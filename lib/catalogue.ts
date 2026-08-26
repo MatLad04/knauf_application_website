@@ -332,16 +332,18 @@ export async function listProducts(q: ProductQuery): Promise<ProductPage> {
     orderBy = ORDER_BY[q.sort === "relevance" ? "code" : q.sort];
   }
 
-  const limit = f.bind(q.perPage);
-  const offset = f.bind((q.page - 1) * q.perPage);
+  // The grid grows rather than turning over: `page` is how many pages worth
+  // have been asked for, so one query returns the whole visible set and the
+  // results already on screen keep their position when more arrive.
+  const limit = f.bind(q.page * q.perPage);
 
-  // COUNT(*) OVER() takes the total from the same scan as the page.
+  // COUNT(*) OVER() takes the total from the same scan as the rows.
   const rows = await query<ProductRow>(
     `SELECT ${PRODUCT_COLUMNS}, COUNT(*) OVER() AS total_count
      ${PRODUCT_FROM}
      WHERE ${f.sql}
      ORDER BY ${orderBy}
-     LIMIT ${limit} OFFSET ${offset}`,
+     LIMIT ${limit}`,
     f.values,
   );
 
@@ -357,6 +359,20 @@ export async function listProducts(q: ProductQuery): Promise<ProductPage> {
 // ---------------------------------------------------------------------------
 // Facets
 // ---------------------------------------------------------------------------
+
+/**
+ * How many products match, without fetching any. The toolbar and the filter
+ * rail are answered by this while the grid itself is still running, so
+ * switching view or sort leaves everything but the products on the screen.
+ */
+export async function countProducts(q: ProductQuery): Promise<number> {
+  const f = buildFilters(q);
+  const rows = await query<{ total: number }>(
+    `SELECT count(*)::int AS total ${PRODUCT_FROM} WHERE ${f.sql}`,
+    f.values,
+  );
+  return rows[0]?.total ?? 0;
+}
 
 export async function getFacets(q: ProductQuery): Promise<Facets> {
   const categoryFilters = buildFilters(q, "category");
@@ -729,18 +745,72 @@ export async function getApplicationBySlug(slug: string): Promise<Application | 
   return row ? toApplication(row) : null;
 }
 
+export type Family = {
+  key: string;
+  name: string;
+  textureKey: string;
+  categoryName: string;
+  productCount: number;
+  /** Thinnest and thickest variant, where the family has thicknesses. */
+  thicknessMin: number | null;
+  thicknessMax: number | null;
+  bestLambda: number | null;
+};
+
 /**
- * One product per material texture for the landing page sample wall. Keyed on
- * texture rather than family because several families share a photograph, and
- * a wall of identical tiles is not a sample wall.
+ * Products are authored as families with variants, so the family is the unit a
+ * specifier recognises: one datasheet, one photograph, several thicknesses.
+ * Used on the landing page as the third way into the catalogue.
  */
-export async function getSampleWall(limit = 8): Promise<Product[]> {
+export async function getFamilies(limit = 8): Promise<Family[]> {
+  const rows = await query<{
+    family: string;
+    family_name: string;
+    texture_key: string;
+    category_name: string;
+    product_count: number;
+    thickness_min: number | null;
+    thickness_max: number | null;
+    best_lambda: number | null;
+  }>(
+    `SELECT p.family, p.family_name, p.texture_key,
+            min(c.name) AS category_name,
+            count(*)::int AS product_count,
+            min(p.thickness_mm) AS thickness_min,
+            max(p.thickness_mm) AS thickness_max,
+            min(p.thermal_conductivity) AS best_lambda
+     FROM products p
+     JOIN categories c ON c.id = p.category_id
+     GROUP BY p.family, p.family_name, p.texture_key
+     ORDER BY count(*) DESC, min(p.sort_order)
+     LIMIT $1`,
+    [limit],
+  );
+  return rows.map((r) => ({
+    key: r.family,
+    name: r.family_name,
+    textureKey: r.texture_key,
+    categoryName: r.category_name,
+    productCount: r.product_count,
+    thicknessMin: r.thickness_min,
+    thicknessMax: r.thickness_max,
+    bestLambda: r.best_lambda,
+  }));
+}
+
+/**
+ * One product per family, best conductivity first. The panel in the search bar
+ * shows six of these: six thicknesses of the same slab is one answer shown six
+ * times, which is worse than showing six.
+ */
+export async function getShowcase(limit = 6): Promise<Product[]> {
   const rows = await query<ProductRow>(
     `SELECT ${PRODUCT_COLUMNS} ${PRODUCT_FROM}
      WHERE p.id IN (
-       SELECT DISTINCT ON (texture_key) id FROM products ORDER BY texture_key, sort_order
+       SELECT DISTINCT ON (family) id FROM products
+       ORDER BY family, thermal_conductivity NULLS LAST, sort_order
      )
-     ORDER BY p.sort_order
+     ORDER BY p.thermal_conductivity NULLS LAST, p.sort_order
      LIMIT $1`,
     [limit],
   );

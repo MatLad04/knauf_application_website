@@ -38,7 +38,7 @@ export default function Error({
           Try again
         </button>
         <Link href="/products" className="btn btn-quiet">
-          Catalogue
+          Search
         </Link>
         <Link href="/" className="btn btn-quiet">
           Home

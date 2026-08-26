@@ -30,6 +30,17 @@
   /* Tinted to the ground, never pure black. */
   --shadow-lift: 0 1px 2px #17181a0d, 0 18px 34px -20px #17181a3d;
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* The bar is fixed furniture, so anything else that sticks has to know how
+     tall it is. Three rows below `lg`, where the wordmark, the search and the
+     navigation each take a line. */
+  --header-h: 11rem;
+}
+
+@media (width >= 64rem) {
+  :root {
+    --header-h: 5.5rem;
+  }
 }
 
 [data-theme="dark"] {
@@ -189,6 +200,246 @@
     color: var(--color-signal);
   }
 
+  @media (width < 64rem) {
+    .sheet-section {
+      display: none;
+    }
+  }
+
+  /* The stamp a drawing office puts on a sheet that is not to be built from.
+     Rotated, outlined, and slightly worn at the edges, because that is what a
+     rubber stamp looks like and the joke only works if it is convincing. */
+  .stamp {
+    display: inline-grid;
+    justify-items: center;
+    gap: 0.125rem;
+    rotate: -6deg;
+    border: 3px solid var(--color-signal);
+    border-radius: 6px;
+    padding: 1.25rem 2rem 1rem;
+    color: var(--color-signal);
+    opacity: 0.85;
+  }
+
+  .stamp-line {
+    font-family: var(--font-display);
+    font-size: clamp(1.25rem, 2.4vw, 1.75rem);
+    line-height: 1.05;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  .stamp-rule {
+    inline-size: 100%;
+    block-size: 2px;
+    margin-block: 0.5rem 0.375rem;
+    background: currentColor;
+    opacity: 0.6;
+  }
+
+  .stamp-meta {
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    opacity: 0.75;
+  }
+
+  [data-issued="true"] {
+    color: var(--color-signal);
+  }
+
+  /* The one characteristic that rules a product in or out, on the photograph
+     rather than under it. A frosted plate rather than a fill, so it belongs to
+     the image instead of sitting on top of it. */
+  .card-badge {
+    position: absolute;
+    inset-block-start: 0.625rem;
+    inset-inline-end: 0.625rem;
+    z-index: 1;
+    border-radius: var(--radius-pill);
+    border: 1px solid color-mix(in srgb, var(--color-surface) 55%, transparent);
+    background: color-mix(in srgb, var(--color-surface) 72%, transparent);
+    backdrop-filter: blur(6px);
+    padding: 0.1875rem 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.04em;
+    color: var(--color-ink);
+  }
+
+  /* The three ways in, on the first screen. No frame and no fill: the
+     photograph is the object and the type sits under it on the page ground,
+     the same way a product card is built. */
+  .way .media {
+    transition:
+      transform 0.5s var(--ease-out),
+      box-shadow 0.5s var(--ease-out);
+  }
+
+  .way:hover .media {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lift);
+  }
+
+  /* The whole card answers the pointer, not just the heading: the photograph,
+     the name, the count and the argument are one target and they should read
+     as one. */
+  .way:hover,
+  .way:focus-visible {
+    color: var(--color-signal);
+  }
+
+  /* The argument under the name is set here rather than with a utility, so it
+     can follow the hover instead of being overridden by one. */
+  .way-lead {
+    color: var(--color-muted);
+  }
+
+  .way:hover .way-lead,
+  .way:focus-visible .way-lead,
+  .way:hover .caption,
+  .way:focus-visible .caption {
+    color: color-mix(in srgb, var(--color-signal) 70%, var(--color-muted));
+  }
+
+  /* The search bar. The one pill-shaped control that is not a chip, because it
+     is the one control the whole site is organised around. */
+  .search-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    min-inline-size: 0;
+    border: 1px solid var(--color-rule);
+    border-radius: var(--radius-pill);
+    background: var(--color-sunken);
+    padding-inline: 1.125rem;
+    color: var(--color-muted);
+    transition:
+      border-color 0.15s ease,
+      background 0.15s ease;
+  }
+
+  .search-bar:hover {
+    border-color: var(--color-edge);
+  }
+
+  .search-bar:focus-within,
+  .search-bar[data-open="true"] {
+    background: var(--color-raised);
+    border-color: var(--color-signal);
+    box-shadow:
+      0 0 0 1px var(--color-signal),
+      0 0 0 5px var(--color-signal-soft);
+    color: var(--color-ink);
+  }
+
+  .search-bar input {
+    color: var(--color-ink);
+  }
+
+  /* What opens under it. Anchored to the bar on a wide screen and to the page
+     on a narrow one, because at 390px the bar is the page. */
+  .search-panel {
+    position: absolute;
+    inset-inline: -1rem;
+    inset-block-start: calc(100% + 0.75rem);
+    z-index: 60;
+    max-block-size: min(30rem, calc(100svh - 8rem));
+    overflow-y: auto;
+    border: 1px solid var(--color-rule);
+    border-radius: var(--radius-media);
+    background: var(--color-raised);
+    box-shadow: var(--shadow-lift);
+    padding: 1.5rem;
+    animation: panel-in 0.22s var(--ease-out) both;
+  }
+
+  @media (width >= 40rem) {
+    .search-panel {
+      inset-inline: 0;
+      padding: 1.75rem 2rem;
+    }
+  }
+
+  /* From `lg` it leaves the bar and takes the width of the page, the way a
+     catalogue menu does: seven product names do not fit in the width of a
+     search field, and truncating them defeats the point of listing them. */
+  @media (width >= 64rem) {
+    .search-panel {
+      position: fixed;
+      inset-inline: 0;
+      inset-block-start: var(--header-h);
+      max-block-size: calc(100svh - var(--header-h) - 2rem);
+      border-inline: 0;
+      border-block-start: 0;
+      border-end-start-radius: var(--radius-media);
+      border-end-end-radius: var(--radius-media);
+      border-start-start-radius: 0;
+      border-start-end-radius: 0;
+      padding: 0;
+    }
+
+    .search-panel-inner {
+      margin-inline: auto;
+      max-inline-size: 105rem;
+      padding: 2rem 3rem 2.25rem;
+    }
+
+    @media (width >= 80rem) {
+      .search-panel-inner {
+        padding-inline: 4rem;
+      }
+    }
+  }
+
+  .search-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    background: color-mix(in srgb, #17181a 42%, transparent);
+    animation: fade-scrim 0.22s var(--ease-out) both;
+  }
+
+  @keyframes fade-scrim {
+    from {
+      opacity: 0;
+    }
+  }
+
+  /* The panel's column headings. Louder than a `.label`, because in a panel of
+     three lists the heading is what you read first and everything under it is
+     an answer to it. */
+  .lane-title {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 500;
+    color: var(--color-ink);
+    padding-block-end: 0.5rem;
+    border-block-end: 1px solid var(--color-edge);
+  }
+
+  /* The count belongs to the name, so it sits next to it rather than at the far
+     end of the column: a number floating a hand's width away from its label
+     reads as a second column of unrelated figures. */
+  .search-row {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.625rem;
+    max-inline-size: 100%;
+    border-radius: var(--radius-control);
+    margin-inline: -0.5rem;
+    padding: 0.4375rem 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  .search-row:hover {
+    background: var(--color-sunken);
+    color: var(--color-signal);
+  }
+
   /* Filter chips are the one pill shape on the page, because a pill reads as
      something you can take off again. */
   .chip {
@@ -281,17 +532,21 @@
     filter: saturate(0.62) brightness(0.7) contrast(1.06);
   }
 
-  /* The hero photograph runs full bleed behind the type. The wash keeps the
-     top of the frame at the page ground so the headline always has its
-     contrast, and hands back to the ground at the very bottom. */
-  .hero-wash {
-    background: linear-gradient(
-      to bottom,
-      var(--color-surface) 0%,
-      color-mix(in srgb, var(--color-surface) 88%, transparent) 34%,
-      color-mix(in srgb, var(--color-surface) 30%, transparent) 62%,
-      var(--color-surface) 100%
-    );
+  .sheet-wash {
+    background:
+      linear-gradient(
+        to right,
+        color-mix(in srgb, var(--color-surface) 94%, transparent) 0%,
+        color-mix(in srgb, var(--color-surface) 72%, transparent) 34%,
+        transparent 66%
+      ),
+      linear-gradient(
+        to bottom,
+        color-mix(in srgb, var(--color-surface) 55%, transparent) 0%,
+        transparent 22%,
+        transparent 70%,
+        color-mix(in srgb, var(--color-surface) 80%, transparent) 100%
+      );
   }
 
   .hatch-stroke {
@@ -301,6 +556,29 @@
 
   .hatch-fill {
     fill: var(--color-muted);
+  }
+}
+
+/* The one scroll cue on the site: the hand-over from the hero to the search. */
+@keyframes nudge {
+  0%,
+  55%,
+  100% {
+    transform: none;
+  }
+  28% {
+    transform: translateY(4px);
+  }
+}
+
+.scroll-cue svg {
+  animation: nudge 2.4s var(--ease-out) infinite;
+}
+
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
   }
 }
 

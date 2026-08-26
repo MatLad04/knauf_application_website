@@ -4,9 +4,9 @@ import { ArrowRight } from "@phosphor-icons/react/dist/ssr";
 import { Container } from "@/components/section";
 
 export const metadata: Metadata = {
-  title: "About the data",
+  title: "About",
   description:
-    "Kernbau is a fictional manufacturer. What the catalogue data is, how it was built, and what it cannot be used for.",
+    "Kernbau is a fictional manufacturer invented for this prototype. Who the company is meant to be, what the catalogue data is, how it was built, and what it cannot be used for.",
   alternates: { canonical: "/about" },
 };
 
@@ -41,8 +41,9 @@ export default function AboutPage() {
   return (
     <>
       <section className="border-b rule">
-        <Container className="py-12 sm:py-16">
-          <h1 className="display max-w-[20ch] text-[clamp(2rem,4.5vw,3.25rem)]">
+        <Container className="flex min-h-[46svh] flex-col justify-end py-14 sm:py-20">
+          <p className="label">About</p>
+          <h1 className="display mt-6 max-w-[18ch] text-[clamp(2.5rem,6vw,4.5rem)] leading-[0.98]">
             Invented products, real specification framework
           </h1>
         </Container>
@@ -50,11 +51,20 @@ export default function AboutPage() {
 
       <Container className="grid items-start gap-12 py-14 lg:grid-cols-[minmax(0,42rem)_minmax(0,1fr)] lg:gap-20">
         <div className="grid gap-8 text-lg leading-relaxed">
+          <h2 className="display text-[clamp(1.5rem,3vw,2rem)]">The company</h2>
           <p>
-            Kernbau does not exist. It was invented for this prototype so that the catalogue could
+            Kernbau is a mid-sized European manufacturer of external wall insulation, reinforcement
+            and render systems: seven product categories, seventy-four products, five constructions
+            it approves them in. It sells to specifiers rather than to consumers, which is why this
+            site is organised around declared performance and build-ups instead of around
+            photographs of finished houses.
+          </p>
+          <p>
+            It also does not exist. It was invented for this prototype so that the catalogue could
             be built without using any manufacturer&rsquo;s protected content. The products, the
             names, the codes and every declared value in the database are made up.
           </p>
+          <h2 className="display mt-4 text-[clamp(1.5rem,3vw,2rem)]">The data</h2>
           <p>
             What is not made up is the framework around them. Each value follows the format, unit
             and standard a real datasheet uses: thermal conductivity as λD in W/(m·K), reaction to
@@ -122,7 +132,7 @@ export default function AboutPage() {
 
       <Container className="pb-20">
         <Link href="/products" className="btn btn-primary group">
-          Open the catalogue
+          Search the catalogue
           <ArrowRight
             size={16}
             weight="bold"

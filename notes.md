@@ -305,3 +305,164 @@ thickness scale moved back onto the card, where it separates a 60 mm slab from
 a 160 mm one with information rather than decoration. And the product code sat
 in the same row as the name, which pushed past the viewport on a 390 px screen;
 it now sits under the name, where no column width can collide with it.
+
+### Entry-point pass
+
+Two problems survived the redesign. The hero led with a search field, which
+made the first screen a control panel rather than a statement. And the three
+ways into the catalogue were three consecutive sections, each with its own
+heading and its own argument, so they read as three unrelated ideas rather than
+as a set of choices.
+
+- **The hero lost its search field** and gained a full-bleed photograph, the
+  catalogue figures, and one cue at the bottom naming where the search is. The
+  hero now says what the site is; the section under it does the work.
+- **The three ways in became one section.** _Find a product_: search across the
+  top, then material, family and situation as three columns under a single
+  heading. Every row is a filtered catalogue URL, and each column carries a CTA
+  into the broader view of its own dimension.
+- **A family became a first-class way in.** Products were already authored as
+  families with variants, but nothing in the interface exposed that. A family
+  row searches on the family name, which the tolerant search already handles.
+- **The catalogue is called Search.** It is the main thing the site does, and
+  naming it after the action rather than after the shelf says so. The grid,
+  filters and cards are untouched.
+- The honesty note lost its button. It was a third route to the same page the
+  header and footer already link to, and the note is a footnote, not a call to
+  action.
+
+### Bar pass
+
+The site had a search page with a search on it, and a landing page with another
+search on it, and the answer to "where do I search?" was still two answers. It
+also had a nav that named a shelf — Catalogue, Applications, Data — rather than
+naming what a specifier comes here to do.
+
+- **One bar, on every page, and it does not move.** The search lives in the
+  furniture rather than on a page: the same field is there whether you are
+  reading about a build-up or looking at 74 results, and the body under it is
+  what changes. Searching is a plain GET to `/products`, so a result set is a
+  URL that survives a refresh, a share and the back button, and the field works
+  with no JavaScript at all.
+- **Focusing it opens the catalogue's three dimensions.** Materials, families
+  and systems, as three columns of real counts, because someone who has just
+  clicked into a search field usually knows the job and not the product name.
+  Typing narrows the three lists in place, so the panel answers the half-typed
+  word instead of waiting for the whole one. From `lg` it leaves the bar and
+  takes the width of the page: seven product names do not fit in the width of a
+  search field, and truncating them defeats the point of listing them.
+- **The first screen lost its lists and kept its objects.** The three ways in
+  are three photographs with a title and a count under the headline. The lists
+  themselves are one keystroke away in the bar, and a first screen is for saying
+  what a thing is.
+- **The catalogue page is results.** No heading block, no second search field,
+  no requirement chips repeated: the count, the toolbar, the filters and the
+  grid, under the same bar as everywhere else.
+- **Products, Applications, Services.** Named after what a specifier is doing.
+  Applications is the argument that a wall is not a shelf of products, and it is
+  now one construction to a band with its build-up in installation order, rather
+  than five identical cards. Services is what a manufacturer does between the
+  datasheet and the finished wall. About covers the company and the data
+  together, and it is in the footer, because it is a footnote to the work rather
+  than a step in it.
+- The whole layout reads from Postgres now, since the bar carries live counts,
+  so `dynamic` moved from the individual pages up to the root layout.
+
+### Furniture pass
+
+Six things, all of them the same argument: the page should look like the trade
+it serves, and the parts that repeat on every page should be worth repeating.
+
+- **The hero is drawn, not photographed.** A photograph of a wall says
+  marketing; the same wall in section at 1:5, on a ruled sheet with every layer
+  dimensioned and named, says what the catalogue is for. It is inline SVG in
+  `components/drafting-sheet.tsx` — grid, frame, hatches per material, leaders
+  jogging out to a label column, an overall depth of 366 mm — and every line
+  takes its colour from the theme tokens, so it inverts rather than being two
+  files. The layers stack downwards because the hero is wide and short and six
+  leaders across a horizontal build-up collide.
+- **The bar takes the width it is worth.** Taller, a bigger wordmark, and a
+  search field that runs from the navigation to the theme toggle. Clicking into
+  it opens what the catalogue has before a word is typed: common searches on the
+  left, six products on the right — one per family, lowest declared conductivity
+  first, because six thicknesses of one slab is a single answer shown six times
+  — and the three dimensions under them. Typing narrows all of it in place.
+- **The results grow instead of turning over.** `page` is now how many pages
+  worth have been asked for, one query returns the whole visible set, and the
+  count says `24/74` rather than `1 of 4`. A specifier comparing two products
+  across a page boundary loses the comparison; a page number is also a worse
+  answer to "how many are there" than a count is. It is still a link, so the
+  state is in the URL and it works with no JavaScript.
+- **The cards lost their remaining furniture.** No fill, no frame: a rounded
+  photograph, the Euroclass on it as a frosted plate because it is the one
+  characteristic that rules a product out outright, and under it the two figures
+  a specifier reaches for first — conductivity and thickness — set large and
+  pushed to opposite corners, legible without reading a label.
+- **The footer is the last informative block.** The way back up, then what the
+  numbers on this site are in, which is the declared-value equivalent of a
+  country and a language and without which none of them mean anything. Three
+  columns, then the standards the data is shaped by where a real manufacturer
+  would put social icons, and the honesty note at the foot where a legal line
+  goes, because that is exactly what it is.
+
+### Measure pass
+
+Seven corrections, most of them about a control saying what it is doing.
+
+- **The page takes the screen.** There is no maximum width any more: a catalogue
+  is a working tool and the display it is opened on is the width it should use.
+  What holds it off the edge is a gutter that grows with the viewport rather
+  than a column that stops in the middle of a 27-inch monitor.
+- **The bar says it is open**, not merely focused: a signal border and a soft
+  ring, so the state of the field and the state of the panel are one thing.
+- **The panel's column headings are headings.** Ink rather than muted, and a
+  rule under them: in a panel of three lists the heading is what is read first
+  and everything below it is an answer to it.
+- **A count belongs to its name.** The counts sat at the far end of each column,
+  a hand's width from the label, which read as a second column of unrelated
+  figures. They now sit directly after the name.
+- **Sorting applies as it is chosen**, and so does a filter. A select that needs
+  a second click is a form pretending to be a control. Both Apply buttons are
+  still rendered for a browser with no JavaScript, and removed once there is
+  some — the same trick the filter rail already used for its disclosure.
+- **Only the products rerun.** The Suspense boundary wrapped the whole
+  catalogue, so switching Cards for Schedule replaced the toolbar and the filter
+  rail with a skeleton as well. The boundary is now around the results alone,
+  keyed on the parameters that actually change them, and the toolbar reads from
+  a `countProducts` that does not wait on the grid. One extra query against an
+  indexed count, in exchange for a rail that stays where it is.
+- **The hero and the ways in are two sections.** Three photographs under a
+  headline about something else are pictures; introduced under their own
+  heading, they are a set of choices. The hero keeps the drawing and hands over
+  with one cue.
+- **The footer lost a third of its height** without losing a line: the units
+  block shares the row with the three link columns rather than taking one of its
+  own.
+
+### Frame pass
+
+- **The measure has a frame.** A drawing sheet has a margin and the content runs
+  inside it, which is also the honest answer to a catalogue on a 27-inch
+  monitor: 1680px is wide enough for four product cards beside a filter rail
+  without a line of prose ever running past a readable length, and past that the
+  gutter opens rather than the column stretching.
+- **Type sits in its half, not against the edge.** In the hero and in the
+  build-up section the text column is centred inside the half it occupies, so it
+  reads against the drawing and the photograph rather than against the gutter,
+  and the section head's lead sits beside its heading instead of at the far side
+  of the screen.
+- **A way in is one target.** Hovering a card carries the photograph, the name,
+  the count and the argument together. The argument's colour is set on a class
+  rather than a utility, because a utility wins the cascade against a component
+  rule and the paragraph stayed grey while everything around it turned.
+- **The footer signs off.** The wordmark is centred at the foot, where a sheet
+  is signed, and the note beside it is gone — it was the third place on the page
+  saying the same thing, and /about says it properly.
+- **The bar has an account side.** Sign in, favourites and a basket, in the
+  proportions of the shop bars this pattern comes from. None of them is built,
+  so each one says so on `/in-development`: a not-issued-for-construction stamp
+  and a revision table, which is how a drawing office says "not yet", and a
+  paragraph on why that particular thing is out of scope — there is no basket
+  because the person who chooses is not the person who buys.
+- Below `lg` the section in the hero comes off and the paper stays: at 390px the
+  drawing and the headline were competing for the same 300 pixels.

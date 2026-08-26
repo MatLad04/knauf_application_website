@@ -21,7 +21,14 @@ export default function Filters({ facets, query }: { facets: Facets; query: Prod
   // button does nothing. Once hydrated it collapses into a disclosure on small
   // screens; from `lg` up it is always visible anyway.
   const [open, setOpen] = useState(true);
-  useEffect(() => setOpen(false), []);
+  // `scripted` also decides whether the Apply button is worth showing: the
+  // change handler above already applies a filter as it is chosen, so the
+  // button is only the route for a browser that is not running this.
+  const [scripted, setScripted] = useState(false);
+  useEffect(() => {
+    setOpen(false);
+    setScripted(true);
+  }, []);
 
   const applyOnChange = () => formRef.current?.requestSubmit();
 
@@ -160,9 +167,11 @@ export default function Filters({ facets, query }: { facets: Facets; query: Prod
         </div>
 
         <div className="mt-6 flex gap-2">
-          <button type="submit" className="btn btn-primary flex-1 py-2.5 text-sm">
-            Apply
-          </button>
+          {!scripted && (
+            <button type="submit" className="btn btn-primary flex-1 py-2.5 text-sm">
+              Apply
+            </button>
+          )}
           <a href="/products" className="btn btn-quiet flex-1 py-2.5 text-sm">
             Clear all
           </a>

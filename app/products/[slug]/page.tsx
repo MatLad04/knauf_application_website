@@ -60,7 +60,7 @@ export default async function ProductPage({ params }: Props) {
       <Container className="py-8 sm:py-12">
         <nav aria-label="Breadcrumb" className="label flex flex-wrap items-center gap-1.5">
           <Link href="/products" className="hover:text-signal">
-            Catalogue
+            Search
           </Link>
           <CaretRight size={10} weight="bold" aria-hidden="true" />
           <Link href={`/products?category=${product.categorySlug}`} className="hover:text-signal">

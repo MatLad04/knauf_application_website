@@ -57,7 +57,7 @@ export default async function ComparePage({
           declared value.
         </p>
         <Link href="/products" className="btn btn-primary mt-8">
-          Open the catalogue
+          Search the catalogue
         </Link>
       </Container>
     );
@@ -144,7 +144,7 @@ export default async function ComparePage({
 
       <p className="mt-10">
         <Link href="/products" className="link">
-          Back to the catalogue
+          Back to the results
         </Link>
       </p>
     </Container>

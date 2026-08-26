@@ -41,6 +41,18 @@ export function FiltersSkeleton() {
   );
 }
 
+/** Shown while only the products are rerunning: the rail and the bar stay. */
+export function ResultsSkeleton() {
+  return (
+    <div className="mt-2">
+      <p role="status" className="sr-only">
+        Loading products
+      </p>
+      <CardGridSkeleton />
+    </div>
+  );
+}
+
 /** Shown while the filtered query runs. Same geometry as the real thing. */
 export function CatalogueSkeleton() {
   return (

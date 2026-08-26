@@ -1,12 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight } from "@phosphor-icons/react/dist/ssr";
-import { getApplications, getCatalogueStats, getCategories, getSampleWall } from "@/lib/catalogue";
+import { ArrowRight, CaretDown } from "@phosphor-icons/react/dist/ssr";
+import { getCatalogueStats } from "@/lib/catalogue";
 import { applicationImage, HERO_IMAGE, texture } from "@/lib/media";
-import { lambda } from "@/lib/format";
-import ProductCard from "@/components/product-card";
-import SearchField from "@/components/search-field";
-import { Container, SectionHead } from "@/components/section";
+import DraftingSheet from "@/components/drafting-sheet";
+import { Container } from "@/components/section";
 import { Enter, Reveal } from "@/components/motion";
 
 // Rendered per request: the catalogue lives in Postgres, which does not exist
@@ -23,215 +21,157 @@ const BUILD_UP = [
   "Thin-coat render",
 ];
 
+type Stats = { products: number; categories: number; applications: number };
+
+const WAYS = [
+  {
+    title: "Materials",
+    lead: "What a product is made of decides how it behaves in a fire and how deep the wall has to get.",
+    image: texture("mineral-wool"),
+    cta: (s: Stats) => ({ label: `All ${s.categories} categories`, href: "/products" }),
+  },
+  {
+    title: "Families",
+    lead: "A family is one datasheet and one photograph across every thickness it is made in.",
+    image: texture("eps"),
+    cta: (s: Stats) => ({ label: `All ${s.products} products`, href: "/products" }),
+  },
+  {
+    title: "Systems",
+    lead: "Most specification decisions begin with a construction rather than with a catalogue.",
+    image: applicationImage("external-wall"),
+    cta: (s: Stats) => ({ label: `All ${s.applications} applications`, href: "/applications" }),
+  },
+];
+
 export default async function HomePage() {
-  const [stats, categories, applications, wall] = await Promise.all([
-    getCatalogueStats(),
-    getCategories(),
-    getApplications(),
-    getSampleWall(8),
-  ]);
+  const stats = await getCatalogueStats();
 
   return (
     <>
       <Hero stats={stats} />
 
-      {/* Browse by what the product is made of. A rail rather than a grid,
-          because seven categories are a shelf, not a page. */}
-      <section aria-labelledby="categories-heading" className="py-20 sm:py-28">
+      {/* The three ways in are their own section now. In the hero they were an
+          unannounced row of photographs under a headline about something else;
+          here they are introduced, which is the difference between a set of
+          choices and some pictures. */}
+      <section aria-labelledby="ways-heading" className="border-t rule py-16 sm:py-20">
         <Container>
-          <Reveal>
-            <SectionHead
-              id="categories-heading"
-              title="Browse by material"
-              lead="Seven product categories, each with its own declared characteristics and its own reason for being chosen."
-            />
-          </Reveal>
-        </Container>
-
-        <Reveal className="mt-10">
-          <ul className="flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 sm:gap-6 sm:px-8 [scrollbar-width:thin]">
-            {categories.map((category) => {
-              const image = texture(category.textureKey);
-              return (
-                <li key={category.slug} className="w-[70vw] shrink-0 snap-start sm:w-72">
-                  <Link
-                    href={`/products?category=${category.slug}`}
-                    className="card group relative block"
-                  >
-                    <div className="media aspect-[3/4]">
-                      <Image
-                        src={image.src}
-                        alt=""
-                        fill
-                        sizes="(max-width: 640px) 70vw, 18rem"
-                        className="texture object-cover"
-                      />
-                    </div>
-                    <div className="flex items-baseline justify-between gap-3 pt-4">
-                      <h3 className="font-medium group-hover:text-signal">{category.name}</h3>
-                      <span className="mono text-[0.6875rem] text-muted">
-                        {category.productCount}
-                      </span>
-                    </div>
-                    <p className="mt-1.5 text-sm text-muted">{category.summary}</p>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </Reveal>
-      </section>
-
-      {/* The products themselves. One per material family, so the grid shows
-          the range of the catalogue rather than eight variants of one board. */}
-      <section aria-labelledby="products-heading" className="py-20 sm:py-28">
-        <Container>
-          <Reveal>
-            <SectionHead
-              id="products-heading"
-              title="One product from each family"
-              lead="Every variant of a board shares a datasheet and a photograph. Thickness and declared conductivity are what separate them."
-              href="/products"
-              hrefLabel={`All ${stats.products} products`}
-            />
-          </Reveal>
-
-          <Reveal className="mt-12">
-            <div className="grid grid-cols-2 gap-x-4 gap-y-10 sm:gap-x-6 md:grid-cols-3 xl:grid-cols-4">
-              {wall.map((product, i) => (
-                <ProductCard key={product.id} product={product} priority={i < 4} />
-              ))}
-            </div>
-          </Reveal>
-        </Container>
-      </section>
-
-      {/* The second way in: start from the construction you are detailing. */}
-      <section aria-labelledby="applications-heading" className="py-20 sm:py-28">
-        <Container>
-          <div className="grid gap-12 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:gap-20">
-            <Reveal>
-              <h2 id="applications-heading" className="display text-[clamp(1.75rem,3.6vw,2.75rem)]">
-                Or start from the situation
+          <Reveal className="grid items-end gap-x-12 gap-y-5 lg:grid-cols-2">
+            <div>
+              <p className="label">Where to start</p>
+              <h2 id="ways-heading" className="display mt-4 text-[clamp(1.75rem,3.6vw,2.75rem)]">
+                Three ways into the catalogue
               </h2>
-              <p className="mt-4 text-muted">
-                Most specification decisions begin with a construction, not a catalogue. Pick the
-                one you are detailing and the list narrows to what is approved for it.
+            </div>
+            <p className="max-w-[52ch] text-muted lg:pb-1">
+              A specification starts from what the product is made of, from the family it belongs
+              to, or from the construction it is going into. All three are one keystroke away in the
+              search bar.
+            </p>
+          </Reveal>
+
+          <Reveal className="mt-12 sm:mt-14">
+            <ul className="grid gap-6 sm:grid-cols-3 sm:gap-5 lg:gap-8">
+              {WAYS.map((way) => {
+                const cta = way.cta(stats);
+                return (
+                  <li key={way.title}>
+                    <Link href={cta.href} className="way group block">
+                      <div className="media aspect-[16/10] lg:aspect-[3/2]">
+                        <Image
+                          src={way.image.src}
+                          alt=""
+                          fill
+                          sizes="(max-width: 640px) 100vw, 30vw"
+                          className="texture object-cover"
+                        />
+                      </div>
+
+                      <div className="mt-4 flex items-baseline justify-between gap-4">
+                        <h3 className="display text-lg group-hover:text-signal">{way.title}</h3>
+                        <span className="caption inline-flex items-center gap-1.5 whitespace-nowrap">
+                          {cta.label}
+                          <ArrowRight
+                            size={13}
+                            weight="bold"
+                            aria-hidden="true"
+                            className="transition-transform group-hover:translate-x-0.5"
+                          />
+                        </span>
+                      </div>
+                      <p className="way-lead mt-2 text-sm">{way.lead}</p>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </Reveal>
+        </Container>
+      </section>
+
+      {/* What the catalogue is actually about: layer order and true thickness.
+          The photograph carries it, so the type sits beside it, not over it. */}
+      <section aria-labelledby="systems-heading" className="border-t rule py-20 sm:py-28">
+        <Container>
+          <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+            <Reveal className="lg:mx-auto lg:max-w-[34rem]">
+              <h2 id="systems-heading" className="display text-[clamp(1.75rem,3.6vw,2.75rem)]">
+                A board is one layer of seven
+              </h2>
+              <p className="mt-4 max-w-[46ch] text-muted">
+                An insulation board is never installed alone, and it is approved as part of a
+                build-up rather than on its own. Every product page carries the system it belongs
+                to, in installation order.
               </p>
-              <Link href="/applications" className="btn btn-quiet group mt-8">
-                All applications
-                <ArrowRight
-                  size={16}
-                  weight="bold"
-                  aria-hidden="true"
-                  className="transition-transform group-hover:translate-x-0.5"
-                />
-              </Link>
+
+              <ol className="mt-10">
+                {BUILD_UP.map((layer, i) => (
+                  <li
+                    key={layer}
+                    className="flex items-baseline gap-5 border-b rule py-3.5 first:border-t"
+                  >
+                    <span className="mono text-xs text-muted">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <span className="text-sm font-medium sm:text-base">{layer}</span>
+                  </li>
+                ))}
+              </ol>
             </Reveal>
 
             <Reveal>
-              <ul>
-                {applications.map((application) => {
-                  const image = applicationImage(application.imageKey);
-                  return (
-                    <li key={application.slug} className="border-b rule first:border-t">
-                      <Link
-                        href={`/applications/${application.slug}`}
-                        className="group flex items-center gap-5 py-5 hover:text-signal"
-                      >
-                        <span className="media aspect-square w-16 shrink-0 sm:w-20">
-                          <Image
-                            src={image.src}
-                            alt=""
-                            fill
-                            sizes="80px"
-                            className="texture object-cover"
-                          />
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block font-medium">{application.name}</span>
-                          <span className="mt-1 block text-sm text-muted">
-                            {application.summary}
-                          </span>
-                        </span>
-                        <span className="mono shrink-0 text-xs text-muted">
-                          {application.productCount}
-                        </span>
-                        <ArrowRight
-                          size={16}
-                          weight="bold"
-                          aria-hidden="true"
-                          className="shrink-0 text-muted transition-transform group-hover:translate-x-0.5 group-hover:text-signal"
-                        />
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
+              <div className="media aspect-[4/3]">
+                <Image
+                  src={HERO_IMAGE.src}
+                  alt={HERO_IMAGE.alt}
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 46rem"
+                  className="texture object-cover"
+                />
+              </div>
             </Reveal>
           </div>
         </Container>
       </section>
 
-      {/* Why the catalogue is shaped as systems rather than as isolated items. */}
-      <section aria-labelledby="systems-heading" className="py-20 sm:py-28">
+      {/* The honesty note. It is a footnote and not a feature, so it carries no
+          button: the header and the footer already link to the same page. */}
+      <section aria-labelledby="honesty-heading" className="border-t rule py-20 sm:py-24">
         <Container>
-          <Reveal>
-            <div className="media aspect-[16/10] max-h-[34rem] sm:aspect-[21/9]">
-              <Image
-                src={HERO_IMAGE.src}
-                alt={HERO_IMAGE.alt}
-                fill
-                sizes="(max-width: 1536px) 100vw, 92rem"
-                className="texture object-cover"
-              />
-            </div>
-          </Reveal>
-
-          <Reveal className="mt-12">
-            <h2 id="systems-heading" className="display text-[clamp(1.75rem,3.6vw,2.75rem)]">
-              A board is one layer of seven
-            </h2>
-            <p className="mt-4 max-w-[58ch] text-muted">
-              An insulation board is never installed alone, and it is approved as part of a build-up
-              rather than on its own. Every product page carries the system it belongs to, in
-              installation order.
-            </p>
-
-            <ol className="mt-10 grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-4 lg:grid-cols-7">
-              {BUILD_UP.map((layer, i) => (
-                <li key={layer} className="border-t-2 border-ink pt-3">
-                  <span className="mono text-xs text-muted">{String(i + 1).padStart(2, "0")}</span>
-                  <span className="mt-1 block text-sm font-medium">{layer}</span>
-                </li>
-              ))}
-            </ol>
-          </Reveal>
-        </Container>
-      </section>
-
-      {/* The honesty note. Narrow and centred, because it is a statement and
-          not a feature. */}
-      <section className="pb-24 pt-8 sm:pb-32">
-        <Container>
-          <Reveal className="mx-auto max-w-[46rem] border-t rule pt-12 text-center">
-            <h2 className="display text-[clamp(1.5rem,3vw,2.25rem)]">
+          <Reveal className="max-w-[52rem]">
+            <p className="label">About this prototype</p>
+            <h2
+              id="honesty-heading"
+              className="display mt-4 max-w-[22ch] text-[clamp(1.75rem,3.6vw,2.75rem)]"
+            >
               Invented products, real specification framework
             </h2>
-            <p className="mt-5 text-muted">
+            <p className="mt-5 max-w-[68ch] text-muted">
               Kernbau does not exist. Every declared value here is made up and backed by no test
               report. The units, standards and document formats are the ones a real datasheet uses,
               so the interface can be judged honestly.
             </p>
-            <Link href="/about" className="btn btn-quiet group mt-8">
-              How the data was built
-              <ArrowRight
-                size={16}
-                weight="bold"
-                aria-hidden="true"
-                className="transition-transform group-hover:translate-x-0.5"
-              />
-            </Link>
           </Reveal>
         </Container>
       </section>
@@ -239,79 +179,46 @@ export default async function HomePage() {
   );
 }
 
-function Hero({
-  stats,
-}: {
-  stats: { products: number; categories: number; applications: number; bestLambda: number | null };
-}) {
+/**
+ * The photograph is gone and the drawing is the ground: a section through the
+ * wall this catalogue is about, to scale, with its layers dimensioned. The
+ * first screen says what the thing is; the section under it says where to go.
+ */
+function Hero({ stats }: { stats: Stats }) {
   return (
-    <section className="pb-4">
-      <Container className="pt-14 pb-12 text-center sm:pt-20 sm:pb-16">
-        <Enter>
-          <h1 className="display text-[clamp(2.5rem,6.5vw,4.75rem)]">Every layer, declared</h1>
-        </Enter>
-        <Enter delay={0.1} className="mx-auto mt-6 max-w-[56ch]">
-          <p className="text-lg text-muted sm:text-xl">
-            Insulation, reinforcement and render systems, searchable on the values a Declaration of
-            Performance actually carries.
-          </p>
-        </Enter>
-        <Enter delay={0.2} className="mx-auto mt-9 w-full max-w-2xl">
-          <SearchField id="hero-search" label="Search the catalogue" />
-        </Enter>
-      </Container>
+    <section className="relative isolate flex min-h-[calc(100svh-var(--header-h))] flex-col overflow-hidden">
+      {/* Drawn in the theme's own ink, so it inverts with the rest of it. */}
+      <DraftingSheet className="absolute inset-0 -z-20 h-full w-full" />
+      <div className="sheet-wash absolute inset-0 -z-10" aria-hidden="true" />
 
-      {/* The photograph is the object; the page ground holds the type. Cropped
-          wide so it reads as a stage rather than as a card. */}
-      <Enter delay={0.3}>
-        <Container>
-          {/* Held to a stage width rather than run full bleed: the photograph
-              is a square object, and a wide crop would cut the layers off. */}
-          <div className="media mx-auto aspect-[4/3] w-full max-w-3xl">
-            <Image
-              src={HERO_IMAGE.src}
-              alt={HERO_IMAGE.alt}
-              fill
-              priority
-              sizes="(max-width: 768px) 100vw, 48rem"
-              className="texture object-cover object-center"
-            />
-          </div>
-        </Container>
-      </Enter>
-
-      <Container>
-        <dl className="mt-12 grid grid-cols-2 gap-x-6 sm:grid-cols-4">
-          <Stat term="Products" value={stats.products} />
-          <Stat term="Categories" value={stats.categories} />
-          <Stat term="Applications" value={stats.applications} />
-          <Stat
-            term={<span className="symbol">Lowest λD</span>}
-            value={lambda(stats.bestLambda) ?? "n/a"}
-            unit="W/(m·K)"
-          />
-        </dl>
+      {/* Two halves: the type takes the left one and sits centred in it, so it
+          reads against the drawing rather than against the edge of the page. */}
+      <Container className="grid flex-1 items-center py-20 sm:py-24 lg:grid-cols-2">
+        <div className="lg:mx-auto lg:max-w-[34rem]">
+          <Enter>
+            <h1 className="display max-w-[13ch] text-[clamp(2.5rem,6.5vw,4.75rem)]">
+              Every layer, declared
+            </h1>
+          </Enter>
+          <Enter delay={0.1}>
+            <p className="mt-6 max-w-[38ch] text-lg text-muted sm:text-xl">
+              {stats.products} insulation, reinforcement and render products, declared to the values
+              a Declaration of Performance actually carries.
+            </p>
+          </Enter>
+          <Enter delay={0.2}>
+            <a
+              href="#ways-heading"
+              className="scroll-cue group mt-12 inline-flex items-center gap-3 text-sm"
+            >
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-full border rule transition-colors group-hover:border-[color:var(--color-edge)]">
+                <CaretDown size={14} weight="bold" aria-hidden="true" />
+              </span>
+              Where to start
+            </a>
+          </Enter>
+        </div>
       </Container>
     </section>
-  );
-}
-
-function Stat({
-  term,
-  value,
-  unit,
-}: {
-  term: React.ReactNode;
-  value: string | number;
-  unit?: string;
-}) {
-  return (
-    <div className="border-t-2 border-ink pt-3">
-      <dt className="label">{term}</dt>
-      <dd className="mono mt-1.5 text-2xl sm:text-3xl">
-        {value}
-        {unit && <span className="caption ml-2">{unit}</span>}
-      </dd>
-    </div>
   );
 }

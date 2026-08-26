@@ -26,6 +26,11 @@ const plexMono = IBM_Plex_Mono({
   display: "swap",
 });
 
+// The bar carries the catalogue's three dimensions, so every page in this
+// layout reads from Postgres — which does not exist at build time inside
+// Docker. One switch here rather than a `dynamic` in every page under it.
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
