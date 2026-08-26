@@ -1,0 +1,40 @@
+{
+  "name": "kernbau",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Kernbau — building materials discovery prototype",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "catalogue:generate": "node db/generate-catalogue.mjs",
+    "db:setup": "tsx db/seed.ts",
+    "media:optimise": "node scripts/optimise-media.mjs",
+    "format": "prettier --write ."
+  },
+  "dependencies": {
+    "@phosphor-icons/react": "^2.1.10",
+    "next": "^16.3.3",
+    "pg": "^8.16.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "sharp": "^0.35.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "^22.15.0",
+    "@types/pg": "^8.15.6",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "prettier": "^3.6.0",
+    "shadcn": "^4.19.0",
+    "tailwindcss": "^4.3.3",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

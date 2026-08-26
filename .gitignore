@@ -1,2 +1,18 @@
+node_modules
+.next
+out
+next-env.d.ts
+*.tsbuildinfo
+.env
+.env.local
+.DS_Store
+
+# Local agent tooling: vendored skill copies and MCP config, not part of the
+# deliverable.
+.claude/
+.mcp.json
+
+# Working material kept out of the public repo
 plan.md
 /moodboard
+/inspo

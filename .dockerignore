@@ -1,0 +1,9 @@
+node_modules
+.next
+.git
+imgs
+moodboard
+inspo
+plan.md
+*.md
+!README.md

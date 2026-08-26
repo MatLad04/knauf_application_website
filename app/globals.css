@@ -1,0 +1,379 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+@theme {
+  /* Near-monochrome, so the only colour on the page is the one that means
+     "you can act here". The material photography carries all the warmth. */
+  --color-surface: #f5f5f4;
+  --color-raised: #ffffff;
+  --color-sunken: #eaeae7;
+  --color-rule: #dededb;
+  /* Hairlines are decorative; the border of anything you can operate is not,
+     so it gets its own token that clears 3:1 (WCAG 1.4.11). */
+  --color-edge: #82827d;
+  --color-muted: #5e5e5a;
+  --color-ink: #17181a;
+  --color-signal: #14489e;
+  --color-signal-soft: #14489e14;
+
+  --font-display: var(--font-archivo), "Archivo", system-ui, sans-serif;
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, "SFMono-Regular", monospace;
+
+  /* One radius system, three steps, applied by role and nothing else:
+     photography and panels, controls, removable chips. */
+  --radius-media: 14px;
+  --radius-control: 8px;
+  --radius-pill: 999px;
+
+  /* Tinted to the ground, never pure black. */
+  --shadow-lift: 0 1px 2px #17181a0d, 0 18px 34px -20px #17181a3d;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+[data-theme="dark"] {
+  --color-surface: #131414;
+  --color-raised: #1d1e1e;
+  --color-sunken: #0c0d0d;
+  --color-rule: #2f302e;
+  --color-edge: #7c7d77;
+  --color-muted: #989993;
+  --color-ink: #ededea;
+  --color-signal: #7fb0ff;
+  --color-signal-soft: #7fb0ff1f;
+  --shadow-lift: 0 1px 2px #00000040, 0 18px 34px -20px #00000099;
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+
+  [data-theme="dark"] {
+    color-scheme: dark;
+  }
+
+  body {
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-underline-offset: 0.2em;
+  }
+
+  /* Values, codes and standards are always mono, with tabular figures so spec
+     columns line up digit under digit. */
+  code,
+  kbd,
+  samp,
+  .mono {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-signal);
+    outline-offset: 3px;
+    border-radius: 3px;
+  }
+
+  ::selection {
+    background: var(--color-signal);
+    color: #ffffff;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  /* Nothing linked to should land underneath the sticky header. */
+  [id] {
+    scroll-margin-top: 6rem;
+  }
+}
+
+@layer components {
+  /* Archivo, heavy and tight. Hierarchy comes from weight and measure, so the
+     scale never has to shout. */
+  .display {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.028em;
+    line-height: 1;
+  }
+
+  /* The small mono label. Structural, not decorative: it names a value, a
+     column or a group, and it is never used as a section eyebrow. */
+  .label {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Greek symbols carry meaning: λ is not Λ. Opt a span out of the label's
+     uppercasing rather than spelling the symbol differently. */
+  .symbol {
+    text-transform: none;
+  }
+
+  .caption {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    line-height: 1.5;
+    color: var(--color-muted);
+  }
+
+  .rule {
+    border-color: var(--color-rule);
+  }
+
+  /* Product cards have no frame. The photograph is the only object with a
+     fill; the text below it sits directly on the page ground. */
+  .media {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--radius-media);
+    background: var(--color-sunken);
+    isolation: isolate;
+  }
+
+  .media img {
+    transform: var(--crop, none);
+    transition: transform 0.6s var(--ease-out);
+  }
+
+  /* Confirms the whole card is one target, and lets a shared photograph move
+     under a cursor the way a real sample would. */
+  .card:hover .media img,
+  .card:focus-within .media img {
+    transform: var(--crop, none) scale(1.045);
+  }
+
+  /* A panel is used only where something really is a raised surface: the
+     sticky summary on a product page, a dialog, the search field. */
+  .panel {
+    background: var(--color-raised);
+    border-radius: var(--radius-media);
+    box-shadow: var(--shadow-lift);
+  }
+
+  .control {
+    border: 1px solid var(--color-edge);
+    border-radius: var(--radius-control);
+    background: var(--color-raised);
+    color: var(--color-ink);
+    transition:
+      border-color 0.15s ease,
+      background 0.15s ease;
+  }
+
+  .control:hover {
+    border-color: var(--color-ink);
+  }
+
+  .control:active {
+    transform: translateY(1px);
+  }
+
+  .control[aria-pressed="true"],
+  .control[data-active="true"],
+  .control[aria-current="page"] {
+    border-color: var(--color-signal);
+    background: var(--color-signal-soft);
+    color: var(--color-signal);
+  }
+
+  /* Filter chips are the one pill shape on the page, because a pill reads as
+     something you can take off again. */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px solid var(--color-rule);
+    border-radius: var(--radius-pill);
+    background: var(--color-raised);
+    padding: 0.3125rem 0.75rem;
+    font-size: 0.8125rem;
+    transition:
+      border-color 0.15s ease,
+      color 0.15s ease;
+  }
+
+  .chip:hover {
+    border-color: var(--color-edge);
+  }
+
+  .chip[data-active="true"] {
+    border-color: var(--color-signal);
+    background: var(--color-signal-soft);
+    color: var(--color-signal);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: var(--radius-control);
+    padding: 0.75rem 1.25rem;
+    font-weight: 500;
+    line-height: 1.2;
+    white-space: nowrap;
+    transition:
+      background 0.15s ease,
+      color 0.15s ease,
+      transform 0.1s ease;
+  }
+
+  .btn:active {
+    transform: translateY(1px);
+  }
+
+  .btn-primary {
+    background: var(--color-ink);
+    color: var(--color-surface);
+  }
+
+  .btn-primary:hover {
+    background: var(--color-signal);
+    color: #ffffff;
+  }
+
+  [data-theme="dark"] .btn-primary:hover {
+    color: #0d1526;
+  }
+
+  .btn-quiet {
+    border: 1px solid var(--color-edge);
+    color: var(--color-ink);
+  }
+
+  .btn-quiet:hover {
+    border-color: var(--color-ink);
+    background: var(--color-raised);
+  }
+
+  .link {
+    color: var(--color-signal);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+  }
+
+  .link:hover {
+    text-decoration-thickness: 2px;
+  }
+}
+
+@layer utilities {
+  /* Pulls the eleven source photographs into one tonal range. They were shot
+     apart and drift green and warm; this is cheaper than reshooting. */
+  .texture {
+    filter: saturate(0.78) contrast(1.02);
+  }
+
+  [data-theme="dark"] .texture {
+    filter: saturate(0.62) brightness(0.7) contrast(1.06);
+  }
+
+  /* The hero photograph runs full bleed behind the type. The wash keeps the
+     top of the frame at the page ground so the headline always has its
+     contrast, and hands back to the ground at the very bottom. */
+  .hero-wash {
+    background: linear-gradient(
+      to bottom,
+      var(--color-surface) 0%,
+      color-mix(in srgb, var(--color-surface) 88%, transparent) 34%,
+      color-mix(in srgb, var(--color-surface) 30%, transparent) 62%,
+      var(--color-surface) 100%
+    );
+  }
+
+  .hatch-stroke {
+    stroke: var(--color-muted);
+    fill: none;
+  }
+
+  .hatch-fill {
+    fill: var(--color-muted);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Hero content arrives in reading order, so the eye lands on the headline
+   before the search field. Pure CSS, so it also runs without JavaScript. */
+.enter {
+  animation: rise 0.7s var(--ease-out) both;
+}
+
+/* Sections rise as they reach the viewport. Scroll-driven, so there is no
+   observer and no JavaScript; a browser without support simply shows the
+   finished state. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal {
+      animation: rise linear both;
+      animation-timeline: view();
+      animation-range: entry 4% cover 20%;
+    }
+  }
+}
+
+/* Every sequence has a static end state, and reduced motion goes straight to
+   it rather than playing faster. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .enter,
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Build-up layers separate as the drawing scrolls into view. Scroll-driven
+   animation, so no JavaScript and no observer; browsers without support get
+   the finished drawing, which is the static end state. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .section-layer {
+      animation: separate linear both;
+      animation-timeline: view();
+      animation-range: entry 10% cover 35%;
+      animation-delay: calc(var(--i) * 0.04s);
+    }
+  }
+}
+
+@keyframes separate {
+  from {
+    transform: translateY(6px);
+    opacity: 0.35;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}

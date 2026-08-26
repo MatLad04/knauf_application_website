@@ -1,0 +1,46 @@
+# One command from a clean clone to a running, seeded application:
+#
+#   docker compose up
+#
+# No accounts, no secrets, no external services. The database credentials below
+# are deliberately plain and local-only — this is a prototype with fictional
+# data and nothing worth protecting. A real deployment would take them from the
+# environment.
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: kernbau
+      POSTGRES_PASSWORD: kernbau
+      POSTGRES_DB: kernbau
+    ports:
+      # Exposed on a non-default host port so it cannot collide with a Postgres
+      # the reviewer already runs locally. Inside the compose network the app
+      # still reaches it as db:5432.
+      - "55432:5432"
+    volumes:
+      - kernbau-db:/var/lib/postgresql/data
+    healthcheck:
+      # The app container waits for this: without it the first start races the
+      # database's own initialisation and the seed fails on a cold volume.
+      test: ["CMD-SHELL", "pg_isready -U kernbau -d kernbau"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  app:
+    build: .
+    environment:
+      DATABASE_URL: postgres://kernbau:kernbau@db:5432/kernbau
+      NODE_ENV: production
+      PORT: "3000"
+    ports:
+      # Override with APP_PORT=3001 docker compose up if 3000 is taken.
+      - "${APP_PORT:-3000}:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  kernbau-db:
