@@ -113,7 +113,10 @@ export default function AboutPage() {
           </p>
         </div>
 
-        <aside>
+        {/* Its own measure. The page runs to the edge of the screen now, and a
+            register of standards set across the full width of a monitor is a
+            line no one finishes. */}
+        <aside className="max-w-[38rem]">
           <h2 className="label">Sources consulted</h2>
           <p className="mt-2 text-sm text-muted">
             Referenced for the shape of the data: the naming, units and classification systems. No
@@ -131,14 +134,9 @@ export default function AboutPage() {
       </Container>
 
       <Container className="pb-20">
-        <Link href="/products" className="btn btn-primary group">
+        <Link href="/products" className="btn btn-primary">
           Search the catalogue
-          <ArrowRight
-            size={16}
-            weight="bold"
-            aria-hidden="true"
-            className="transition-transform group-hover:translate-x-0.5"
-          />
+          <ArrowRight size={16} weight="bold" aria-hidden="true" />
         </Link>
       </Container>
     </>

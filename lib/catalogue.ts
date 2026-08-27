@@ -857,3 +857,170 @@ export async function getAllSlugs(): Promise<{ products: string[]; applications:
     applications: applications.map((r) => r.slug),
   };
 }
+
+// ---------------------------------------------------------------------------
+// The build-up configurator
+// ---------------------------------------------------------------------------
+
+/** One board family, with every depth it is actually made in. */
+export type BoardFamily = {
+  family: string;
+  familyName: string;
+  categorySlug: string;
+  categoryName: string;
+  /** The material key the drawn figures are keyed off. */
+  textureKey: string;
+  thermalConductivity: number;
+  reactionToFire: string | null;
+  variants: { slug: string; code: string; thicknessMm: number }[];
+};
+
+/** A component of the system that is chosen once and does not vary by depth. */
+export type BuildUpPart = {
+  slug: string;
+  code: string;
+  name: string;
+  /** The name without the variant on the end, which is what a schedule prints. */
+  familyName: string;
+  reactionToFire: string | null;
+  variantLabel: string | null;
+};
+
+export type BuildUp = {
+  boards: BoardFamily[];
+  renders: BuildUpPart[];
+  adhesive: BuildUpPart | null;
+  baseCoat: BuildUpPart | null;
+  mesh: BuildUpPart | null;
+  primer: BuildUpPart | null;
+  /** Anchors are sold by the depth of board they are driven through. */
+  anchors: (BuildUpPart & { forThicknessMm: number | null })[];
+};
+
+type BuildUpRow = {
+  slug: string;
+  code: string;
+  name: string;
+  family: string;
+  family_name: string;
+  thickness_mm: number | null;
+  thermal_conductivity: string | number | null;
+  reaction_to_fire: string | null;
+  variant_label: string | null;
+  texture_key: string;
+  category_slug: string;
+  category_name: string;
+  external_wall: boolean;
+};
+
+const BOARD_CATEGORIES = ["mineral-wool", "rigid-boards", "wood-fibre"];
+const RENDER_FAMILIES = ["mineral", "silicate", "silicone"];
+
+/**
+ * Everything the wall configurator is allowed to put in a build-up, in one
+ * round trip.
+ *
+ * The catalogue is 74 rows, so partitioning it in application code costs less
+ * than six queries would and keeps the rule about what may go in an external
+ * wall in one readable place. The important part is that nothing here is
+ * invented for the configurator: the boards are the boards, the depths are the
+ * depths they are made in, and the anchor lengths are the lengths they are sold
+ * in — so a build-up the configurator produces is one you could order.
+ */
+export async function getBuildUp(): Promise<BuildUp> {
+  const rows = await query<BuildUpRow>(
+    `SELECT p.slug, p.code, p.name, p.family, p.family_name,
+            p.thickness_mm, p.thermal_conductivity, p.reaction_to_fire,
+            p.variant_label, p.texture_key,
+            c.slug AS category_slug, c.name AS category_name,
+            EXISTS (
+              SELECT 1 FROM product_applications pa
+              JOIN applications a ON a.id = pa.application_id
+              WHERE pa.product_id = p.id AND a.slug = 'external-wall'
+            ) AS external_wall
+     FROM products p
+     JOIN categories c ON c.id = p.category_id
+     ORDER BY p.sort_order, p.code`,
+  );
+
+  const part = (row: BuildUpRow): BuildUpPart => ({
+    slug: row.slug,
+    code: row.code,
+    name: row.name,
+    familyName: row.family_name,
+    reactionToFire: row.reaction_to_fire,
+    variantLabel: row.variant_label,
+  });
+
+  // Boards, grouped into the family a specifier recognises. A family is one
+  // declared conductivity across every depth, which is the whole reason the
+  // depth can be a rail rather than a second product choice.
+  const byFamily = new Map<string, BoardFamily>();
+  for (const row of rows) {
+    if (!row.external_wall) continue;
+    if (!BOARD_CATEGORIES.includes(row.category_slug)) continue;
+    if (row.thickness_mm === null || row.thermal_conductivity === null) continue;
+
+    const existing = byFamily.get(row.family);
+    const board =
+      existing ??
+      ({
+        family: row.family,
+        familyName: row.family_name,
+        categorySlug: row.category_slug,
+        categoryName: row.category_name,
+        textureKey: row.texture_key,
+        thermalConductivity: Number(row.thermal_conductivity),
+        reactionToFire: row.reaction_to_fire,
+        variants: [],
+      } satisfies BoardFamily);
+
+    board.variants.push({ slug: row.slug, code: row.code, thicknessMm: row.thickness_mm });
+    byFamily.set(row.family, board);
+  }
+
+  const boards = [...byFamily.values()]
+    .filter((board) => board.variants.length > 1)
+    .sort((a, b) => a.thermalConductivity - b.thermalConductivity);
+  for (const board of boards) {
+    board.variants.sort((a, b) => a.thicknessMm - b.thicknessMm);
+  }
+
+  const find = (family: string, code?: string) =>
+    rows.find((row) => row.family === family && (!code || row.code === code));
+
+  // The render is a choice because it is where the fire class of the finished
+  // system is usually decided. One grain per family: 2.0 mm is the one that
+  // gets specified, and three grains of the same render is one answer shown
+  // three times.
+  const renders = RENDER_FAMILIES.map((family) =>
+    rows.find((row) => row.family === family && row.variant_label?.startsWith("2.0")),
+  )
+    .filter((row): row is BuildUpRow => Boolean(row))
+    .map(part);
+
+  const anchors = rows
+    .filter((row) => row.family === "anchor")
+    .map((row) => ({
+      ...part(row),
+      // '115 mm, for 80 mm insulation' — the second figure is the depth of
+      // board the anchor is sold to suit.
+      forThicknessMm: Number(row.variant_label?.match(/for (\d+)\s*mm/)?.[1] ?? "") || null,
+    }))
+    .sort((a, b) => (a.forThicknessMm ?? 0) - (b.forThicknessMm ?? 0));
+
+  const adhesive = find("adhesive", "KB-AD-100") ?? find("adhesive");
+  const baseCoat = find("basecoat", "KB-BC-300") ?? find("basecoat");
+  const mesh = find("mesh", "KB-RM-165") ?? find("mesh");
+  const primer = find("primer");
+
+  return {
+    boards,
+    renders,
+    adhesive: adhesive ? part(adhesive) : null,
+    baseCoat: baseCoat ? part(baseCoat) : null,
+    mesh: mesh ? part(mesh) : null,
+    primer: primer ? part(primer) : null,
+    anchors,
+  };
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
@@ -49,6 +50,8 @@ export default function SiteSearch({
 
   const [open, setOpen] = useState(false);
   const [term, setTerm] = useState("");
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   // The bar is shared layout, so it has to answer to the URL under it: a
   // reload, a shared link or the back button all put the term back in the box.
@@ -61,6 +64,17 @@ export default function SiteSearch({
   useEffect(() => {
     setOpen(false);
   }, [pathname, params]);
+
+  // The bar and the panel are one surface while it is open, so the bar comes
+  // up to the panel's light instead of sitting on the dimmed page behind it.
+  useEffect(() => {
+    const root = document.documentElement;
+    if (open) root.dataset.searchOpen = "true";
+    else delete root.dataset.searchOpen;
+    return () => {
+      delete root.dataset.searchOpen;
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -143,8 +157,20 @@ export default function SiteSearch({
       {open && (
         <>
           {/* The page steps back while the panel is open, so a wall of product
-              names is not read against a drawing. */}
-          <div className="search-scrim" aria-hidden="true" onPointerDown={() => setOpen(false)} />
+              names is not read against a drawing — but the bar is the one thing
+              on the screen that is still live, so the scrim goes to the body
+              rather than staying in the header's stacking context. Rendered
+              here it would be painted over the field that opened it, which is
+              exactly the control the visitor is still using. */}
+          {mounted &&
+            createPortal(
+              <div
+                className="search-scrim"
+                aria-hidden="true"
+                onPointerDown={() => setOpen(false)}
+              />,
+              document.body,
+            )}
 
           <div id={`${listId}-panel`} className="search-panel">
             <div className="search-panel-inner">
@@ -195,8 +221,8 @@ export default function SiteSearch({
                         <ul className="mt-4 grid grid-cols-2 gap-x-5 gap-y-6 sm:grid-cols-3 xl:grid-cols-6">
                           {shown.slice(0, 6).map((product) => (
                             <li key={product.href}>
-                              <Link href={product.href} className="group block">
-                                <div className="media aspect-[4/3] rounded-[0.875rem]">
+                              <Link href={product.href} className="tint-parent group block">
+                                <div className="media tint aspect-[4/3] rounded-[0.875rem]">
                                   <Image
                                     src={product.image}
                                     alt=""

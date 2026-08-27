@@ -4,12 +4,12 @@ import { ArrowRight } from "@phosphor-icons/react/dist/ssr";
 /**
  * Page gutter. Everything on the site lines up to this measure.
  *
- * A drawing sheet has a frame, and content runs inside it rather than off the
- * edge of the paper — which is also the honest answer to a catalogue on a
- * 27-inch monitor. So the measure grows with the viewport and then stops:
- * 1680px is wide enough for four product cards and a filter rail without a
- * line of prose ever running past a readable length, and the gutter opens up
- * rather than the column stretching.
+ * Full width, with a margin that opens as the screen does. The measure used to
+ * stop at 1680px and let the gutter take the rest, which on a wide monitor put
+ * a band of empty page down both sides of a catalogue that had four more
+ * columns in it. Prose is what actually needs a limit, and every block of it
+ * sets its own — so the page can run to the edges without a line of text ever
+ * running past a readable length.
  */
 export function Container({
   children,
@@ -19,7 +19,7 @@ export function Container({
   className?: string;
 }) {
   return (
-    <div className={`mx-auto w-full max-w-[105rem] px-5 sm:px-8 lg:px-12 xl:px-16 ${className}`}>
+    <div className={`w-full px-5 sm:px-8 lg:px-12 xl:px-16 2xl:px-20 ${className}`}>
       {children}
     </div>
   );
@@ -51,14 +51,9 @@ export function SectionHead({
         {lead && <p className="mt-3 max-w-[52ch] text-muted">{lead}</p>}
       </div>
       {href && hrefLabel && (
-        <Link href={href} className="btn btn-quiet group shrink-0">
+        <Link href={href} className="btn btn-quiet shrink-0">
           {hrefLabel}
-          <ArrowRight
-            size={16}
-            weight="bold"
-            aria-hidden="true"
-            className="transition-transform group-hover:translate-x-0.5"
-          />
+          <ArrowRight size={16} weight="bold" aria-hidden="true" />
         </Link>
       )}
     </div>

@@ -67,6 +67,23 @@ export type ParsedQuery = { query: ProductQuery; issues: ParamIssue[] };
 /** Shape Next.js hands a page for `searchParams`, once awaited. */
 export type RawSearchParams = Record<string, string | string[] | undefined>;
 
+/**
+ * A `URLSearchParams` as the shape the parsers read.
+ *
+ * Not `Object.fromEntries`: that keeps only the last of a repeated key, and a
+ * facet list is exactly a repeated key. `?application=roof&application=floor`
+ * arrived as one application, so the second box you ticked replaced the first
+ * instead of narrowing it.
+ */
+export function rawFromSearchParams(params: URLSearchParams): RawSearchParams {
+  const out: RawSearchParams = {};
+  for (const key of new Set(params.keys())) {
+    const values = params.getAll(key);
+    out[key] = values.length > 1 ? values : values[0];
+  }
+  return out;
+}
+
 const SLUG = /^[a-z0-9][a-z0-9-]{0,48}$/;
 
 function readAll(params: RawSearchParams, key: string): string[] {

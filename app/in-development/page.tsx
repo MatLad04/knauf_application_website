@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight } from "@phosphor-icons/react/dist/ssr";
+import { ArrowRight } from "@phosphor-icons/react/dist/ssr";
 import { Container } from "@/components/section";
 
 export const metadata: Metadata = {
@@ -54,7 +54,7 @@ export default async function InDevelopmentPage({
 
   return (
     <Container className="py-16 sm:py-24">
-      <div className="grid gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:gap-20">
+      <div className="grid gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,28rem)] lg:gap-20">
         <div className="lg:max-w-[38rem]">
           <p className="label">Sheet not issued</p>
           <h1 className="display mt-6 max-w-[14ch] text-[clamp(2.5rem,6vw,4.5rem)] leading-[0.98]">
@@ -73,24 +73,10 @@ export default async function InDevelopmentPage({
             built and working.
           </p>
 
-          <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3">
-            <Link href="/products" className="btn btn-primary group">
+          <div className="mt-10">
+            <Link href="/products" className="btn btn-primary">
               Back to the catalogue
-              <ArrowRight
-                size={16}
-                weight="bold"
-                aria-hidden="true"
-                className="transition-transform group-hover:translate-x-0.5"
-              />
-            </Link>
-            <Link href="/" className="link group inline-flex items-center gap-2 text-sm">
-              <ArrowLeft
-                size={14}
-                weight="bold"
-                aria-hidden="true"
-                className="transition-transform group-hover:-translate-x-0.5"
-              />
-              Home
+              <ArrowRight size={16} weight="bold" aria-hidden="true" />
             </Link>
           </div>
         </div>

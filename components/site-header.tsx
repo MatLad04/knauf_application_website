@@ -1,16 +1,43 @@
 import { Suspense } from "react";
+import { texture } from "@/lib/media";
 import Link from "next/link";
 import { getApplications, getCategories, getFamilies, getShowcase } from "@/lib/catalogue";
 import { lambda } from "@/lib/format";
-import { texture } from "@/lib/media";
+
 import { Basket, Heart, User } from "@phosphor-icons/react/dist/ssr";
 import ThemeToggle from "./theme-toggle";
 import SiteSearch, { type SearchLane } from "./site-search";
+
+/**
+ * The same three layers as the favicon — render, insulation, substrate — cut to
+ * a section through a wall. It is drawn in `currentColor` rather than in the
+ * favicon's fixed greys so it belongs to whichever theme is on and turns with
+ * the wordmark on hover, and the layers keep the favicon's proportions so the
+ * tab and the bar are recognisably the same mark.
+ */
+function Logomark() {
+  return (
+    <svg
+      viewBox="0 0 32 32"
+      aria-hidden="true"
+      focusable="false"
+      className="size-[1.15em] shrink-0 rounded-[5px]"
+    >
+      <rect width="32" height="32" fill="currentColor" />
+      <g fill="var(--color-surface)">
+        <rect x="6" y="7" width="20" height="4" />
+        <rect x="6" y="13" width="20" height="7" opacity="0.55" />
+        <rect x="6" y="22" width="20" height="4" opacity="0.8" />
+      </g>
+    </svg>
+  );
+}
 
 const NAV = [
   { href: "/products", label: "Products" },
   { href: "/applications", label: "Applications" },
   { href: "/services", label: "Services" },
+  { href: "/about", label: "About" },
 ];
 
 /**
@@ -64,7 +91,7 @@ export default async function SiteHeader() {
       })),
     },
     {
-      title: "Systems",
+      title: "Applications",
       rows: applications.map((application) => ({
         label: application.name,
         count: application.productCount,
@@ -92,12 +119,14 @@ export default async function SiteHeader() {
   }));
 
   return (
-    <header className="sticky top-0 z-50 border-b rule bg-surface">
-      <div className="mx-auto flex w-full max-w-[105rem] flex-wrap items-center gap-x-6 gap-y-3 px-5 py-3.5 sm:px-8 lg:h-[5.5rem] lg:flex-nowrap lg:gap-x-8 lg:px-12 lg:py-0 xl:px-16">
+    <header className="site-bar sticky top-0 z-50 border-b rule bg-surface">
+      <div className="flex w-full flex-wrap items-center gap-x-6 gap-y-3 px-5 py-3.5 sm:px-8 lg:h-[5.5rem] lg:flex-nowrap lg:gap-x-8 lg:px-12 lg:py-0 xl:px-16 2xl:px-20">
         <Link
           href="/"
-          className="display order-1 shrink-0 text-xl tracking-tight hover:text-signal lg:text-[1.6rem]"
+          aria-label="Kernbau, home"
+          className="display order-1 flex shrink-0 items-center gap-2.5 text-xl tracking-tight hover:text-signal lg:text-[1.6rem]"
         >
+          <Logomark />
           KERNBAU
         </Link>
 

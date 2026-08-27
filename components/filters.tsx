@@ -1,22 +1,34 @@
 "use client";
 
-import Form from "next/form";
 import { useEffect, useRef, useState } from "react";
 import type { Facets } from "@/lib/catalogue";
+import Select from "./select";
 import { FIRE_CLASSES, LIMITS, type ProductQuery } from "@/lib/params";
 
 const LAMBDA_STEPS = [0.032, 0.035, 0.038, 0.04, 0.045];
 
 /**
- * A plain GET form, so every filter state is a real URL. next/form turns the
- * submit into a client-side navigation; the change handler submits early so a
- * checkbox applies immediately instead of waiting for the button.
+ * A plain GET form, so every filter state is still a real URL — and with a
+ * script running, the submit is handed to the catalogue browser instead, which
+ * swaps the results without the page going anywhere.
  *
- * The search field is not here — it belongs in the band above, so it carries
+ * The search field is not here — it belongs in the bar above, so it carries
  * through as a hidden value.
  */
-export default function Filters({ facets, query }: { facets: Facets; query: ProductQuery }) {
+export default function Filters({
+  facets,
+  query,
+  onApply,
+}: {
+  facets: Facets;
+  query: ProductQuery;
+  /** Given the form's own state. Returning false lets the form submit. */
+  onApply?: (form: HTMLFormElement) => void;
+}) {
   const formRef = useRef<HTMLFormElement>(null);
+  const [lambdaMax, setLambdaMax] = useState(
+    query.lambdaMax === null ? "" : String(query.lambdaMax),
+  );
   // Starts open so the panel is usable without JavaScript, where the toggle
   // button does nothing. Once hydrated it collapses into a disclosure on small
   // screens; from `lg` up it is always visible anyway.
@@ -29,6 +41,12 @@ export default function Filters({ facets, query }: { facets: Facets; query: Prod
     setOpen(false);
     setScripted(true);
   }, []);
+
+  const submit = (event: React.FormEvent<HTMLFormElement>) => {
+    if (!onApply) return;
+    event.preventDefault();
+    onApply(event.currentTarget);
+  };
 
   const applyOnChange = () => formRef.current?.requestSubmit();
 
@@ -44,11 +62,13 @@ export default function Filters({ facets, query }: { facets: Facets; query: Prod
         {open ? "Hide filters" : "Show filters"}
       </button>
 
-      <Form
+      <form
         ref={formRef}
         action="/products"
+        method="get"
         id="filter-panel"
         onChange={applyOnChange}
+        onSubmit={submit}
         className={`${open ? "block" : "hidden"} mt-4 lg:mt-0 lg:block`}
       >
         {/* Carried through so filtering does not reset the search, view or sort. */}
@@ -104,22 +124,32 @@ export default function Filters({ facets, query }: { facets: Facets; query: Prod
         </FilterGroup>
 
         <div className="border-b rule py-5">
-          <label htmlFor="lambda_max" className="label">
+          <p className="label" id="lambda-label">
             Thermal conductivity <span className="symbol">λD</span>
-          </label>
-          <select
-            id="lambda_max"
+          </p>
+          {/* Held here rather than read off the DOM at submit time: the drawn
+              listbox posts through a hidden input, and a hidden input only
+              changes when something tells it to. */}
+          <Select
             name="lambda_max"
-            defaultValue={query.lambdaMax ?? ""}
-            className="control mono mt-3 w-full px-3 py-2 text-sm"
-          >
-            <option value="">No limit</option>
-            {LAMBDA_STEPS.map((step) => (
-              <option key={step} value={step}>
-                ≤ {step.toFixed(3)} W/(m·K)
-              </option>
-            ))}
-          </select>
+            label="Maximum thermal conductivity"
+            mono
+            value={lambdaMax}
+            onChange={(next) => {
+              setLambdaMax(next);
+              // The form has not re-rendered with the new hidden value yet, so
+              // the submit waits a frame for it.
+              requestAnimationFrame(applyOnChange);
+            }}
+            options={[
+              { value: "", label: "No limit" },
+              ...LAMBDA_STEPS.map((step) => ({
+                value: String(step),
+                label: `≤ ${step.toFixed(3)} W/(m·K)`,
+              })),
+            ]}
+            className="mt-3"
+          />
         </div>
 
         <fieldset className="border-b rule py-5">
@@ -172,11 +202,28 @@ export default function Filters({ facets, query }: { facets: Facets; query: Prod
               Apply
             </button>
           )}
-          <a href="/products" className="btn btn-quiet flex-1 py-2.5 text-sm">
+          <a
+            href="/products"
+            onClick={(event) => {
+              if (!onApply) return;
+              event.preventDefault();
+              formRef.current?.reset();
+              const form = formRef.current;
+              if (!form) return;
+              for (const el of form.querySelectorAll<HTMLInputElement>("input[type=checkbox]"))
+                el.checked = false;
+              for (const el of form.querySelectorAll<HTMLSelectElement>("select")) el.value = "";
+              setLambdaMax("");
+              for (const el of form.querySelectorAll<HTMLInputElement>("input[type=number]"))
+                el.value = "";
+              onApply(form);
+            }}
+            className="btn btn-quiet flex-1 py-2.5 text-sm"
+          >
             Clear all
           </a>
         </div>
-      </Form>
+      </form>
     </>
   );
 }

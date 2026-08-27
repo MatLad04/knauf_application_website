@@ -16,6 +16,10 @@
   --color-ink: #17181a;
   --color-signal: #14489e;
   --color-signal-soft: #14489e14;
+  /* Signal proper is a reading colour and is dark enough to be read as body
+     text. A hover wash is neither, so it gets its own lighter, brighter blue —
+     visible across a grid of cards without dragging the type down with it. */
+  --color-signal-bright: #1f63d8;
 
   --font-display: var(--font-archivo), "Archivo", system-ui, sans-serif;
   --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
@@ -30,6 +34,10 @@
   /* Tinted to the ground, never pure black. */
   --shadow-lift: 0 1px 2px #17181a0d, 0 18px 34px -20px #17181a3d;
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  /* Eased at both ends. `--ease-out` leaves at full speed, which is right for
+     something arriving and wrong for a card that has to travel across the grid
+     to its new place — that reads as a jump followed by a glide. */
+  --ease-swap: cubic-bezier(0.4, 0, 0.2, 1);
 
   /* The bar is fixed furniture, so anything else that sticks has to know how
      tall it is. Three rows below `lg`, where the wordmark, the search and the
@@ -53,6 +61,7 @@
   --color-ink: #ededea;
   --color-signal: #7fb0ff;
   --color-signal-soft: #7fb0ff1f;
+  --color-signal-bright: #9ec8ff;
   --shadow-lift: 0 1px 2px #00000040, 0 18px 34px -20px #00000099;
 }
 
@@ -104,6 +113,10 @@
   [id] {
     scroll-margin-top: 6rem;
   }
+
+  /* Smooth scrolling for in-page anchors lives in `smooth-anchors.tsx`, not
+     here: declared on `html` it also animates the router's own scroll reset,
+     and a navigation then lands wherever the previous page was scrolled to. */
 }
 
 @layer components {
@@ -249,58 +262,17 @@
     color: var(--color-signal);
   }
 
-  /* The one characteristic that rules a product in or out, on the photograph
-     rather than under it. A frosted plate rather than a fill, so it belongs to
-     the image instead of sitting on top of it. */
-  .card-badge {
-    position: absolute;
-    inset-block-start: 0.625rem;
-    inset-inline-end: 0.625rem;
-    z-index: 1;
-    border-radius: var(--radius-pill);
-    border: 1px solid color-mix(in srgb, var(--color-surface) 55%, transparent);
-    background: color-mix(in srgb, var(--color-surface) 72%, transparent);
-    backdrop-filter: blur(6px);
-    padding: 0.1875rem 0.5rem;
-    font-family: var(--font-mono);
-    font-size: 0.625rem;
-    letter-spacing: 0.04em;
-    color: var(--color-ink);
-  }
-
-  /* The three ways in, on the first screen. No frame and no fill: the
-     photograph is the object and the type sits under it on the page ground,
-     the same way a product card is built. */
-  .way .media {
-    transition:
-      transform 0.5s var(--ease-out),
-      box-shadow 0.5s var(--ease-out);
-  }
-
-  .way:hover .media {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-lift);
-  }
-
-  /* The whole card answers the pointer, not just the heading: the photograph,
-     the name, the count and the argument are one target and they should read
-     as one. */
-  .way:hover,
-  .way:focus-visible {
-    color: var(--color-signal);
-  }
-
-  /* The argument under the name is set here rather than with a utility, so it
-     can follow the hover instead of being overridden by one. */
-  .way-lead {
-    color: var(--color-muted);
-  }
-
-  .way:hover .way-lead,
-  .way:focus-visible .way-lead,
-  .way:hover .caption,
-  .way:focus-visible .caption {
-    color: color-mix(in srgb, var(--color-signal) 70%, var(--color-muted));
+  /* A layer in a build-up list, drawn at its depth. The rule is not decoration:
+     a 2 mm mesh and a 140 mm slab are both one line of text, and this is the
+     only thing in the row that says they are not the same size. */
+  .layer-rule {
+    display: block;
+    inline-size: var(--depth, 40%);
+    max-inline-size: 8rem;
+    block-size: 2px;
+    flex-shrink: 0;
+    background: var(--color-edge);
+    opacity: 0.55;
   }
 
   /* The search bar. The one pill-shaped control that is not a chip, because it
@@ -380,15 +352,21 @@
       padding: 0;
     }
 
+    /* Aligned to the page gutter rather than to a measure of its own, so the
+       lanes start where the bar above them starts. */
     .search-panel-inner {
-      margin-inline: auto;
-      max-inline-size: 105rem;
       padding: 2rem 3rem 2.25rem;
     }
 
     @media (width >= 80rem) {
       .search-panel-inner {
         padding-inline: 4rem;
+      }
+    }
+
+    @media (width >= 96rem) {
+      .search-panel-inner {
+        padding-inline: 5rem;
       }
     }
   }
@@ -466,24 +444,1534 @@
     color: var(--color-signal);
   }
 
+  /* Buttons are drawing-office furniture: a ruled box with a label in it. The
+     hover is a fill struck across from the leading edge rather than a colour
+     swap, so the control reads as being ruled in rather than lighting up — and
+     the trailing arrow steps forward, because that is where the click goes. */
+  /* --- The standards register ---------------------------------------------
+
+     A drawing office keeps a register of the documents a job is drawn to. The
+     rows are ruled and the reference sits in the margin, which is how a
+     register is set out and also the shape that makes five long titles
+     scannable. */
+  .register-row {
+    border-block-end: 1px solid var(--color-rule);
+  }
+
+  .register-row:first-child {
+    border-block-start: 1px solid var(--color-rule);
+  }
+
+  .register-link {
+    display: grid;
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+    gap: 0 1rem;
+    padding-block: 1.5rem;
+  }
+
+  @media (width >= 48rem) {
+    .register-link {
+      grid-template-columns: 3.5rem minmax(0, 1fr) 10rem;
+      align-items: start;
+      gap: 0 2rem;
+    }
+  }
+
+  .register-index {
+    font-size: 0.75rem;
+    color: var(--color-muted);
+    padding-block-start: 0.2rem;
+  }
+
+  .register-ref {
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    color: var(--color-muted);
+  }
+
+  .register-link:hover .display {
+    color: var(--color-signal);
+  }
+
+  .register-meta {
+    grid-column: 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-block-start: 1rem;
+  }
+
+  @media (width >= 48rem) {
+    .register-meta {
+      grid-column: 3;
+      padding-block-start: 0.2rem;
+    }
+  }
+
+  .register-arrow {
+    flex-shrink: 0;
+    transition: transform 0.3s var(--ease-out);
+  }
+
+  .register-link:hover .register-arrow {
+    transform: translateX(4px);
+  }
+
+  /* The title block at the head of a reference sheet. Same device as the
+     configurator's, so the two read as pages from the same office. */
+  .sheet-block {
+    display: grid;
+    gap: 1px;
+    border: 1px solid var(--color-edge);
+    border-radius: var(--radius-media);
+    background: var(--color-rule);
+    overflow: hidden;
+    max-inline-size: 44rem;
+  }
+
+  @media (width >= 40rem) {
+    .sheet-block {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  /* --- The Euroclass ladder ------------------------------------------------
+
+     An ordered scale drawn as one: the bar behind each step is shorter than the
+     one above it, so the shape of the list carries the ranking and the reader
+     does not have to hold seven letters in their head to see that A1 is the top
+     of it. */
+  .ladder-step {
+    position: relative;
+    display: grid;
+    grid-template-columns: 3.5rem minmax(0, 1fr);
+    gap: 1.25rem;
+    align-items: baseline;
+    padding: 0.875rem 1rem;
+    isolation: isolate;
+  }
+
+  .ladder-bar {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    z-index: -1;
+    border-radius: var(--radius-control);
+    background: var(--color-sunken);
+  }
+
+  .ladder-code {
+    font-size: 0.9375rem;
+    font-weight: 500;
+  }
+
+  .appears:hover .text-sm {
+    color: var(--color-signal);
+  }
+
+  /* --- The configurator stage ----------------------------------------------
+
+     A bench rather than a form. The choices are worked down the left and the
+     specimen sits on the right and does not move — because a tool where the
+     answer scrolls off the top while you are still changing the question is a
+     form with a picture next to it.
+
+     Density is deliberate and borrowed from technical product interfaces:
+     hairline rules between groups instead of large vertical gaps, values set
+     ahead of their labels, and every control carrying the figure it decides. */
+  .config-title {
+    font-size: clamp(1.75rem, 4vw, 2.75rem);
+    max-inline-size: 22ch;
+  }
+
+  /* One line from `lg` up. The title is the first promise the page makes and a
+     promise that wraps mid-clause reads as two. */
+  @media (width >= 64rem) {
+    .config-title {
+      max-inline-size: none;
+      white-space: nowrap;
+    }
+  }
+
+  .stage {
+    display: flex;
+    flex-direction: column;
+    margin-block-start: 2rem;
+  }
+
+  @media (width >= 64rem) {
+    .stage {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 27rem);
+      align-items: start;
+      gap: 0 3.5rem;
+      margin-block-start: 2.5rem;
+    }
+  }
+
+  @media (width >= 90rem) {
+    .stage {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 30rem);
+      gap: 0 5rem;
+    }
+  }
+
+  /* --- The choices --------------------------------------------------------- */
+
+  .choices-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    border-block-end: 2px solid var(--color-ink);
+    padding-block-end: 0.5rem;
+  }
+
+  .reset {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+    transition:
+      color 0.15s ease,
+      opacity 0.15s ease;
+  }
+
+  .reset:hover:not(:disabled) {
+    color: var(--color-signal);
+  }
+
+  .reset:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+
+  .step {
+    border-block-end: 1px solid var(--color-rule);
+    padding-block: 0.6875rem 0.8125rem;
+  }
+
+  .step:last-of-type {
+    border-block-end: 0;
+    padding-block-end: 0;
+  }
+
+  /* The number, the instruction and the reason on one line: three stacked
+     blocks per group is most of a screen spent on labels. */
+  .step-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 0.625rem;
+    margin-block-end: 0.4375rem;
+  }
+
+  .step-n {
+    font-size: 0.6875rem;
+    color: var(--color-muted);
+  }
+
+  .step-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    font-size: 1.0625rem;
+  }
+
+  .step-note {
+    flex: 1 1 14rem;
+    min-inline-size: 0;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    color: var(--color-muted);
+  }
+
+  /* --- The option tiles ---------------------------------------------------- */
+
+  .tiles {
+    display: grid;
+    gap: 0.375rem;
+  }
+
+  @media (width >= 30rem) {
+    .tiles {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (width >= 64rem) and (width < 78rem) {
+    .tiles {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  .tile {
+    touch-action: manipulation;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    border: 1px solid var(--color-rule);
+    border-radius: var(--radius-control);
+    background: var(--color-raised);
+    padding: 0.5rem 0.75rem;
+    text-align: start;
+    /* An inset ring rather than a wider border, so nothing reflows when the
+       selection moves from one tile to the next. */
+    box-shadow: inset 0 0 0 0 transparent;
+    transition:
+      border-color 0.18s ease,
+      background 0.18s ease,
+      box-shadow 0.18s ease;
+  }
+
+  .tile:hover {
+    border-color: var(--color-edge);
+  }
+
+  .tile[data-active="true"] {
+    border-color: var(--color-signal);
+    background: var(--color-signal-soft);
+    box-shadow: inset 0 0 0 1px var(--color-signal);
+  }
+
+  .tile-figure {
+    display: grid;
+    place-items: center;
+    inline-size: 2.75rem;
+    block-size: 2.25rem;
+    flex: none;
+    border-radius: 5px;
+    background: var(--color-sunken);
+    overflow: hidden;
+  }
+
+  .tile[data-active="true"] .tile-figure {
+    background: color-mix(in srgb, var(--color-signal) 10%, var(--color-raised));
+  }
+
+  .tile-body {
+    display: grid;
+    min-inline-size: 0;
+    gap: 0.0625rem;
+    padding-block-start: 0.0625rem;
+  }
+
+  .tile-code {
+    font-size: 0.6875rem;
+    letter-spacing: 0.06em;
+    color: var(--color-muted);
+  }
+
+  .tile[data-active="true"] .tile-code {
+    color: var(--color-signal);
+  }
+
+  .tile-name {
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.3;
+    color: var(--color-ink);
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  .tile-facts {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 0.75rem;
+    font-size: 0.75rem;
+    color: var(--color-muted);
+  }
+
+  .tile-fact {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.3125rem;
+  }
+
+  .tile-term {
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    opacity: 0.8;
+  }
+
+  /* Greek carries meaning: λ is not Λ. */
+  .tile-term.symbol {
+    text-transform: none;
+    letter-spacing: 0.04em;
+  }
+
+  /* --- The depths ---------------------------------------------------------- */
+
+  .depths {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+  }
+
+  /* A button per depth, each carrying the resistance it buys. A slider would
+     say every value between two stops exists; a board is made in six depths
+     and nothing in between. */
+  .depth {
+    touch-action: manipulation;
+    display: grid;
+    justify-items: center;
+    gap: 0.0625rem;
+    min-inline-size: 4.25rem;
+    border: 1px solid var(--color-rule);
+    border-radius: var(--radius-control);
+    background: var(--color-raised);
+    padding: 0.5rem 0.75rem 0.4375rem;
+    transition:
+      border-color 0.18s ease,
+      background 0.18s ease,
+      box-shadow 0.18s ease;
+  }
+
+  .depth:hover {
+    border-color: var(--color-edge);
+  }
+
+  .depth[data-active="true"] {
+    border-color: var(--color-signal);
+    background: var(--color-signal-soft);
+    box-shadow: inset 0 0 0 1px var(--color-signal);
+  }
+
+  .depth-mm {
+    font-family: var(--font-mono);
+    font-size: 1.0625rem;
+    line-height: 1;
+    color: var(--color-ink);
+  }
+
+  .depth[data-active="true"] .depth-mm {
+    color: var(--color-signal);
+  }
+
+  .depth-r {
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.04em;
+    color: var(--color-muted);
+  }
+
+  /* --- What you built ------------------------------------------------------
+
+     The sentence sits at the head of the sheet, over the drawing it names — a
+     caption goes before the thing it captions, and this one is the only place
+     the four choices are said back in words. */
+  .build-up {
+    border-block-end: 1px solid var(--color-rule);
+    padding: 0.875rem 1.125rem 0.9375rem;
+  }
+
+  .build-up-line {
+    margin-block-start: 0.4375rem;
+    font-size: 0.875rem;
+    line-height: 1.45;
+    color: var(--color-muted);
+  }
+
+  .build-up-line strong {
+    font-weight: 500;
+    color: var(--color-ink);
+  }
+
+  /* --- The specimen -------------------------------------------------------- */
+
+  .stage-panel {
+    order: -1;
+    margin-block-end: 2rem;
+  }
+
+  @media (width >= 64rem) {
+    .stage-panel {
+      order: 0;
+      position: sticky;
+      inset-block-start: calc(var(--header-h) + 1.25rem);
+      margin-block-end: 0;
+    }
+  }
+
+  .specimen-sheet {
+    overflow: hidden;
+    border: 1px solid var(--color-edge);
+    border-radius: var(--radius-media);
+    background: var(--color-raised);
+  }
+
+  .specimen-frame {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 8.5rem);
+    align-items: center;
+    gap: 1rem;
+    padding: 0.875rem 1.125rem 0.625rem;
+  }
+
+  .specimen {
+    display: block;
+    inline-size: 100%;
+    block-size: auto;
+    max-block-size: min(38svh, 17.25rem);
+  }
+
+  /* Only a `<rect>` has geometry a browser will animate, which is why every
+     part of this drawing that moves is one. */
+  .band {
+    transition:
+      y 0.38s var(--ease-out),
+      height 0.38s var(--ease-out);
+  }
+
+  .specimen-anchor rect {
+    fill: var(--color-edge);
+  }
+
+  .specimen-dim rect {
+    fill: var(--color-edge);
+  }
+
+  .specimen-total {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    fill: var(--color-muted);
+  }
+
+  .specimen-board-bar {
+    fill: var(--color-signal);
+    rx: 1.5;
+  }
+
+  .specimen-board-figure {
+    transition: transform 0.38s var(--ease-out);
+    font-family: var(--font-mono);
+    fill: var(--color-signal);
+    font-size: 11px;
+  }
+
+  .specimen-board-unit {
+    font-size: 7px;
+    opacity: 0.75;
+  }
+
+  /* The legend. In installation order, keyed by the hatch the bands are filled
+     with, and static — a leader line joins two points that both move, so it can
+     only ever jump. */
+  .legend {
+    display: grid;
+    gap: 0.375rem;
+    align-self: center;
+  }
+
+  .legend-row {
+    display: grid;
+    grid-template-columns: 0.875rem minmax(0, 1fr);
+    align-items: center;
+    gap: 0 0.5rem;
+  }
+
+  .legend-name {
+    font-size: 0.6875rem;
+    line-height: 1.2;
+    color: var(--color-ink);
+  }
+
+  .legend-mm {
+    grid-column: 2;
+    font-family: var(--font-mono);
+    font-size: 0.5625rem;
+    color: var(--color-muted);
+  }
+
+  .swatch {
+    inline-size: 1.5rem;
+    block-size: 1.5rem;
+  }
+
+  .swatch-sm {
+    inline-size: 0.875rem;
+    block-size: 0.875rem;
+  }
+
+  /* --- The resulting figures -----------------------------------------------
+
+     Joined to the drawing rather than boxed away from it: a hairline over each,
+     the name, the value. Two columns — four across is a strip of digits and
+     four down is a list nobody reads to the end of. */
+  .specs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.875rem 1.5rem;
+    padding: 0.25rem 1.125rem 1.125rem;
+  }
+
+  .spec {
+    border-block-start: 1px solid var(--color-edge);
+    padding-block-start: 0.5rem;
+  }
+
+  .spec-term {
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+  }
+
+  .spec-value {
+    margin-block-start: 0.3125rem;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 1rem;
+    line-height: 1.2;
+    color: var(--color-ink);
+    white-space: nowrap;
+  }
+
+  .spec-unit {
+    margin-inline-start: 0.375rem;
+    font-size: 0.6875rem;
+    color: var(--color-muted);
+  }
+
+  /* --- What you would do with it -------------------------------------------
+
+     The one that opens the product takes the full width, because it is what
+     the page was building towards; the other three share the row under it, so
+     four actions cost two lines rather than a wrapped pile of pills. */
+  .acts {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin-block-start: 0.625rem;
+  }
+
+  .acts-lead {
+    grid-column: 1 / -1;
+  }
+
+  .acts .btn-sm {
+    padding-inline: 0.5rem;
+  }
+
+  /* Placed after the row whatever its position in the markup, so selecting a
+     product to compare adds a line under the actions instead of breaking the
+     three of them onto separate rows. */
+  .acts-note {
+    order: 1;
+    grid-column: 1 / -1;
+    margin-block-start: 0.125rem;
+  }
+
+  .glyph {
+    inline-size: 3.25rem;
+    block-size: auto;
+    flex: none;
+  }
+
+  .glyph-quiet {
+    fill: var(--color-rule);
+    stroke: none;
+  }
+
+  .glyph-live {
+    fill: none;
+    stroke: var(--color-signal);
+    stroke-width: 1.2;
+  }
+
+  .glyph-ink {
+    fill: var(--color-ink);
+    stroke: none;
+  }
+
+  .glyph-fill {
+    fill: var(--color-signal);
+    stroke: none;
+  }
+
+  .glyph-rule {
+    fill: none;
+    stroke: var(--color-edge);
+    stroke-width: 0.8;
+  }
+
+  /* The block that closes a page. It stays on the page ground — a tinted band
+     under a page this quiet reads as a different site rather than as a
+     different kind of block — so the rule above it and the room around it are
+     what set it apart. */
+  .closing {
+    border-block-start: 1px solid var(--color-rule);
+  }
+
+  .closing-figure {
+    border: 1px solid var(--color-rule);
+    border-radius: var(--radius-media);
+    background: var(--color-raised);
+    padding: 1.5rem 1.25rem 1rem;
+  }
+
+  /* --- The build loop ------------------------------------------------------
+
+     A wall assembling itself and then changing its mind about how deep to be.
+     One timeline: two beats to put up what is already there, then three turns
+     through the depths the board is made in, each one carrying its own figures.
+     See `build-loop.tsx`. */
+  .build-loop {
+    display: block;
+    inline-size: 100%;
+    block-size: auto;
+    color: var(--color-muted);
+    --bl-cycle: 9s;
+  }
+
+  .bl-grid {
+    color: var(--color-rule);
+  }
+
+  .bl-band {
+    stroke: var(--color-edge);
+    stroke-width: 1.1;
+  }
+
+  .bl-skin {
+    fill: var(--color-ink);
+    opacity: 0.85;
+  }
+
+  .bl-dim {
+    fill: none;
+    stroke: var(--color-edge);
+    stroke-width: 1;
+  }
+
+  .bl-figure {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    fill: var(--color-ink);
+  }
+
+  .bl-unit {
+    font-size: 10px;
+    fill: var(--color-muted);
+  }
+
+  .bl-tag {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    fill: var(--color-signal);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    /* The substrate and the adhesive go up once and stay up. */
+    .bl-step {
+      animation: bl-place 0.5s var(--ease-out) both;
+      animation-delay: calc(var(--i) * 0.28s);
+    }
+
+    /* Each depth holds a third of the cycle, so the two figures under the
+       drawing are readable rather than a blur of digits. */
+    .bl-board {
+      animation: bl-turn var(--bl-cycle) linear infinite both;
+      animation-delay: calc(0.9s + var(--n) * (var(--bl-cycle) / 3));
+    }
+  }
+
+  /* Without the timeline the loop resolves to the deepest board, which is the
+     one the drawing is dimensioned around. */
+  @media (prefers-reduced-motion: reduce) {
+    .bl-board {
+      opacity: 0;
+    }
+
+    .bl-board:nth-last-of-type(-n + 3) {
+      opacity: 1;
+    }
+  }
+
+  @keyframes bl-place {
+    from {
+      opacity: 0;
+      transform: translateX(-10px);
+    }
+  }
+
+  /* On for its third of the cycle, off for the other two. The board arrives
+     from behind the one before it, which reads as the wall getting deeper
+     rather than as three pictures being shuffled. */
+  @keyframes bl-turn {
+    0% {
+      opacity: 0;
+      transform: translateX(-8px);
+    }
+    4%,
+    30% {
+      opacity: 1;
+      transform: none;
+    }
+    34%,
+    100% {
+      opacity: 0;
+      transform: none;
+    }
+  }
+
+  /* --- The construction figures --------------------------------------------
+
+     One section per application, on the back of its card. Drawn in the theme's
+     own ink so it inverts with the rest of the site. See
+     `construction-figure.tsx` for why each one has its own geometry. */
+  .construction {
+    display: block;
+    inline-size: 100%;
+    block-size: auto;
+    color: var(--color-muted);
+  }
+
+  .cf-body {
+    color: var(--color-muted);
+  }
+
+  .cf-body rect {
+    stroke: var(--color-edge);
+    stroke-width: 1;
+  }
+
+  .cf-line {
+    fill: none;
+    stroke: var(--color-edge);
+    stroke-width: 1;
+  }
+
+  .cf-line rect {
+    fill: var(--color-raised);
+  }
+
+  .cf-heavy {
+    stroke-width: 2;
+  }
+
+  .cf-fill {
+    fill: var(--color-edge);
+    stroke: none;
+  }
+
+  /* The leader, which is the only line in the drawing that is not part of the
+     construction — so it is the only one drawn in the hairline rather than the
+     edge colour. */
+  .cf-leader {
+    fill: none;
+    stroke: color-mix(in srgb, var(--color-edge) 55%, transparent);
+    stroke-width: 1;
+  }
+
+  .cf-tick-ring {
+    fill: var(--color-raised);
+    stroke: var(--color-signal);
+    stroke-width: 1.2;
+  }
+
+  .cf-tick-text {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    fill: var(--color-signal);
+  }
+
+  .cf-note-text {
+    font-family: var(--font-mono);
+    font-size: 8px;
+    letter-spacing: 1.2px;
+    fill: var(--color-muted);
+  }
+
+  /* --- The turning photograph ---------------------------------------------
+
+     A construction has more to say than a photograph of it can, and it used to
+     say it on a page of its own — which was a stop on the way to the catalogue
+     rather than a destination. So the second face is the back of the first: the
+     card turns, and the note is on the other side of the thing it describes. */
+  .turn {
+    perspective: 1600px;
+  }
+
+  /* The turn itself is the feedback, but it takes most of a second — so the
+     card also rings while it is focused, which lands immediately. */
+  .turn:focus-visible {
+    outline: none;
+  }
+
+  .turn:focus-visible .media {
+    box-shadow: 0 0 0 2px var(--color-signal);
+  }
+
+  .turn-inner {
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.7s var(--ease-out);
+  }
+
+  .turn:hover .turn-inner,
+  .turn:focus-visible .turn-inner {
+    transform: rotateY(180deg);
+  }
+
+  .turn-face {
+    backface-visibility: hidden;
+  }
+
+  .turn-back {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    transform: rotateY(180deg);
+    border: 1px solid var(--color-rule);
+    border-radius: var(--radius-media);
+    background: var(--color-raised);
+    padding: clamp(1.25rem, 2.6vw, 2rem);
+  }
+
+  /* The drawing takes whatever the note leaves, centred in it. */
+  .turn-figure {
+    flex: 1;
+    display: grid;
+    place-items: center;
+    min-block-size: 0;
+    padding-block: 0.75rem;
+  }
+
+  .turn-figure svg {
+    max-block-size: 100%;
+  }
+
+  /* The instruction, so the turn is offered rather than discovered. It goes
+     when the card is turned — an instruction to do the thing you have already
+     done is noise. */
+  .turn-hint {
+    position: absolute;
+    z-index: 2;
+    inset-block-end: 0.875rem;
+    inset-inline-start: 0.875rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4375rem;
+    border-radius: var(--radius-pill);
+    border: 1px solid color-mix(in srgb, var(--color-surface) 55%, transparent);
+    background: color-mix(in srgb, var(--color-surface) 82%, transparent);
+    backdrop-filter: blur(6px);
+    padding: 0.3125rem 0.6875rem;
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-ink);
+    transition: opacity 0.25s var(--ease-out);
+  }
+
+  .turn:hover .turn-hint,
+  .turn:focus-visible .turn-hint {
+    opacity: 0;
+  }
+
+  /* No pointer, no hover: the note sits under the photograph instead of behind
+     it, which is the same information without a gesture that does not exist. */
+  @media (hover: none) {
+    .turn {
+      perspective: none;
+    }
+
+    .turn-inner {
+      transform: none !important;
+    }
+
+    .turn-back {
+      position: static;
+      transform: none;
+      margin-block-start: 1rem;
+    }
+
+    .turn-hint {
+      display: none;
+    }
+  }
+
+  /* The blue wash a photograph takes when the thing it is on is hovered.
+     Signal is the site's one colour and it means "you can act here", so it is
+     the right thing to put over a target — and on eleven near-monochrome macro
+     shots it is also the only way a hover reads at all. */
+  .tint::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: var(--color-signal-bright);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.28s var(--ease-out);
+  }
+
+  .tint-parent:hover .tint::after,
+  .tint-parent:focus-visible .tint::after,
+  .product-card:hover .tint::after,
+  .product-card:focus-within .tint::after,
+  .way:hover .tint::after,
+  .way:focus-visible .tint::after {
+    opacity: 0.3;
+  }
+
+  /* --- The family, under the photograph ------------------------------------
+
+     A board family is one datasheet, one photograph and one declared
+     conductivity; the depth is the only thing you choose. So it is a control on
+     the product rather than a section further down the page, and it sits where
+     the thing it changes is. */
+  .depths-row {
+    margin-block-start: 1.25rem;
+    border-block-start: 1px solid var(--color-rule);
+    padding-block-start: 1rem;
+  }
+
+  /* --- The bill of materials -----------------------------------------------
+
+     The layers this product is approved with, written as an order rather than
+     as a diagram key: a position, a layer, the product that fills it, and the
+     code you would put on the order. The line you are on is marked, because the
+     whole point of the section is that this page is one of them. */
+  .bom {
+    display: grid;
+  }
+
+  .bom-row {
+    position: relative;
+    display: grid;
+    grid-template-columns: 2rem minmax(0, 1fr);
+    gap: 0.25rem 1rem;
+    border-block-start: 1px solid var(--color-rule);
+    padding: 0.875rem 0.5rem 0.875rem 0;
+  }
+
+  @media (width >= 48rem) {
+    .bom-row {
+      grid-template-columns: 2rem 9rem minmax(0, 1fr) 8rem;
+      align-items: baseline;
+      gap: 0 1rem;
+    }
+  }
+
+  .bom-row:last-child {
+    border-block-end: 1px solid var(--color-rule);
+  }
+
+  /* The line this page is. */
+  .bom-row[data-here="true"] {
+    box-shadow: inset 2px 0 0 var(--color-signal);
+    padding-inline-start: 0.75rem;
+  }
+
+  .bom-n {
+    font-size: 0.6875rem;
+    color: var(--color-muted);
+  }
+
+  .bom-layer {
+    grid-column: 2;
+  }
+
+  @media (width >= 48rem) {
+    .bom-layer {
+      grid-column: auto;
+    }
+  }
+
+  .bom-name {
+    display: block;
+    font-size: 0.9375rem;
+    line-height: 1.35;
+  }
+
+  .bom-link {
+    color: var(--color-ink);
+    text-decoration: underline;
+    text-decoration-color: var(--color-rule);
+    text-underline-offset: 0.2em;
+    transition: color 0.15s ease;
+  }
+
+  .bom-link:hover {
+    color: var(--color-signal);
+    text-decoration-color: currentColor;
+  }
+
+  .bom-here {
+    display: inline-block;
+    margin-inline-start: 0.625rem;
+    border-radius: var(--radius-pill);
+    background: var(--color-signal-soft);
+    padding: 0.125rem 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.5625rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-signal);
+    translate: 0 -0.1em;
+  }
+
+  .bom-note {
+    display: block;
+    margin-block-start: 0.25rem;
+    font-size: 0.75rem;
+    color: var(--color-muted);
+  }
+
+  .bom-code {
+    grid-column: 2;
+    font-size: 0.6875rem;
+    color: var(--color-muted);
+  }
+
+  @media (width >= 48rem) {
+    .bom-code {
+      grid-column: auto;
+      text-align: end;
+    }
+  }
+
+  .bom-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    border-block-end: 2px solid var(--color-ink);
+    padding-block: 1.125rem;
+  }
+
+  /* --- The product card ----------------------------------------------------
+
+     Each product is held on its own panel, one step darker than the page
+     ground: a grid of these reads as a row of separate objects rather than as a
+     run of photographs that happen to sit next to each other, and the figures
+     under each one belong visibly to the thing above them.
+
+     The photograph inside it goes a step lighter again, so the card reads as a
+     mount and the image reads as what is mounted on it. */
+  .product-card {
+    border-radius: var(--radius-media);
+    background: var(--color-sunken);
+    padding: 0.75rem 0.875rem 0.875rem;
+    transition:
+      background 0.2s ease,
+      box-shadow 0.35s var(--ease-out),
+      transform 0.35s var(--ease-out);
+  }
+
+  /* The card ground stays neutral on hover and lifts instead. Colour goes on
+     the two things that are the product — the photograph and its name — so the
+     grid never turns into a field of blue rectangles, and the declared values
+     under each name keep the ground they were designed to be read on. */
+  .product-card:hover,
+  .product-card:focus-within {
+    background: color-mix(in srgb, var(--color-sunken) 55%, var(--color-raised));
+    box-shadow: var(--shadow-lift);
+    transform: translateY(-2px);
+  }
+
+  .product-card .media {
+    background: var(--color-raised);
+  }
+
+  /* The one characteristic that rules a product in or out, on the photograph
+     rather than under it. A frosted plate rather than a fill, so it belongs to
+     the image instead of sitting on top of it. */
+  .card-badge {
+    position: absolute;
+    inset-block-start: 0.625rem;
+    inset-inline-end: 0.625rem;
+    z-index: 1;
+    border-radius: var(--radius-pill);
+    border: 1px solid color-mix(in srgb, var(--color-surface) 55%, transparent);
+    background: color-mix(in srgb, var(--color-surface) 72%, transparent);
+    backdrop-filter: blur(6px);
+    padding: 0.1875rem 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.04em;
+    color: var(--color-ink);
+  }
+
+  /* The three ways in, on the first screen. No frame and no fill: the
+     photograph is the object and the type sits under it on the page ground,
+     the same way a product card is built. */
+  .way .media {
+    transition:
+      transform 0.5s var(--ease-out),
+      box-shadow 0.5s var(--ease-out);
+  }
+
+  .way:hover .media {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lift);
+  }
+
+  /* The whole card answers the pointer, not just the heading: the photograph,
+     the name, the count and the argument are one target and they should read
+     as one. */
+  .way:hover,
+  .way:focus-visible {
+    color: var(--color-signal);
+  }
+
+  /* The argument under the name is set here rather than with a utility, so it
+     can follow the hover instead of being overridden by one. */
+  .way-lead {
+    color: var(--color-muted);
+  }
+
+  .way:hover .way-lead,
+  .way:focus-visible .way-lead,
+  .way:hover .caption,
+  .way:focus-visible .caption {
+    color: color-mix(in srgb, var(--color-signal) 70%, var(--color-muted));
+  }
+
+  /* --- The drawn product figure -------------------------------------------
+
+     Every product in the catalogue as an axonometric object rather than a macro
+     photograph of its surface. See `product-figure.tsx` for why. Drawn in the
+     theme's own ink, so it inverts with the rest of the site instead of being
+     two assets. */
+  .product-figure {
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+    color: var(--color-muted);
+  }
+
+  .pf-body {
+    transition: transform 0.6s var(--ease-out);
+    transform-origin: 50% 60%;
+  }
+
+  /* The three faces. A slab is one colour lit three ways, so the tones are
+     steps of the same ground rather than three different fills. */
+  .pf-top {
+    fill: var(--color-raised);
+  }
+
+  .pf-side {
+    fill: color-mix(in srgb, var(--color-sunken) 72%, var(--color-raised));
+  }
+
+  .pf-side-lit {
+    fill: var(--color-raised);
+  }
+
+  .pf-texture {
+    color: var(--color-muted);
+    opacity: 0.75;
+  }
+
+  .pf-edge,
+  .pf-edge-shape {
+    fill: none;
+    stroke: var(--color-edge);
+    stroke-width: 1.4;
+    stroke-linejoin: round;
+  }
+
+  .pf-edge polygon,
+  .pf-edge ellipse,
+  .pf-edge path,
+  .pf-edge rect {
+    fill: none;
+    stroke: var(--color-edge);
+    stroke-width: 1.4;
+    stroke-linejoin: round;
+  }
+
+  /* Faces declared inside the outline group still want their fill. */
+  .pf-edge .pf-top {
+    fill: var(--color-raised);
+  }
+
+  .pf-edge .pf-side {
+    fill: color-mix(in srgb, var(--color-sunken) 72%, var(--color-raised));
+  }
+
+  /* The same lift a photograph got, so a card still answers the cursor. */
+  .card:hover .pf-body,
+  .product-card:hover .pf-body,
+  .group:hover .pf-body {
+    transform: scale(1.045);
+  }
+
+  /* --- The active-filter rail ---------------------------------------------
+
+     Every filter that is on, next to the count, on one line that never grows.
+     Past the width available the chips run under the sort control and are
+     scrolled to, which is the only arrangement that keeps the toolbar the same
+     height whether one filter is on or seven. The fade is set from the rail's
+     own scroll position, so it says "there is more this way" rather than
+     permanently blurring the last chip. */
+  /* The bar is the same height whether a filter is on or not. Left to size
+     itself it lost the chip row's quarter-inch and the whole grid under it
+     stepped up — a toolbar that moves when you clear a filter reads as the page
+     jumping rather than as the filter clearing. */
+  .toolbar-row {
+    /* The height a chip row occupies, held whether or not one is there. */
+    min-block-size: 2.5625rem;
+  }
+
+  .chip-rail {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-inline-size: 0;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    /* Room for a focus ring, which a clipped overflow would otherwise cut. */
+    padding-block: 0.25rem;
+  }
+
+  .chip-rail::-webkit-scrollbar {
+    display: none;
+  }
+
+  .chip-slot {
+    flex: none;
+  }
+
+  .chip-rail[data-fade-end="true"] {
+    mask-image: linear-gradient(to right, #000 calc(100% - 3rem), transparent);
+  }
+
+  .chip-rail[data-fade-start="true"] {
+    mask-image: linear-gradient(to right, transparent, #000 3rem);
+  }
+
+  .chip-rail[data-fade-start="true"][data-fade-end="true"] {
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      #000 3rem,
+      #000 calc(100% - 3rem),
+      transparent
+    );
+  }
+
+  /* --- The filter rail ----------------------------------------------------
+
+     Its own scroll area from `lg` up, so the filters and the results move
+     independently: changing your mind about a category should not mean
+     scrolling the catalogue back to the top, and reading the fourth row of
+     products should not mean the filters have gone. */
+  @media (width >= 64rem) {
+    .filter-rail {
+      position: sticky;
+      /* Pinned to the underside of the toolbar, which is itself pinned under
+         the header. `--toolbar-h` is measured on the bar, so the rail catches
+         at the exact pixel it already sits at and never slides first. */
+      inset-block-start: calc(var(--header-h) + var(--toolbar-h, 3.5rem));
+      max-block-size: calc(100svh - var(--header-h) - var(--toolbar-h, 3.5rem));
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-width: thin;
+      /* The scrollbar sits in the gutter rather than over the last count. */
+      padding-inline-end: 0.75rem;
+      margin-inline-end: -0.75rem;
+    }
+  }
+
+  /* --- The results --------------------------------------------------------
+
+     The grid is never emptied while the next set is on its way, so what is on
+     the screen stays there and dims by a hair. The swap itself is a view
+     transition: cards that survived the filter slide to their new positions,
+     and only the ones that actually left and arrived are cross-faded. */
+  .results {
+    /* Only a filter change sets this. Appending the next page leaves the grid
+       alone: dimming products someone is already reading, to add more below
+       them, is motion charged to the wrong part of the screen. */
+    transition: opacity 0.32s var(--ease-swap);
+  }
+
+  .results[data-pending="true"] {
+    opacity: 0.62;
+  }
+
+  .card-slot {
+    /* Named per product, so the browser can pair a card in the old frame with
+       the same card in the new one and move it rather than redraw it. */
+    view-transition-name: var(--vt);
+    contain: layout;
+  }
+
+  /* --- The dropdown -------------------------------------------------------
+
+     A listbox drawn on the page rather than by the operating system, so the
+     options are set in the same mono the values in them are set in everywhere
+     else and the whole thing belongs to the catalogue. See `select.tsx` for
+     why it is worth replacing a native control at all. */
+  .dropdown {
+    position: relative;
+    min-inline-size: 0;
+  }
+
+  .dropdown-button {
+    display: flex;
+    inline-size: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.625rem;
+    padding: 0.4375rem 0.75rem;
+    font-size: 0.8125rem;
+    text-align: start;
+  }
+
+  .dropdown-button[data-open="true"] {
+    border-color: var(--color-signal);
+    color: var(--color-signal);
+  }
+
+  .dropdown-caret {
+    flex-shrink: 0;
+    color: var(--color-muted);
+    transition: transform 0.18s var(--ease-out);
+  }
+
+  .dropdown-button[data-open="true"] .dropdown-caret {
+    transform: rotate(180deg);
+    color: inherit;
+  }
+
+  .dropdown-list {
+    position: absolute;
+    inset-block-start: calc(100% + 0.375rem);
+    inset-inline-start: 0;
+    z-index: 70;
+    display: grid;
+    min-inline-size: 100%;
+    max-inline-size: min(22rem, calc(100vw - 2rem));
+    max-block-size: 17rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border: 1px solid var(--color-edge);
+    border-radius: var(--radius-control);
+    background: var(--color-raised);
+    box-shadow: var(--shadow-lift);
+    padding: 0.25rem;
+    animation: panel-in 0.16s var(--ease-out) both;
+  }
+
+  /* Near the trailing edge of the toolbar there is nothing to the right of the
+     control, so the list hangs from that edge instead. */
+  .dropdown-list[data-align="end"] {
+    inset-inline-start: auto;
+    inset-inline-end: 0;
+  }
+
+  .dropdown-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: calc(var(--radius-control) - 3px);
+    padding: 0.4375rem 0.5rem;
+    font-size: 0.8125rem;
+    line-height: 1.35;
+    color: var(--color-muted);
+    white-space: nowrap;
+  }
+
+  /* The cursor is where the keyboard is; the tick is where the value is. Two
+     different things, so they are shown two different ways. */
+  .dropdown-option[data-cursor="true"] {
+    background: var(--color-sunken);
+    color: var(--color-ink);
+  }
+
+  .dropdown-option[data-selected="true"] {
+    color: var(--color-signal);
+  }
+
+  .dropdown-tick {
+    opacity: 0;
+  }
+
+  .dropdown-option[data-selected="true"] .dropdown-tick {
+    opacity: 1;
+  }
+
+  /* The cursor highlight is this control's focus indicator: a ring inside a
+     list that already has a hover state reads as two selections at once. */
+  .dropdown-option:focus-visible {
+    outline: none;
+    background: var(--color-sunken);
+    box-shadow: inset 0 0 0 1px var(--color-signal);
+  }
+
   .btn {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
+    gap: 0.625rem;
     border-radius: var(--radius-control);
-    padding: 0.75rem 1.25rem;
+    padding: 0.8125rem 1.25rem;
     font-weight: 500;
+    font-size: 0.9375rem;
     line-height: 1.2;
     white-space: nowrap;
     transition:
-      background 0.15s ease,
-      color 0.15s ease,
+      color 0.25s ease,
+      border-color 0.25s ease,
       transform 0.1s ease;
+  }
+
+  /* The struck fill. Behind the label rather than over it, so nothing about
+     the text moves while it passes. */
+  .btn::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 0.45s var(--ease-out);
+  }
+
+  .btn:hover::before,
+  .btn:focus-visible::before {
+    transform: scaleX(1);
   }
 
   .btn:active {
     transform: translateY(1px);
+  }
+
+  /* Only a trailing icon moves: a leading one is a symbol for the control, and
+     a symbol that slides away from its label is noise. */
+  .btn > svg:last-child:not(:first-child) {
+    transition: transform 0.35s var(--ease-out);
+  }
+
+  .btn:hover > svg:last-child:not(:first-child),
+  .btn:focus-visible > svg:last-child:not(:first-child) {
+    transform: translateX(3px);
   }
 
   .btn-primary {
@@ -491,12 +1979,17 @@
     color: var(--color-surface);
   }
 
-  .btn-primary:hover {
+  .btn-primary::before {
     background: var(--color-signal);
+  }
+
+  .btn-primary:hover,
+  .btn-primary:focus-visible {
     color: #ffffff;
   }
 
-  [data-theme="dark"] .btn-primary:hover {
+  [data-theme="dark"] .btn-primary:hover,
+  [data-theme="dark"] .btn-primary:focus-visible {
     color: #0d1526;
   }
 
@@ -505,9 +1998,74 @@
     color: var(--color-ink);
   }
 
-  .btn-quiet:hover {
+  .btn-quiet::before {
+    background: var(--color-ink);
+  }
+
+  .btn-quiet:hover,
+  .btn-quiet:focus-visible {
     border-color: var(--color-ink);
+    color: var(--color-surface);
+  }
+
+  /* On, and saying so without the cursor on it. The compare button changed
+     only its label, which is not a state you can see across a page — this is
+     the same signal a selected chip and a selected depth already carry, so the
+     three read as one idea. */
+  .btn-quiet[data-active="true"]:not(:hover):not(:focus-visible) {
+    border-color: var(--color-signal);
+    background: var(--color-signal-soft);
+    color: var(--color-signal);
+  }
+
+  .btn-sm {
+    gap: 0.5rem;
+    padding: 0.5625rem 0.875rem;
+    font-size: 0.8125rem;
+  }
+
+  /* The CTA that closes a list is as wide as the list, so it reads as its last
+     row rather than as a pill dropped underneath it. The label stays centred
+     with its arrow beside it: pushed to opposite edges the two stop reading as
+     one phrase, and on a wide column the arrow ends up a hand's width from the
+     words it belongs to. */
+  .btn-row {
+    inline-size: 100%;
+    justify-content: center;
+  }
+
+  /* --- The configurator sheet ---------------------------------------------
+
+     A drawing and the block that certifies it are one object on paper, so they
+     are one object here: the section above, the figures it produced below, and
+     a single frame around both. The block is ruled the way a title block is
+     ruled — the divisions between the cells are the grid's own gaps showing the
+     ground through, so there is never a doubled hairline at a corner. */
+  .sheet-frame {
+    overflow: hidden;
+    border: 1px solid var(--color-edge);
+    border-radius: var(--radius-media);
     background: var(--color-raised);
+  }
+
+  .sheet-drawing {
+    display: block;
+    inline-size: 100%;
+    block-size: auto;
+    padding: 1.25rem 1rem 0.25rem;
+  }
+
+  .title-block {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    border-block-start: 1px solid var(--color-edge);
+    background: var(--color-rule);
+  }
+
+  .title-cell {
+    background: var(--color-raised);
+    padding: 0.875rem 1rem 1rem;
   }
 
   .link {
@@ -556,6 +2114,196 @@
 
   .hatch-fill {
     fill: var(--color-muted);
+  }
+}
+
+/* The whole card's type goes with the photograph on hover. Colouring only the
+   name left the code and the two declared values reading as a separate,
+   unhovered thing sitting under a hovered one — a card is one target, so it
+   answers as one. The chip keeps its own ground, because it is still a control.
+
+   Unlayered on purpose: the code carries a `text-muted` utility, and a utility
+   beats any specificity in an earlier layer. */
+.product-card:hover .product-name,
+.product-card:focus-within .product-name,
+.product-card:hover .product-body,
+.product-card:focus-within .product-body,
+.product-card:hover .product-body .text-muted,
+.product-card:focus-within .product-body .text-muted {
+  color: var(--color-signal-bright);
+}
+
+.product-card:hover .product-body .label,
+.product-card:focus-within .product-body .label {
+  color: color-mix(in srgb, var(--color-signal-bright) 72%, transparent);
+}
+
+/* While the search panel is open the bar belongs to it: same ground, no rule
+   between them, and the field itself goes white. The scrim is portalled to the
+   body, so the whole header — wordmark, navigation, field and all — stays above
+   it and stays lit. Dimming the one control the visitor is still using is the
+   commonest way this pattern gets built wrong.
+
+   Unlayered on purpose — the header carries a `bg-surface` utility, and a
+   utility beats any specificity in an earlier layer. */
+html[data-search-open] header {
+  z-index: 50;
+  background: var(--color-raised);
+  border-bottom-color: transparent;
+  box-shadow: 0 1px 0 var(--color-rule);
+}
+
+html[data-search-open] .search-bar {
+  background: var(--color-raised);
+}
+
+/* --- The loading mat and the veil ----------------------------------------
+
+   Two surfaces, because they are two different moments. The mat is the first
+   visit: a full screen of the one colour on the site that means "act here",
+   ruled like the cutting mat on a drawing-office bench, held just long enough
+   to be read. The veil is every navigation after it: the page's own ground,
+   fading up over the swap and straight back down, carrying nothing.
+
+   Everything here is opacity and transform, and the phase is an attribute
+   rather than a class so the two states cannot fight each other in the
+   cascade. */
+
+.loader {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  background: var(--color-signal);
+  color: #fff;
+  pointer-events: none;
+  will-change: opacity, transform;
+}
+
+.loader[data-phase="boot"],
+.loader[data-phase="done"] {
+  animation: mat-in 0.28s var(--ease-out) both;
+}
+
+/* Lifted rather than cut: the mat goes up and out, and the page is under it. */
+.loader[data-phase="leaving"] {
+  animation: mat-out 0.58s cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+
+.loader-mat {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  color: #fff;
+  opacity: 0.5;
+}
+
+.loader[data-phase="boot"] .loader-mat,
+.loader[data-phase="done"] .loader-mat {
+  animation: mat-drift 8s var(--ease-out) both;
+}
+
+/* The figure settles rather than snapping when the run to 100 finishes, so the
+   completed state reads as an arrival. */
+.loader[data-phase="done"] .loader-figure {
+  animation: figure-settle 0.4s var(--ease-out) both;
+}
+
+@keyframes figure-settle {
+  from {
+    transform: scale(1.04);
+  }
+  to {
+    transform: none;
+  }
+}
+
+/* The clean corner of the mat is where the figure goes. */
+.loader-figure {
+  position: absolute;
+  inset-block-end: clamp(2rem, 6vw, 4.5rem);
+  inset-inline-end: clamp(1.5rem, 6vw, 4.5rem);
+  display: flex;
+  align-items: baseline;
+  gap: 0.15em;
+  font-family: var(--font-mono);
+  font-size: clamp(3rem, 11vw, 8rem);
+  line-height: 0.9;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.loader-unit {
+  font-size: 0.4em;
+  opacity: 0.7;
+}
+
+@keyframes mat-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes mat-out {
+  to {
+    opacity: 0;
+    transform: translate3d(0, -2%, 0);
+  }
+}
+
+/* The mat moves a little while it is held, so the screen is not a still. */
+@keyframes mat-drift {
+  from {
+    transform: scale(1.05) translate3d(-1%, -1%, 0);
+  }
+  to {
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+}
+
+/* The navigation veil. One element, one property, no content: it is the page
+   ground brought up over the hand-over and taken straight back down.
+
+   Two phases rather than one timeline, because the two halves are waiting on
+   different things. `cover` runs on the click and holds at full cover for as
+   long as the next page takes; `reveal` runs when that page has arrived. A
+   single keyframed fade cannot do that — it would have to guess the wait. */
+.veil {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: var(--color-surface);
+  pointer-events: none;
+  will-change: opacity;
+}
+
+.veil[data-phase="cover"] {
+  animation: veil-in 0.24s ease both;
+}
+
+/* The hold at the head of this one is what makes an instant navigation still
+   read as a transition instead of a blink. */
+.veil[data-phase="reveal"] {
+  animation: veil-out 0.52s ease both;
+}
+
+@keyframes veil-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes veil-out {
+  0%,
+  24% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
   }
 }
 
@@ -653,5 +2401,71 @@
   to {
     transform: none;
     opacity: 1;
+  }
+}
+
+/* The view transition that swaps one set of results for another. The default
+   root cross-fade would take the header and the toolbar with it, which is a
+   whole-page dissolve for what is really one grid changing its mind. */
+::view-transition-group(*) {
+  /* Slow enough to be followed. A filter change moves cards several columns
+     and drops others out; at a third of a second that is a flicker you notice
+     but cannot read, so the eye loses which product went where. */
+  animation-duration: 0.62s;
+  animation-timing-function: var(--ease-swap);
+}
+
+/* The cross-fade of what left and what arrived, held a little shorter than the
+   movement and eased so the two overlap rather than blink past each other. */
+::view-transition-old(*),
+::view-transition-new(*) {
+  animation-duration: 0.5s;
+  animation-timing-function: var(--ease-swap);
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+/* The pinned furniture, held out of the transition.
+ *
+ * A transition's snapshots are painted in the top layer — above every stacking
+ * context on the page, `position: sticky` included. Scrolled down the
+ * catalogue, a card sliding to its new place was drawn straight over the bar
+ * and the toolbar, so for two thirds of a second products appeared to be
+ * sitting on top of the header. Naming the two pinned elements puts them in
+ * that same layer, where they can be ordered above the cards; neither of them
+ * is what changed, so both are held still rather than animated. */
+.site-bar {
+  view-transition-name: site-bar;
+}
+
+.catalogue-bar {
+  view-transition-name: catalogue-bar;
+}
+
+::view-transition-group(site-bar),
+::view-transition-group(catalogue-bar) {
+  z-index: 40;
+  animation: none;
+}
+
+::view-transition-old(site-bar),
+::view-transition-old(catalogue-bar) {
+  display: none;
+}
+
+::view-transition-new(site-bar),
+::view-transition-new(catalogue-bar) {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
   }
 }

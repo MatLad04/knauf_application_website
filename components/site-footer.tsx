@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { STANDARDS } from "@/lib/standards";
 import { ArrowUp } from "@phosphor-icons/react/dist/ssr";
 import { Container } from "./section";
 
@@ -18,6 +19,7 @@ const COLUMNS = [
       { href: "/products", label: "All products" },
       { href: "/applications", label: "Applications" },
       { href: "/compare", label: "Compare products" },
+      { href: "/configurator", label: "Wall configurator" },
       { href: "/products?epd=1", label: "Products with an EPD" },
       { href: "/products?fire=A1", label: "Euroclass A1 products" },
     ],
@@ -41,8 +43,6 @@ const COLUMNS = [
     ],
   },
 ];
-
-const STANDARDS = ["EN 13501-1", "EN 13162", "EN ISO 6946", "ETAG 004", "EU 305/2011"];
 
 export default function SiteFooter() {
   return (
@@ -97,20 +97,29 @@ export default function SiteFooter() {
           ))}
         </div>
 
-        {/* Where a real manufacturer would put social icons and app stores, a
-            fictional one puts the standards its data is shaped by. */}
-        <div className="mt-11 flex flex-wrap items-center gap-2 border-t rule pt-7">
-          <span className="label mr-2">Declared against</span>
+        {/* One line, under the lists: they answer the same question the units
+            do — what are these numbers, and against what. Each one is a page
+            now, because a reference nobody can look up is decoration. */}
+        <div className="mt-12 flex flex-wrap items-center gap-2 border-t rule pt-8">
+          <Link href="/standards" className="label mr-2 hover:text-signal">
+            Declared against
+          </Link>
           {STANDARDS.map((standard) => (
-            <span key={standard} className="chip mono text-[0.6875rem] text-muted">
-              {standard}
-            </span>
+            <Link
+              key={standard.slug}
+              href={`/standards/${standard.slug}`}
+              className="chip mono text-[0.6875rem]"
+            >
+              {standard.reference}
+            </Link>
           ))}
         </div>
 
         {/* The wordmark signs off the page, centred, the way a sheet is signed
             at the foot of the frame. */}
-        <p className="display mt-10 text-center text-xl tracking-tight">KERNBAU</p>
+        <p className="display mt-14 text-center text-[clamp(1.75rem,4vw,2.75rem)] tracking-tight">
+          KERNBAU
+        </p>
       </Container>
     </footer>
   );

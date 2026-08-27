@@ -1,9 +1,18 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, CaretDown } from "@phosphor-icons/react/dist/ssr";
-import { getCatalogueStats } from "@/lib/catalogue";
-import { applicationImage, HERO_IMAGE, texture } from "@/lib/media";
+import type { BuildUp } from "@/lib/catalogue";
+import {
+  getApplications,
+  getBuildUp,
+  getCatalogueStats,
+  getCategories,
+  getFamilies,
+} from "@/lib/catalogue";
+import { SUBSTRATES } from "@/lib/build-up";
+import { applicationImage, HERO_IMAGE, texture, type Texture } from "@/lib/media";
 import DraftingSheet from "@/components/drafting-sheet";
+import BuildLoop from "@/components/build-loop";
 import { Container } from "@/components/section";
 import { Enter, Reveal } from "@/components/motion";
 
@@ -22,89 +31,133 @@ const BUILD_UP = [
 ];
 
 type Stats = { products: number; categories: number; applications: number };
-
-const WAYS = [
-  {
-    title: "Materials",
-    lead: "What a product is made of decides how it behaves in a fire and how deep the wall has to get.",
-    image: texture("mineral-wool"),
-    cta: (s: Stats) => ({ label: `All ${s.categories} categories`, href: "/products" }),
-  },
-  {
-    title: "Families",
-    lead: "A family is one datasheet and one photograph across every thickness it is made in.",
-    image: texture("eps"),
-    cta: (s: Stats) => ({ label: `All ${s.products} products`, href: "/products" }),
-  },
-  {
-    title: "Systems",
-    lead: "Most specification decisions begin with a construction rather than with a catalogue.",
-    image: applicationImage("external-wall"),
-    cta: (s: Stats) => ({ label: `All ${s.applications} applications`, href: "/applications" }),
-  },
-];
+type Row = { label: string; href: string };
+type Way = {
+  title: string;
+  lead: string;
+  image: Texture;
+  rows: Row[];
+  cta: { label: string; href: string };
+};
 
 export default async function HomePage() {
-  const stats = await getCatalogueStats();
+  const [stats, categories, families, applications, buildUp] = await Promise.all([
+    getCatalogueStats(),
+    getCategories(),
+    getFamilies(4),
+    getApplications(),
+    getBuildUp(),
+  ]);
+
+  // Each way in carries the first few of its own values, and every one of them
+  // is a filtered catalogue URL — the same link the search panel and the
+  // application pages use, so clicking a name here does what clicking a name
+  // anywhere else on the site does.
+  const ways: Way[] = [
+    {
+      title: "Materials",
+      lead: "What a product is made of decides how it behaves in a fire and how deep the wall has to get.",
+      image: texture("mineral-wool"),
+      rows: categories.slice(0, 4).map((category) => ({
+        label: category.name,
+        href: `/products?category=${category.slug}`,
+      })),
+      cta: { label: `All ${stats.categories} categories`, href: "/products" },
+    },
+    {
+      title: "Families",
+      lead: "A family is one datasheet and one photograph across every thickness it is made in.",
+      image: texture("eps"),
+      rows: families.map((family) => ({
+        label: family.name,
+        href: `/products?q=${encodeURIComponent(family.name)}`,
+      })),
+      cta: { label: `All ${stats.products} products`, href: "/products" },
+    },
+    {
+      title: "Applications",
+      lead: "Most specification decisions begin with a construction rather than with a catalogue.",
+      image: applicationImage("external-wall"),
+      rows: applications.slice(0, 4).map((application) => ({
+        label: application.name,
+        href: `/products?application=${application.slug}`,
+      })),
+      cta: { label: `All ${stats.applications} applications`, href: "/applications" },
+    },
+  ];
 
   return (
     <>
       <Hero stats={stats} />
 
-      {/* The three ways in are their own section now. In the hero they were an
-          unannounced row of photographs under a headline about something else;
-          here they are introduced, which is the difference between a set of
-          choices and some pictures. */}
+      {/* The three ways in are their own section. Each one carries the first
+          few of its own values, because a name that filters the catalogue is
+          worth more than a photograph that does not. */}
       <section aria-labelledby="ways-heading" className="border-t rule py-16 sm:py-20">
         <Container>
-          <Reveal className="grid items-end gap-x-12 gap-y-5 lg:grid-cols-2">
-            <div>
-              <p className="label">Where to start</p>
-              <h2 id="ways-heading" className="display mt-4 text-[clamp(1.75rem,3.6vw,2.75rem)]">
-                Three ways into the catalogue
-              </h2>
-            </div>
-            <p className="max-w-[52ch] text-muted lg:pb-1">
+          <Reveal className="max-w-[62rem]">
+            <p className="label">Where to start</p>
+            <h2 id="ways-heading" className="display mt-4 text-[clamp(1.75rem,3.6vw,2.75rem)]">
+              Three ways into the catalogue
+            </h2>
+            <p className="mt-5 max-w-[62ch] text-lg text-muted">
               A specification starts from what the product is made of, from the family it belongs
-              to, or from the construction it is going into. All three are one keystroke away in the
-              search bar.
+              to, or from the construction it is going into. Every name below is a filtered
+              catalogue.
             </p>
           </Reveal>
 
           <Reveal className="mt-12 sm:mt-14">
-            <ul className="grid gap-6 sm:grid-cols-3 sm:gap-5 lg:gap-8">
-              {WAYS.map((way) => {
-                const cta = way.cta(stats);
-                return (
-                  <li key={way.title}>
-                    <Link href={cta.href} className="way group block">
-                      <div className="media aspect-[16/10] lg:aspect-[3/2]">
-                        <Image
-                          src={way.image.src}
-                          alt=""
-                          fill
-                          sizes="(max-width: 640px) 100vw, 30vw"
-                          className="texture object-cover"
-                        />
-                      </div>
+            <ul className="grid gap-10 sm:grid-cols-3 sm:gap-5 lg:gap-8">
+              {ways.map((way) => (
+                <li key={way.title} className="flex flex-col">
+                  {/* The photograph and the argument are not a link. Only the
+                      names under them are, because only they go anywhere
+                      specific — a heading that quietly means "all of these" is
+                      the kind of target you click by accident. */}
+                  <div>
+                    <div className="media aspect-[16/10] lg:aspect-[3/2]">
+                      <Image
+                        src={way.image.src}
+                        alt=""
+                        fill
+                        sizes="(max-width: 640px) 100vw, 30vw"
+                        className="texture object-cover"
+                      />
+                    </div>
+                    <h3 className="display mt-4 text-lg">{way.title}</h3>
+                    <p className="way-lead mt-2 text-sm">{way.lead}</p>
+                  </div>
 
-                      <div className="mt-4 flex items-baseline justify-between gap-4">
-                        <h3 className="display text-lg group-hover:text-signal">{way.title}</h3>
-                        <span className="caption inline-flex items-center gap-1.5 whitespace-nowrap">
-                          {cta.label}
-                          <ArrowRight
-                            size={13}
-                            weight="bold"
-                            aria-hidden="true"
-                            className="transition-transform group-hover:translate-x-0.5"
-                          />
-                        </span>
-                      </div>
-                      <p className="way-lead mt-2 text-sm">{way.lead}</p>
-                    </Link>
-                  </li>
-                );
-              })}
+                  {/* The rows are the impact: each one narrows the catalogue. */}
+                  <ul className="mt-5 mb-6">
+                    {way.rows.map((row) => (
+                      <li key={row.href} className="border-b rule first:border-t">
+                        <Link
+                          href={row.href}
+                          className="block truncate py-2.5 text-sm hover:text-signal"
+                        >
+                          {row.label}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+
+                  {/* The CTA closes the list rather than floating under it: it
+                      is as wide as the rows above it and its arrow sits on the
+                      same edge, so the three columns read as three lists that
+                      each end in "and the rest of them" instead of as three
+                      loose pills.
+
+                      `mt-auto` is the safety net, not the mechanism: the three
+                      lists are the same length, so the CTAs already line up,
+                      and this only holds them there when a long name wraps. */}
+                  <Link href={way.cta.href} className="btn btn-quiet btn-sm btn-row mt-auto">
+                    {way.cta.label}
+                    <ArrowRight size={14} weight="bold" aria-hidden="true" />
+                  </Link>
+                </li>
+              ))}
             </ul>
           </Reveal>
         </Container>
@@ -115,7 +168,7 @@ export default async function HomePage() {
       <section aria-labelledby="systems-heading" className="border-t rule py-20 sm:py-28">
         <Container>
           <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
-            <Reveal className="lg:mx-auto lg:max-w-[34rem]">
+            <Reveal className="lg:max-w-[34rem]">
               <h2 id="systems-heading" className="display text-[clamp(1.75rem,3.6vw,2.75rem)]">
                 A board is one layer of seven
               </h2>
@@ -155,26 +208,7 @@ export default async function HomePage() {
         </Container>
       </section>
 
-      {/* The honesty note. It is a footnote and not a feature, so it carries no
-          button: the header and the footer already link to the same page. */}
-      <section aria-labelledby="honesty-heading" className="border-t rule py-20 sm:py-24">
-        <Container>
-          <Reveal className="max-w-[52rem]">
-            <p className="label">About this prototype</p>
-            <h2
-              id="honesty-heading"
-              className="display mt-4 max-w-[22ch] text-[clamp(1.75rem,3.6vw,2.75rem)]"
-            >
-              Invented products, real specification framework
-            </h2>
-            <p className="mt-5 max-w-[68ch] text-muted">
-              Kernbau does not exist. Every declared value here is made up and backed by no test
-              report. The units, standards and document formats are the ones a real datasheet uses,
-              so the interface can be judged honestly.
-            </p>
-          </Reveal>
-        </Container>
-      </section>
+      <ConfiguratorTrial buildUp={buildUp} />
     </>
   );
 }
@@ -217,6 +251,83 @@ function Hero({ stats }: { stats: Stats }) {
               Where to start
             </a>
           </Enter>
+        </div>
+      </Container>
+    </section>
+  );
+}
+
+/**
+ * The configurator, and the last thing the page says.
+ *
+ * It closes the landing page rather than sitting in the middle of it, because
+ * it is the one thing here that is not a list of products: everything above is
+ * "here is what we make", and this is "here is the number you actually have to
+ * hand in". A closing CTA is also the honest place for it — the footer is next,
+ * and a visitor who has read this far is looking for somewhere to go.
+ *
+ * It sits on the sunken ground rather than the page's, so it reads as a
+ * different kind of block from the three sections above it without needing a
+ * rule, a border or a colour the rest of the site does not use.
+ *
+ * The drawing beside it is the argument, moving: the wall goes up in
+ * installation order and then steps through three depths, and the depth and the
+ * U-value under it change with it. Both figures come from `lib/build-up.ts`,
+ * which is the arithmetic the configurator itself runs, so this cannot
+ * advertise a number the tool would not produce.
+ */
+function ConfiguratorTrial({ buildUp }: { buildUp: BuildUp }) {
+  const board = buildUp.boards.find((b) => b.categorySlug === "mineral-wool") ?? buildUp.boards[0];
+  const substrate = SUBSTRATES[0]!;
+  if (!board) return null;
+
+  return (
+    <section aria-labelledby="configurator-heading" className="closing">
+      <Container className="py-20 sm:py-28 lg:py-32">
+        <div className="grid items-center gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,32rem)] lg:gap-20">
+          <Reveal className="lg:max-w-[34rem]">
+            <p className="label">Configurator</p>
+
+            <h2
+              id="configurator-heading"
+              className="display mt-5 max-w-[16ch] text-[clamp(2rem,4.6vw,3.5rem)]"
+            >
+              Configure the wall, not the board
+            </h2>
+
+            <p className="mt-6 max-w-[50ch] text-lg text-muted">
+              The figure a specifier is asked for is the wall&rsquo;s, and it is printed on no board
+              in this catalogue: depth and U-value belong to the build-up. Four decisions —
+              substrate, board, depth, finish — and the section is drawn to scale while you make
+              them.
+            </p>
+
+            <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-4">
+              <Link href="/configurator" className="btn btn-primary px-7 py-4 text-base">
+                Open the configurator
+                <ArrowRight size={17} weight="bold" aria-hidden="true" />
+              </Link>
+              <Link href="/products?application=external-wall" className="link text-sm">
+                Or browse the external wall catalogue
+              </Link>
+            </div>
+
+            <p className="caption mt-8 max-w-[52ch]">
+              Kernbau does not exist and every declared value here is invented. The units, the
+              standards and the arithmetic are the ones a real datasheet uses, so the interface can
+              be judged honestly.
+            </p>
+          </Reveal>
+
+          <Reveal>
+            <div className="closing-figure">
+              <BuildLoop thermalConductivity={board.thermalConductivity} />
+            </div>
+            <p className="caption mt-4">
+              {board.familyName} on {substrate.name.toLowerCase()}. Indicative, and to the same
+              arithmetic the configurator runs.
+            </p>
+          </Reveal>
         </div>
       </Container>
     </section>

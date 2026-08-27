@@ -466,3 +466,92 @@ Seven corrections, most of them about a control saying what it is doing.
   because the person who chooses is not the person who buys.
 - Below `lg` the section in the hero comes off and the paper stays: at 390px the
   drawing and the headline were competing for the same 300 pixels.
+
+### Object pass
+
+Read `references/nike.md` before touching the grid rather than inventing a card
+system: the useful principle there is that the photograph is the card and it
+sits on a swatch one step off the canvas, with the metadata directly under it.
+This catalogue wants the swatch to be the whole card rather than just the image,
+because a specifier scans a grid of these for one figure and needs to know where
+one product stops and the next begins.
+
+- **A product card is an object.** A tinted surface one step darker than the page
+  ground, a rounded photograph inside it, and the two figures under it. No
+  border, which would make the grid read as a table, and no shadow, which would
+  make it read as an app. Four across on a desktop instead of three, because the
+  card now defines its own footprint and does not need the width to do it.
+- **The tint.** A photograph turning towards the brand colour on hover is the one
+  place this site puts colour on an image. `mix-blend-mode: color` takes the hue
+  and leaves the material's own light, so tinted mineral wool still reads as
+  mineral wool rather than as a blue rectangle. It runs on the three ways in, on
+  every product card, on the application photographs and on the thumbnails in
+  the search panel.
+- **Asking for more is not a different set.** The results boundary is keyed on
+  what changes _which_ products come back — view, sort, filters — and
+  deliberately not on the page. So loading more appends under the cards already
+  on the screen, which keep their DOM and never flash a skeleton, while
+  switching Cards for Schedule still remounts and the rail and toolbar outside
+  the boundary still do not move.
+- **The lead sits under its heading**, at the same measure, rather than across a
+  gap on the far side of the page — and the build-up section starts at the page
+  margin, not at the middle of its own half, so the three sections down the
+  landing page share one left edge.
+- **The footer's standards moved in with the units.** They answer the same
+  question: what are these numbers, and against what. The wordmark that signs
+  off the page got the size that signing off deserves.
+- **Applications and Services open on a schedule.** Both pages now lead with the
+  argument beside an index of what is on the page — a sheet list on one, a
+  service schedule with turnarounds on the other — and both continue as one
+  sheet per item rather than as a grid of identical cards. In a build-up list
+  each layer carries a rule drawn at its depth, because a 2 mm mesh and a 140 mm
+  slab are otherwise both just one line of text.
+- **404 speaks the same language as `/in-development`.** A drawing office does
+  not put up a friendly error, it stamps the sheet — and next to the stamp is
+  how a product code is actually built, so the reader can repair the address by
+  hand instead of starting again.
+
+### Island pass
+
+The catalogue was a page, and every control on it was a link: a filter, a sort,
+a view swap or another 24 products all meant a route navigation, which re-ran
+the whole route on the server and replaced the rail, the toolbar and every card
+on the screen at once. That is why it flickered, and no amount of narrowing the
+Suspense boundary was going to fix it — the boundary was not the problem, the
+navigation was.
+
+- **The catalogue is one mounted component now.** The server still renders the
+  first set, so it is a real page for a crawler and for a browser with no
+  script. After that the URL is pushed with `history.pushState` and one server
+  action returns the products, the facet counts and the relaxations in a single
+  round trip. Nothing unmounts: measured, the filter rail's DOM node and the
+  first card's DOM node both survive a filter, a sort, a view swap and a load
+  more, and the back button is just another state change.
+- **The count and the chips share a row**, because on their own line the chips
+  changed the height of the sticky bar and pushed the entire grid up and down
+  whenever a filter went on or off.
+- **Comparison is a selection, and a selection outlives the page it was made
+  on.** In the catalogue it lives in the URL, which is what makes that view
+  shareable — but a product page has no way of reading that, so adding from two
+  product pages in a row replaced the first each time. The tray is mirrored in
+  local storage and the two stay in step.
+- **A photograph is not a link.** On the three ways in, only the names and the
+  CTA go anywhere specific; a heading that quietly means "all of these" is the
+  kind of target you hit by accident.
+- **The family is a thing you configure.** The thicknesses sit on a rail at the
+  intervals they are actually made in — an 80 and a 100 are 20 mm apart and look
+  it — and moving along it recalculates R live, because R is the number the
+  choice is being made against. Buttons on a rail rather than a range input or a
+  select: a range has no discrete labels and a select hides every option but
+  one, and the point is seeing them against each other. The list of thicknesses
+  stays in the sidebar, because a rail is a good way to choose and a poor way to
+  scan.
+- **The blue mat.** A self-healing cutting mat — the one piece of kit on every
+  bench in this trade — masked on the diagonal so it is full strength at the
+  corner the drawing starts from and gone by the corner the figure sits in. It
+  holds on a cold load, counting, and lifts; on a navigation the same surface
+  passes across and clears. It runs once per session and not at all under
+  `prefers-reduced-motion`, because a loading screen you have already watched is
+  a delay. Read the GSAP core skill first and did not take the dependency: this
+  is one sequence with no runtime control, it is opacity and transform only, and
+  the rest of the site's motion layer is library-free.

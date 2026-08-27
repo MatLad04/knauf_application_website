@@ -6,6 +6,7 @@ import { parseProductQuery, type RawSearchParams } from "@/lib/params";
 import { texture, textureCrop } from "@/lib/media";
 import { lambda, rValue, thermalResistance } from "@/lib/format";
 import { Container } from "@/components/section";
+import { plural } from "@/lib/format";
 
 export const metadata: Metadata = {
   title: "Compare",
@@ -66,7 +67,7 @@ export default async function ComparePage({
   return (
     <Container className="py-12 sm:py-16">
       <h1 className="display text-[clamp(2rem,4.5vw,3.25rem)]">
-        {products.length} products side by side
+        {products.length} {plural(products.length, "product")} side by side
       </h1>
 
       {(missing > 0 || issues.length > 0) && (
@@ -85,7 +86,6 @@ export default async function ComparePage({
                 <span className="label">Characteristic</span>
               </th>
               {products.map((product) => {
-                const image = texture(product.textureKey);
                 return (
                   <th
                     key={product.id}
@@ -94,7 +94,7 @@ export default async function ComparePage({
                   >
                     <span className="media block aspect-square w-full max-w-32">
                       <Image
-                        src={image.src}
+                        src={texture(product.textureKey).src}
                         alt=""
                         fill
                         sizes="8rem"

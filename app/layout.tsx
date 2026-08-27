@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Archivo, IBM_Plex_Mono, Inter } from "next/font/google";
 import SiteHeader from "@/components/site-header";
+import SiteLoader from "@/components/site-loader";
+import SmoothAnchors from "@/components/smooth-anchors";
 import SiteFooter from "@/components/site-footer";
 import { SITE_URL } from "@/lib/site";
 import "./globals.css";
@@ -74,6 +76,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           Skip to content
         </a>
+        <SiteLoader />
+        <SmoothAnchors />
         <SiteHeader />
         <main id="main" className="flex-1">
           {children}
