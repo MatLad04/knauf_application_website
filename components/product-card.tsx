@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Basket, Heart } from "@phosphor-icons/react/dist/ssr";
 import type { Product } from "@/lib/catalogue";
 import { texture, textureCrop } from "@/lib/media";
 import { lambda } from "@/lib/format";
@@ -107,14 +108,38 @@ export default function ProductCard({ product, compareHref, onCompare, isCompare
           </div>
         </dl>
 
+        {/* The same two things the product page leads with, on the card and at
+            the width of it. They sit above the card's own link (`relative
+            z-10`), which otherwise covers the whole card, and comparing — which
+            is a thing you may do next rather than a decision about this product
+            — is a line under them. */}
+        <div className="card-acts">
+          <Link
+            href="/in-development?feature=favourites"
+            aria-label={`Save ${product.name}`}
+            className="card-act"
+          >
+            <Heart size={15} weight="bold" aria-hidden="true" />
+            Save
+          </Link>
+          <Link
+            href="/in-development?feature=basket"
+            aria-label={`Add ${product.name} to the cart`}
+            className="card-act"
+          >
+            <Basket size={15} weight="bold" aria-hidden="true" />
+            Cart
+          </Link>
+        </div>
+
         {onCompare ? (
           <button
             type="button"
             onClick={onCompare}
             data-active={isCompared ? "true" : undefined}
-            className="chip relative z-10 mt-4 justify-center self-start border-transparent bg-raised text-xs text-muted hover:text-ink"
+            className="act-line card-compare"
           >
-            {isCompared ? "Selected" : "Compare"}
+            {isCompared ? "Selected to compare" : "Compare"}
             <span className="sr-only"> {product.name}</span>
           </button>
         ) : (
@@ -123,9 +148,9 @@ export default function ProductCard({ product, compareHref, onCompare, isCompare
               href={compareHref}
               scroll={false}
               data-active={isCompared ? "true" : undefined}
-              className="chip relative z-10 mt-4 justify-center self-start border-transparent bg-raised text-xs text-muted hover:text-ink"
+              className="act-line card-compare"
             >
-              {isCompared ? "Selected" : "Compare"}
+              {isCompared ? "Selected to compare" : "Compare"}
               <span className="sr-only"> {product.name}</span>
             </Link>
           )

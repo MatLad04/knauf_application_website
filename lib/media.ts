@@ -1,3 +1,15 @@
+import anchorPhoto from "@/public/media/anchor.jpg";
+import cementPhoto from "@/public/media/cement.jpg";
+import epsPhoto from "@/public/media/eps.jpg";
+import eticsSectionPhoto from "@/public/media/etics-section.jpg";
+import externalWallPhoto from "@/public/media/external-wall.jpg";
+import floorPhoto from "@/public/media/floor.jpg";
+import internalPartitionPhoto from "@/public/media/internal-partition.jpg";
+import meshPhoto from "@/public/media/mesh.jpg";
+import mineralWoolPhoto from "@/public/media/mineral-wool.jpg";
+import pitchedRoofPhoto from "@/public/media/pitched-roof.jpg";
+import renderPhoto from "@/public/media/render.jpg";
+
 /**
  * Material photography. A texture identifies what a product is made of, so
  * every product in a family shares one — the thickness bar and the product code
@@ -6,47 +18,56 @@
  * Alt text describes what is in the photograph. Where the image is decorative
  * because the same information is already in the text beside it, components
  * pass `alt=""` instead of one of these.
+ *
+ * Every photograph is imported rather than named by its public path, so the URL
+ * that reaches the browser carries a hash of the file's own contents. That is
+ * what makes replacing a photograph work: `next.config.ts` caches optimised
+ * derivatives for a year, and an address that stays the same while the bytes
+ * behind it change leaves the old encode sitting in every browser that has
+ * already seen it. A new photograph is a new address, so nothing stale can be
+ * served. The files stay in `public/` because the site's Open Graph tag needs
+ * one of them at a fixed address a crawler can be handed.
  */
 
 export type Texture = { src: string; alt: string };
 
 const TEXTURES: Record<string, Texture> = {
   "mineral-wool": {
-    src: "/media/mineral-wool.jpg",
+    src: mineralWoolPhoto.src,
     alt: "Macro photograph of mineral wool: fine pale grey-green fibres in a loose tangle.",
   },
   eps: {
-    src: "/media/eps.jpg",
+    src: epsPhoto.src,
     alt: "Macro photograph of a cut expanded polystyrene board, showing fused white beads.",
   },
   xps: {
-    src: "/media/floor.jpg",
+    src: floorPhoto.src,
     alt: "Cut edge of a floor build-up: a rigid insulation board between a concrete slab and a screed.",
   },
   "wood-fibre": {
-    src: "/media/pitched-roof.jpg",
+    src: pitchedRoofPhoto.src,
     alt: "Timber rafter with fibre insulation and a folded-back vapour control layer.",
   },
   mesh: {
-    src: "/media/mesh.jpg",
+    src: meshPhoto.src,
     alt: "Macro photograph of alkali-resistant glass fibre reinforcement mesh.",
   },
   cement: {
-    src: "/media/cement.jpg",
+    src: cementPhoto.src,
     alt: "Trowelled cementitious base coat, showing the ridge left by the trowel edge.",
   },
   render: {
-    src: "/media/render.jpg",
+    src: renderPhoto.src,
     alt: "Macro photograph of a floated thin-coat render surface, showing the grain texture.",
   },
   anchor: {
-    src: "/media/anchor.jpg",
+    src: anchorPhoto.src,
     alt: "Plastic insulation anchor with a perforated washer plate and a ribbed shank.",
   },
 };
 
 const FALLBACK: Texture = {
-  src: "/media/cement.jpg",
+  src: cementPhoto.src,
   alt: "Trowelled cementitious surface.",
 };
 
@@ -56,23 +77,23 @@ export function texture(key: string): Texture {
 
 const APPLICATION_IMAGES: Record<string, Texture> = {
   "external-wall": {
-    src: "/media/external-wall.jpg",
-    alt: "Corner sample of a rendered external wall system, stepped back to show blockwork, adhesive, insulation, mesh and render.",
+    src: externalWallPhoto.src,
+    alt: "Macro photograph of a cut section through a rendered external wall system, read from the top down: thin-coat render, base coat with the reinforcement mesh surfacing through it, mineral wool, ribbed adhesive mortar and blockwork.",
   },
   "pitched-roof": {
-    src: "/media/pitched-roof.jpg",
+    src: pitchedRoofPhoto.src,
     alt: "Section through a pitched roof: timber rafter, fibre insulation, vapour control layer and board lining.",
   },
   "flat-roof": {
-    src: "/media/etics-section.jpg",
+    src: eticsSectionPhoto.src,
     alt: "Section through a warm-deck build-up: structural base, insulation, reinforced coat and a smooth top surface.",
   },
   floor: {
-    src: "/media/floor.jpg",
+    src: floorPhoto.src,
     alt: "Section through a floor build-up: structural slab, insulation board and screed.",
   },
   "internal-partition": {
-    src: "/media/internal-partition.jpg",
+    src: internalPartitionPhoto.src,
     alt: "Section through a metal stud partition with board linings and mineral wool cavity insulation.",
   },
 };
@@ -105,6 +126,6 @@ export function textureCrop(seed: string): React.CSSProperties {
 }
 
 export const HERO_IMAGE: Texture = {
-  src: "/media/etics-section.jpg",
+  src: eticsSectionPhoto.src,
   alt: "A cut sample of an external wall system: blockwork, adhesive, mineral wool, reinforcement mesh and a white render finish, stacked in the order they are installed.",
 };

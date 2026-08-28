@@ -11,10 +11,9 @@ import {
 } from "@/lib/catalogue";
 import { texture } from "@/lib/media";
 import { standardHref } from "@/lib/standards";
-import { documentLabel, lambda, rValue, thermalResistance } from "@/lib/format";
+import { lambda, productNameLines, rValue, thermalResistance } from "@/lib/format";
 import SectionDrawing, { type Layer } from "@/components/section-drawing";
 import ThicknessBar from "@/components/thickness-bar";
-import UValueHelper from "@/components/u-value";
 import ProductCard from "@/components/product-card";
 import { Container } from "@/components/section";
 import { Reveal } from "@/components/motion";
@@ -51,6 +50,7 @@ export default async function ProductPage({ params }: Props) {
   // the photograph is a set of siblings, not a list of "others".
   const family = [product, ...variants].sort((a, b) => (a.thicknessMm ?? 0) - (b.thicknessMm ?? 0));
   const r = thermalResistance(product.thicknessMm, product.thermalConductivity);
+  const nameLines = productNameLines(product.familyName, product.variantLabel);
 
   /**
    * The build-up this product belongs to, whichever end of it this product is.
@@ -85,7 +85,7 @@ export default async function ProductPage({ params }: Props) {
           </Link>
         </nav>
 
-        <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,29rem)] lg:gap-14 xl:grid-cols-[minmax(0,1fr)_minmax(0,33rem)] 2xl:grid-cols-[minmax(0,1fr)_minmax(0,44rem)]">
+        <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,29rem)] lg:gap-14 xl:grid-cols-[minmax(0,1fr)_minmax(0,33rem)] 2xl:grid-cols-[minmax(0,1fr)_minmax(0,48rem)]">
           {/* Fixed ratio on a phone, where the photograph is above the values
               and has nothing to match. Beside them it stretches to the height
               of the column instead: a sample photographed at 4:3 against a
@@ -105,8 +105,14 @@ export default async function ProductPage({ params }: Props) {
 
           <div className="min-w-0">
             <p className="mono text-sm text-muted">{product.code}</p>
-            <h1 className="display mt-3 text-[clamp(1.875rem,4.2vw,3.25rem)]">{product.name}</h1>
-            <p className="mt-5 text-lg text-muted">{product.summary}</p>
+            {/* Two lines, always: the family root over the half of the name
+                that varies between siblings. On one line a code, a description
+                and a size read as one long string. */}
+            <h1 className="display t-page mt-3">
+              {nameLines[0]}
+              {nameLines[1] && <span className="block">{nameLines[1]}</span>}
+            </h1>
+            <p className="lead mt-4">{product.summary}</p>
 
             <dl className="mt-10 grid grid-cols-2 gap-x-6 gap-y-8">
               <Headline
@@ -176,143 +182,161 @@ export default async function ProductPage({ params }: Props) {
               </div>
             )}
 
-            {/* This is the page a specifier lands on, so it carries the things
-                you do with a product: read the declaration, put it beside
-                another, keep it, price it. The first spans the row because it is
-                the one this page was written for. */}
+            {/* The two things a specifier does with a product they have decided
+                on — keep it, and ask what it costs — lead the row. Reading the
+                declaration is what the whole page below is, so it is a way down
+                the page rather than the loudest button on it. */}
             <div className="acts mt-9">
-              <a href="#technical" className="btn btn-primary acts-lead">
-                Declared performance
-              </a>
-              <CompareButton slug={product.slug} name={product.name} compact />
-              <Link href="/in-development?feature=favourites" className="btn btn-quiet btn-sm">
-                <Heart size={15} weight="bold" aria-hidden="true" />
+              <Link href="/in-development?feature=favourites" className="btn btn-primary">
+                <Heart size={16} weight="bold" aria-hidden="true" />
                 Save
               </Link>
-              <Link href="/in-development?feature=basket" className="btn btn-quiet btn-sm">
-                <Basket size={15} weight="bold" aria-hidden="true" />
-                Quote
+              <Link href="/in-development?feature=basket" className="btn btn-quiet">
+                <Basket size={16} weight="bold" aria-hidden="true" />
+                Add to cart
               </Link>
+              <CompareButton slug={product.slug} name={product.name} compact />
+              <a href="#technical" className="act-line">
+                Declared performance
+              </a>
             </div>
           </div>
         </div>
       </Container>
 
-      {/* The full declaration, with the documents and sibling thicknesses
-          beside it. */}
+      {/* The declaration itself.
+          Thirteen rows in one table across a page this wide put every value an
+          arm's length from the label it belongs to, and a column of documents
+          that do not exist sat beside it. So the rows are grouped by the kind of
+          claim they make and set in columns you can read across in one
+          movement, and the stub documents are gone — the DoP number is the
+          traceable thing, and it is a row here. */}
       <section id="technical" aria-labelledby="technical-heading" className="border-t rule">
-        <Container className="grid gap-12 py-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:gap-16">
-          <div className="min-w-0">
-            <h2 id="technical-heading" className="display text-[clamp(1.625rem,3.2vw,2.5rem)]">
-              Technical data
-            </h2>
-            <p className="mt-4 max-w-[60ch] text-muted">{product.description}</p>
-            {product.variantNote && (
-              <p className="mt-3 max-w-[60ch] text-muted">{product.variantNote}</p>
-            )}
+        <Container className="py-16">
+          {/* The head is set on the same three columns as the schedule under
+              it: the heading over the first, the description starting where the
+              second begins. Two grids of different rhythms in one section reads
+              as two sections. */}
+          <div className="grid gap-x-14 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div>
+              <p className="label">Declaration</p>
+              <h2 id="technical-heading" className="display t-section mt-3">
+                Technical data
+              </h2>
+            </div>
 
-            <table className="mt-10 w-full border-collapse text-sm">
-              <caption className="sr-only">
-                Declared characteristics for {product.name}, to {product.standard}.
-              </caption>
-              <tbody className="mono">
-                <Row label="Harmonised standard" value={product.standard} link />
-                <Row
-                  label="Thermal conductivity λD"
-                  value={lambda(product.thermalConductivity)}
-                  unit="W/(m·K)"
-                />
-                <Row label="Reaction to fire" value={product.reactionToFire} unit="EN 13501-1" />
-                <Row label="Thickness" value={product.thicknessMm} unit="mm" />
-                <Row label="Density" value={product.densityKgm3} unit="kg/m³" />
-                <Row
-                  label="Compressive strength CS(10\Y)"
-                  value={product.compressiveStrengthKpa}
-                  unit="kPa"
-                />
-                <Row label="Vapour diffusion resistance μ" value={product.vapourResistanceMu} />
-                <Row label="Weighted sound reduction Rw" value={product.acousticRwDb} unit="dB" />
-                <Row label="Format" value={product.formatMm} unit="mm" />
-                <Row label="Consumption" value={product.consumption} />
-                <Row label="Declaration of Performance" value={product.dopNumber} />
-                <Row label="CE marked" value={product.ceMarked ? "Yes" : "No"} />
-                <Row label="EPD available" value={product.epdAvailable ? "Yes" : "No"} />
-              </tbody>
-            </table>
-            <p className="caption mt-3 max-w-[70ch]">
-              Where a row reads &ldquo;not declared&rdquo;, the characteristic is outside this
-              product&rsquo;s Declaration of Performance.
-            </p>
+            <div className="sm:col-span-1 lg:col-span-2 lg:pt-9">
+              <p className="lead max-w-[68ch]">{product.description}</p>
+              {product.variantNote && (
+                <p className="mt-3 max-w-[68ch] text-sm text-muted">{product.variantNote}</p>
+              )}
+            </div>
           </div>
 
-          <aside className="grid content-start gap-8">
-            {product.thermalConductivity !== null && product.thicknessMm !== null && (
-              <div className="panel overflow-hidden">
-                <UValueHelper
-                  thicknessMm={product.thicknessMm}
-                  lambda={product.thermalConductivity}
-                />
-              </div>
-            )}
+          <dl className="mt-12 grid gap-x-14 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+            <Group title="Declared performance">
+              <Fact
+                label={
+                  <>
+                    Thermal conductivity <span className="symbol">λD</span>
+                  </>
+                }
+                value={lambda(product.thermalConductivity)}
+                unit="W/(m·K)"
+              />
+              <Fact label="Reaction to fire" value={product.reactionToFire} unit="EN 13501-1" />
+              <Fact
+                label={<>Compressive strength CS(10\Y)</>}
+                value={product.compressiveStrengthKpa}
+                unit="kPa"
+              />
+              <Fact
+                label={
+                  <>
+                    Vapour diffusion resistance <span className="symbol">μ</span>
+                  </>
+                }
+                value={product.vapourResistanceMu}
+              />
+              <Fact
+                label="Weighted sound reduction Rw"
+                value={product.acousticRwDb}
+                unit="dB"
+                last
+              />
+            </Group>
 
-            <div>
-              <h3 className="label">Documents</h3>
-              <ul className="mt-3 text-sm">
-                {product.documents.map((document) => (
-                  <li key={document.reference} className="border-b rule py-3 first:border-t">
-                    <span className="block">{documentLabel(document.kind)}</span>
-                    <span className="mono text-xs text-muted">
-                      {document.reference}, {document.issuedOn}
-                    </span>
-                    <span className="caption block">Not published in this prototype</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </aside>
+            <Group title="The product as supplied">
+              <Fact label="Thickness" value={product.thicknessMm} unit="mm" />
+              <Fact label="Thermal resistance R" value={rValue(r)} unit="m²K/W" />
+              <Fact label="Density" value={product.densityKgm3} unit="kg/m³" />
+              <Fact label="Format" value={product.formatMm} unit="mm" />
+              <Fact label="Consumption" value={product.consumption} last />
+            </Group>
+
+            <Group title="Traceability">
+              <Fact label="Harmonised standard" value={product.standard} link />
+              <Fact label="Declaration of Performance" value={product.dopNumber} />
+              <Fact label="CE marked" value={product.ceMarked ? "Yes" : "No"} />
+              <Fact label="EPD available" value={product.epdAvailable ? "Yes" : "No"} last />
+            </Group>
+          </dl>
+
+          <p className="caption mt-10 max-w-[70ch]">
+            Where a row reads &ldquo;not declared&rdquo;, the characteristic is outside this
+            product&rsquo;s Declaration of Performance. The documents themselves — DoP, CE, EPD and
+            the datasheet — are not published in this prototype.
+          </p>
         </Container>
       </section>
 
       {/* --- What it has to be bought with ------------------------------- */}
       {host && layers.length > 0 && (
         <section aria-labelledby="system-heading" className="border-t rule bg-sunken">
+          {/* The claim and the drawing that proves it are one column, at the
+              page's own left margin, with the schedule of what the wall is made
+              of beside them. The drawing is under the words rather than opposite
+              them because it is the evidence for the sentence above it, and it
+              is ruled to the same depth as the schedule: the column ends where
+              the schedule ends rather than hanging past the foot of the
+              section. */}
           <Container className="py-16">
-            <Reveal className="max-w-[62rem]">
-              <p className="label">Not sold alone</p>
-              <h2
-                id="system-heading"
-                className="display mt-4 max-w-[22ch] text-[clamp(1.625rem,3.2vw,2.5rem)]"
-              >
-                This {noun(product.categorySlug)} is one line of {host!.components.length + 1}
-              </h2>
-              <p className="mt-5 max-w-[64ch] text-lg text-muted">
-                The approval covers the build-up, not the {noun(product.categorySlug)}. Ordering
-                this on its own gets you a product that is compliant and a wall that is not — the
-                compatibility between the layers is the thing the system approval is about.
-                {host!.slug !== product.slug && (
-                  <>
-                    {" "}
-                    Below is the{" "}
-                    <Link href={`/products/${host!.slug}`} className="link">
-                      {host!.familyName}
-                    </Link>{" "}
-                    system it is approved in.
-                  </>
-                )}
-              </p>
-            </Reveal>
+            <div className="grid gap-12 min-[86rem]:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] min-[86rem]:gap-16">
+              <Reveal className="system-aside">
+                <div>
+                  <p className="label">Not sold alone</p>
+                  <h2 id="system-heading" className="display t-page mt-4 max-w-[22ch]">
+                    This {noun(product.categorySlug)} is one line of {host!.components.length + 1}
+                  </h2>
+                  <p className="lead mt-5">
+                    The approval covers the build-up, not the {noun(product.categorySlug)}. Ordering
+                    this on its own gets you a product that is compliant and a wall that is not —
+                    the compatibility between the layers is the thing the system approval is about.
+                    {host!.slug !== product.slug && (
+                      <>
+                        {" "}
+                        Below is the{" "}
+                        <Link href={`/products/${host!.slug}`} className="link">
+                          {host!.familyName}
+                        </Link>{" "}
+                        system it is approved in.
+                      </>
+                    )}
+                  </p>
+                </div>
 
-            <div className="mt-12 grid gap-12 lg:grid-cols-[minmax(0,21rem)_minmax(0,1fr)] lg:gap-16">
-              <div>
                 <SectionDrawing layers={layers} />
-              </div>
+              </Reveal>
 
-              {/* Written as an order rather than as a diagram key: a position, a
-                  layer, the product that fills it and what it is for. The line
-                  you are on is marked, so it is obvious this page is one of
-                  them rather than the whole of it. */}
-              <div className="min-w-0">
-                <ol className="bom">
+              <div className="system-schedule min-w-0">
+                {/* Written as an order rather than as a diagram key: a position,
+                    a layer, the product that fills it and what it is for. The
+                    line you are on is marked, so it is obvious this page is one
+                    of them rather than the whole of it. */}
+                <ol
+                  className="bom"
+                  style={{ "--rows": host!.components.length } as React.CSSProperties}
+                >
                   {host!.components.map((component) => {
                     const here = component.product?.slug === product.slug;
                     return (
@@ -325,7 +349,7 @@ export default async function ProductPage({ params }: Props) {
                           {String(component.position).padStart(2, "0")}
                         </span>
                         <span className="label bom-layer">{component.layerLabel}</span>
-                        <span className="min-w-0">
+                        <span className="bom-main min-w-0">
                           {component.product ? (
                             here ? (
                               <span className="bom-name">
@@ -391,7 +415,7 @@ export default async function ProductPage({ params }: Props) {
         <section aria-labelledby="alternatives-heading" className="border-t rule">
           <Container className="py-16">
             <Reveal>
-              <h2 id="alternatives-heading" className="display text-[clamp(1.625rem,3.2vw,2.5rem)]">
+              <h2 id="alternatives-heading" className="display t-section">
                 Approved for the same construction
               </h2>
               <div className="mt-10 grid grid-cols-2 gap-x-4 gap-y-10 sm:gap-x-6 lg:grid-cols-4">
@@ -440,42 +464,43 @@ function Headline({
   );
 }
 
-function Row({
+/** One group of declared characteristics, under a ruled title. */
+function Group({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <p className="label border-b-2 border-ink pb-2">{title}</p>
+      <div className="mt-1">{children}</div>
+    </div>
+  );
+}
+
+function Fact({
   label,
   value,
   unit,
   link,
+  last,
 }: {
-  label: string;
+  label: React.ReactNode;
   value: string | number | null;
   unit?: string;
   /** The value itself is a document reference, not a measurement. */
   link?: boolean;
+  last?: boolean;
 }) {
   const href = link && typeof value === "string" ? standardHref(value) : null;
 
-  if (href) {
-    return (
-      <tr className="border-b rule first:border-t">
-        <th scope="row" className="py-3 pr-4 text-left align-top font-sans font-normal">
-          {label}
-        </th>
-        <td className="py-3 text-right whitespace-nowrap">
+  return (
+    <div className="fact" data-last={last ? "true" : undefined}>
+      <dt className="fact-term">{label}</dt>
+      <dd className="mono fact-value">
+        {href ? (
           <Link href={href} className="hover:text-signal">
             {value}
           </Link>
-        </td>
-      </tr>
-    );
-  }
-
-  return (
-    <tr className="border-b rule first:border-t">
-      <th scope="row" className="py-3 pr-4 text-left align-top font-sans font-normal">
-        {label}
-      </th>
-      <td className="py-3 text-right whitespace-nowrap">
-        {value ?? <span className="font-sans text-muted">not declared</span>}
+        ) : (
+          (value ?? <span className="font-sans text-muted">not declared</span>)
+        )}
         {/* A characteristic's unit is often a document. Where the catalogue has
             a page for it, the reference is a link — a standard nobody can look
             up is decoration on a datasheet. */}
@@ -491,8 +516,8 @@ function Row({
             )}
           </span>
         )}
-      </td>
-    </tr>
+      </dd>
+    </div>
   );
 }
 

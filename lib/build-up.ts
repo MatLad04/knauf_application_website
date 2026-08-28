@@ -185,7 +185,10 @@ export function compose(choice: Choice): Composition {
       product: substrate.name,
       code: null,
       mm: substrate.mm,
-      hatch: "substrate",
+      // Its own, not one shared between the four: three of the substrates are
+      // also 200 mm deep, so the hatch is the only thing in the drawing that
+      // can say which wall you chose.
+      hatch: `sub-${substrate.id}`,
     },
     line("adhesive", "Adhesive mortar", choice.adhesive, NOMINAL.adhesive, "adhesives-base-coats"),
     {

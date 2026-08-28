@@ -529,9 +529,7 @@ function EmptyState({
 
   return (
     <div className="py-12">
-      <p className="display text-[clamp(1.375rem,3vw,2rem)]">
-        No product meets all {criteria} criteria.
-      </p>
+      <p className="display t-section">No product meets all {criteria} criteria.</p>
 
       {relaxations.length > 0 ? (
         <>

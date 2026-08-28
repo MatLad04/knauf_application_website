@@ -22,9 +22,7 @@ export default function Error({
 
   return (
     <Container className="py-24">
-      <h1 className="display max-w-3xl text-[clamp(2rem,4.5vw,3.25rem)]">
-        This page could not be rendered
-      </h1>
+      <h1 className="display t-page max-w-3xl">This page could not be rendered</h1>
       <p className="mt-5 max-w-[58ch] text-muted">
         Reloading clears a transient failure. If it does not, the product database is probably not
         reachable. Check that the <span className="mono">db</span> service is healthy with{" "}

@@ -5,6 +5,7 @@ import { getApplications, getCategories, getFamilies, getShowcase } from "@/lib/
 import { lambda } from "@/lib/format";
 
 import { Basket, Heart, User } from "@phosphor-icons/react/dist/ssr";
+import SiteNav from "./site-nav";
 import ThemeToggle from "./theme-toggle";
 import SiteSearch, { type SearchLane } from "./site-search";
 
@@ -21,7 +22,7 @@ function Logomark() {
       viewBox="0 0 32 32"
       aria-hidden="true"
       focusable="false"
-      className="size-[1.15em] shrink-0 rounded-[5px]"
+      className="logomark shrink-0 rounded-[5px]"
     >
       <rect width="32" height="32" fill="currentColor" />
       <g fill="var(--color-surface)">
@@ -35,7 +36,7 @@ function Logomark() {
 
 const NAV = [
   { href: "/products", label: "Products" },
-  { href: "/applications", label: "Applications" },
+  { href: "/configurator", label: "Configurator" },
   { href: "/services", label: "Services" },
   { href: "/about", label: "About" },
 ];
@@ -124,30 +125,21 @@ export default async function SiteHeader() {
         <Link
           href="/"
           aria-label="Kernbau, home"
-          className="display order-1 flex shrink-0 items-center gap-2.5 text-xl tracking-tight hover:text-signal lg:text-[1.6rem]"
+          className="wordmark display order-1 flex shrink-0 items-center gap-2.5 text-lg tracking-tight hover:text-signal lg:text-[1.4rem]"
         >
           <Logomark />
           KERNBAU
         </Link>
 
-        <nav aria-label="Main" className="order-4 w-full min-w-0 lg:order-2 lg:w-auto">
-          <ul className="-mx-2.5 flex items-center gap-1 lg:mx-0">
-            {NAV.map((item) => (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  className="block rounded-[var(--radius-control)] px-2.5 py-2 text-sm hover:bg-raised hover:text-signal lg:px-3"
-                >
-                  {item.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
+        <SiteNav items={NAV} />
 
-        {/* The search takes the middle and the room: it is the widest control on
-            the site because it is the one that is used most. */}
-        <div className="order-3 w-full min-w-0 lg:order-3 lg:mx-2 lg:w-auto lg:max-w-[44rem] lg:flex-1">
+        {/* The search takes the middle and every pixel the rest of the bar is
+            not using. It used to stop at 44rem, and on a wide screen the row
+            then ran out of content before it ran out of bar: the leftover
+            collected after the last item as a band of empty header. The field
+            is the right thing to spend it on — it is the control this site is
+            for. */}
+        <div className="order-3 w-full min-w-0 lg:order-3 lg:mx-2 lg:w-auto lg:flex-1">
           <Suspense fallback={<div className="search-bar h-[3.25rem]" />}>
             <SiteSearch
               lanes={lanes}

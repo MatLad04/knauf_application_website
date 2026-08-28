@@ -32,3 +32,32 @@ export function documentLabel(kind: "dop" | "epd" | "datasheet" | "ce"): string 
 export function plural(count: number, one: string, many = `${one}s`) {
   return count === 1 ? one : many;
 }
+
+/**
+ * A product name in two lines: the family's root over everything that varies.
+ *
+ * A name like "Kernlan RD 038 Flat Roof Slab 80 mm" is three things — a brand
+ * with a code, what the product is, and which one of them this is — and set on
+ * one line it reads as an undifferentiated string. The root is the brand and
+ * its code ("Kernlan RD 038", "Kernfix AM"); everything after it, the
+ * descriptive half of the family name plus the variant, is what changes between
+ * siblings. Families with no code in them ("Kerntex Profiles") keep the whole
+ * name as the root and put the variant underneath.
+ */
+export function productNameLines(
+  familyName: string,
+  variantLabel: string | null,
+): [root: string, rest: string] {
+  const words = familyName.split(" ");
+  // A code token: an all-caps abbreviation (AM, RD, XP) or its number (038).
+  const isCode = (w: string) => /^[A-Z]{2,}$/.test(w) || /^\d{2,4}$/.test(w);
+  let code = 0;
+  for (let i = 1; i < words.length; i++) if (isCode(words[i]!)) code = i;
+
+  const root = code ? words.slice(0, code + 1).join(" ") : familyName;
+  const rest = [code ? words.slice(code + 1).join(" ") : "", variantLabel ?? ""]
+    .filter(Boolean)
+    .join(" ");
+
+  return [root, rest];
+}

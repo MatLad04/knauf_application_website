@@ -62,8 +62,12 @@ export default function CompareButton({
   };
 
   // Inside the product page's action grid the wrapper would be a cell of its
-  // own, so it steps out of the layout and lets the button and the link be
-  // grid items in their own right.
+  // own, so it steps out of the layout and lets the line and the link be grid
+  // items in their own right.
+  //
+  // A line rather than a button: comparing is a thing you may do next, not one
+  // of the two things this page is for, and four buttons of equal weight told
+  // the reader nothing about which of them mattered.
   if (compact) {
     return (
       <div className="contents">
@@ -72,10 +76,10 @@ export default function CompareButton({
           onClick={toggle}
           disabled={full}
           data-active={chosen ? "true" : undefined}
-          className="btn btn-quiet btn-sm disabled:opacity-55"
+          className="act-line disabled:opacity-55"
           aria-pressed={chosen}
         >
-          {chosen ? "Selected" : full ? `Holds ${LIMITS.compare}` : "Compare"}
+          {chosen ? "Selected to compare" : full ? `Compare holds ${LIMITS.compare}` : "Compare"}
           <span className="sr-only"> {name}</span>
         </button>
 

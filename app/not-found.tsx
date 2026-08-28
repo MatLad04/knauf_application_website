@@ -22,15 +22,17 @@ const CODE = [
 
 export default function NotFound() {
   return (
-    <Container className="py-16 sm:py-24">
-      <div className="grid gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,28rem)] lg:gap-20">
-        <div className="lg:max-w-[38rem]">
+    <Container className="py-12 sm:py-16">
+      {/* Two halves. The text keeps the page's own left margin, and the sheet
+          furniture sits in the middle of the space left over beside it — the
+          same placement the About sheet head uses, so a stamp is always found
+          in the same part of the page. */}
+      <div className="grid items-start gap-12 lg:grid-cols-2 lg:gap-16">
+        <div className="lg:max-w-[40rem]">
           <p className="label">Drawing not found</p>
-          <h1 className="display mt-6 max-w-[15ch] text-[clamp(2.5rem,6vw,4.5rem)] leading-[0.98]">
-            That page is not in the catalogue
-          </h1>
+          <h1 className="display t-page mt-5 max-w-[17ch]">That page is not in the catalogue</h1>
 
-          <p className="mt-8 text-lg text-muted sm:text-xl">
+          <p className="lead mt-6">
             The address may be truncated, or the article may have been withdrawn. Every product in
             the catalogue is reachable from the search, and a product code carries enough in it to
             find the product again by hand.
@@ -44,20 +46,19 @@ export default function NotFound() {
           </div>
         </div>
 
-        <div>
-          <div
-            className="stamp stamp-wide"
-            role="img"
-            aria-label="Sheet superseded or never issued"
-          >
-            <span className="stamp-line">Sheet not</span>
-            <span className="stamp-line">on this drawing</span>
+        <div className="w-full lg:ps-20">
+          {/* The status code itself, struck at drawing-number size with the
+              line under it that says what it means. A reader who arrived here
+              from a broken link recognises the three digits before they read a
+              word, so the three digits are the largest thing on the sheet. */}
+          <div className="stamp stamp-code" role="img" aria-label="Error 404, page not found">
+            <span className="stamp-code-no">404</span>
             <span className="stamp-rule" />
-            <span className="stamp-meta">Kernbau · error 404 · no revision</span>
+            <span className="stamp-meta">Kernbau · page not found</span>
           </div>
 
           {/* How to repair the address by hand: a product code is not opaque. */}
-          <table className="mt-10 w-full text-left">
+          <table className="mt-12 w-full max-w-[30rem] text-left">
             <caption className="label pb-3 text-left">
               Reading a product code — <span className="mono">KB-MW-035-100</span>
             </caption>

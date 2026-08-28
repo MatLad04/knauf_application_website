@@ -6,18 +6,22 @@ import { Container } from "./section";
 /**
  * The last informative block on every page rather than a list of links.
  *
- * It opens with the way back up, states what this catalogue is measured in —
- * the equivalent of a country and language, and the thing that decides whether
- * a declared value means anything to you — and closes on the standards the data
- * is shaped by. The honesty note is at the foot, where a legal line goes,
- * because that is exactly what it is.
+ * Four columns, and the first of them is the one a catalogue like this owes its
+ * reader before any link: what the numbers on this site are in. It shares the
+ * row rather than taking one of its own, which is most of the height.
+ *
+ * Under the rule is the sign-off, in two lines. The first states what the data
+ * is declared against — a rail of references, because a reference is a token
+ * you cite rather than a sentence you read — with the way back up at the far
+ * end of it. The wordmark closes underneath, at the left edge every other line
+ * in the footer starts at.
  */
 const COLUMNS = [
   {
     title: "The catalogue",
     links: [
       { href: "/products", label: "All products" },
-      { href: "/applications", label: "Applications" },
+      { href: "/#applications", label: "Applications" },
       { href: "/compare", label: "Compare products" },
       { href: "/configurator", label: "Wall configurator" },
       { href: "/products?epd=1", label: "Products with an EPD" },
@@ -47,26 +51,10 @@ const COLUMNS = [
 export default function SiteFooter() {
   return (
     <footer className="mt-auto border-t rule bg-sunken">
-      {/* Back to the top, centred and on its own, the way a long page ends. */}
-      <div className="border-b rule">
-        <Container className="py-6 text-center">
-          <a href="#main" className="group inline-flex flex-col items-center gap-2.5 text-sm">
-            <ArrowUp
-              size={18}
-              weight="bold"
-              aria-hidden="true"
-              className="transition-transform group-hover:-translate-y-0.5"
-            />
-            Back to top
-          </a>
-        </Container>
-      </div>
-
       <Container className="py-11 sm:py-12">
-        {/* Four columns, and the first one is what the numbers on this site
-            are in: the declared-value equivalent of a country and a language,
-            and without it none of them mean anything. It shares the row rather
-            than taking one of its own, which is most of the height. */}
+        {/* Four columns. The first says what the numbers on this site are in
+            — the declared-value equivalent of a country and a language — and
+            the three after it are the site. */}
         <div className="grid gap-x-12 gap-y-9 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <p className="lane-title inline-block">Units and market</p>
@@ -97,29 +85,43 @@ export default function SiteFooter() {
           ))}
         </div>
 
-        {/* One line, under the lists: they answer the same question the units
-            do — what are these numbers, and against what. Each one is a page
-            now, because a reference nobody can look up is decoration. */}
-        <div className="mt-12 flex flex-wrap items-center gap-2 border-t rule pt-8">
-          <Link href="/standards" className="label mr-2 hover:text-signal">
-            Declared against
-          </Link>
-          {STANDARDS.map((standard) => (
-            <Link
-              key={standard.slug}
-              href={`/standards/${standard.slug}`}
-              className="chip mono text-[0.6875rem]"
-            >
-              {standard.reference}
-            </Link>
-          ))}
-        </div>
+        {/* The sign-off. The references and the way back up share a line —
+            the last thing the data is answerable to at one end, the way out at
+            the other — and the wordmark closes underneath them, starting at the
+            same left edge every other line in the footer starts at. */}
+        <div className="mt-12 border-t rule pt-8">
+          <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <Link href="/standards" className="label mr-2 hover:text-signal">
+                Declared against
+              </Link>
+              {STANDARDS.map((standard) => (
+                <Link
+                  key={standard.slug}
+                  href={`/standards/${standard.slug}`}
+                  className="chip mono text-[0.6875rem]"
+                >
+                  {standard.reference}
+                </Link>
+              ))}
+            </div>
 
-        {/* The wordmark signs off the page, centred, the way a sheet is signed
-            at the foot of the frame. */}
-        <p className="display mt-14 text-center text-[clamp(1.75rem,4vw,2.75rem)] tracking-tight">
-          KERNBAU
-        </p>
+            <a
+              href="#main"
+              className="group inline-flex shrink-0 items-center gap-2 text-sm hover:text-signal"
+            >
+              <ArrowUp
+                size={16}
+                weight="bold"
+                aria-hidden="true"
+                className="transition-transform group-hover:-translate-y-0.5"
+              />
+              Back to top
+            </a>
+          </div>
+
+          <p className="display t-section mt-9 tracking-tight">KERNBAU</p>
+        </div>
       </Container>
     </footer>
   );

@@ -33,13 +33,34 @@ type Anchor = { n: number; x: number; y: number };
 
 export default function ConstructionFigure({
   application,
+  active = null,
+  onHover,
   className = "",
 }: {
   application: string;
+  /**
+   * The layer being pointed at in the list beside the drawing, 1-based. Every
+   * band and every tick carries its own number, so naming one here is enough
+   * for the stylesheet to hold it and let the rest of the section go quiet.
+   */
+  active?: number | null;
+  /** The other direction: pointing at a band or a number names it back. */
+  onHover?: (layer: number | null) => void;
   className?: string;
 }) {
   const drawing = (DRAWINGS[application] ?? DRAWINGS["external-wall"])!;
   const { body, anchors, startBelow } = drawing();
+
+  // One handler on the drawing rather than one per band: every band and every
+  // tick already says which layer it is, so the nearest one under the pointer
+  // is the answer, and the five drawings stay free of event wiring.
+  const point = onHover
+    ? (event: React.MouseEvent) => {
+        const el = (event.target as Element).closest?.("[data-layer]");
+        const layer = el?.getAttribute("data-layer");
+        onHover(layer ? Number(layer) : null);
+      }
+    : undefined;
 
   return (
     <svg
@@ -47,6 +68,9 @@ export default function ConstructionFigure({
       preserveAspectRatio="xMidYMid meet"
       aria-hidden="true"
       focusable="false"
+      data-active={active ?? undefined}
+      onMouseOver={point}
+      onMouseLeave={onHover ? () => onHover(null) : undefined}
       className={`construction ${className}`}
     >
       <Defs />
@@ -96,7 +120,7 @@ function Ticks({ anchors, startBelow }: { anchors: Anchor[]; startBelow?: boolea
         const shoulder = above ? TOP - 12 : BOTTOM + 12;
 
         return (
-          <g key={anchor.n}>
+          <g key={anchor.n} data-layer={anchor.n}>
             <path d={`M${x} ${from}V${shoulder}L${anchor.x} ${anchor.y}`} className="cf-leader" />
             <circle cx={anchor.x} cy={anchor.y} r="1.8" className="cf-fill" />
             <circle cx={x} cy={cy} r={TICK_R} className="cf-tick-ring" />
@@ -183,6 +207,7 @@ function horizontal(layers: Layer[], extras?: (bands: Placed) => React.JSX.Eleme
           {bands.map((band) => (
             <rect
               key={band.n}
+              data-layer={band.n}
               x={LEFT}
               y={band.at}
               width={RIGHT - LEFT}
@@ -215,6 +240,7 @@ function vertical(layers: Layer[], extras?: (bands: Placed) => React.JSX.Element
           {bands.map((band) => (
             <rect
               key={band.n}
+              data-layer={band.n}
               x={band.at}
               y={TOP}
               width={band.size}
@@ -339,14 +365,21 @@ function PitchedRoof(): Drawn {
   const angle = -20;
   const cx = 200;
   const cy = (TOP + BOTTOM) / 2;
+  /**
+   * Rotating a rectangle makes it taller: at 20 degrees this one grew past the
+   * top of the frame and the ridge corner was trimmed off. It is drawn a shade
+   * smaller so the whole rake fits, and the anchors are scaled with it so the
+   * ticks stay on the layers they name.
+   */
+  const S = 0.88;
 
   const turn = (x: number, y: number) => {
     const rad = (angle * Math.PI) / 180;
     const dx = x - cx;
     const dy = y - cy;
     return {
-      x: cx + dx * Math.cos(rad) - dy * Math.sin(rad),
-      y: cy + dx * Math.sin(rad) + dy * Math.cos(rad),
+      x: cx + (dx * Math.cos(rad) - dy * Math.sin(rad)) * S,
+      y: cy + (dx * Math.sin(rad) + dy * Math.cos(rad)) * S,
     };
   };
 
@@ -362,11 +395,15 @@ function PitchedRoof(): Drawn {
 
   return {
     body: (
-      <g className="cf" transform={`rotate(${angle} ${cx} ${cy})`}>
+      <g
+        className="cf"
+        transform={`rotate(${angle} ${cx} ${cy}) translate(${cx} ${cy}) scale(${S}) translate(${-cx} ${-cy})`}
+      >
         <g className="cf-body">
           {bands.map((band) => (
             <rect
               key={band.n}
+              data-layer={band.n}
               x={LEFT}
               y={band.at}
               width={RIGHT - LEFT}

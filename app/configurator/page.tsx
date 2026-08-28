@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { getBuildUp } from "@/lib/catalogue";
 import { Container } from "@/components/section";
-import { Enter } from "@/components/motion";
 import WallConfigurator from "@/components/wall-configurator";
 
 // Rendered per request: the catalogue lives in Postgres, which does not exist
@@ -25,23 +24,9 @@ export default async function ConfiguratorPage() {
   const buildUp = await getBuildUp();
 
   return (
-    <Container className="pt-5 pb-10 sm:pt-6">
-      <Enter className="config-head">
-        <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-          <p className="label">Configurator</p>
-          <p className="mono text-[0.6875rem] tracking-[0.14em] text-muted uppercase">
-            External wall · ETICS · trial
-          </p>
-        </div>
-
-        <h1 className="display config-title mt-2">Build the wall, read the number</h1>
-
-        <p className="mt-2 max-w-[70ch] text-sm text-muted">
-          Depth and U-value belong to the build-up, not to any board in it — four decisions, and the
-          section redraws to scale as you make them.
-        </p>
-      </Enter>
-
+    <Container className="flex min-h-[calc(100svh-var(--header-h))] flex-col pt-5 pb-5">
+      {/* The head belongs to the tool rather than to the page: its title is the
+          product currently being configured, which only the tool knows. */}
       <WallConfigurator buildUp={buildUp} />
     </Container>
   );

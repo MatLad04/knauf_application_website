@@ -23,7 +23,7 @@ const FEATURES: Record<string, { name: string; rev: string; why: string }> = {
   account: {
     name: "Account",
     rev: "A",
-    why: "A specifier's account would hold saved specifications, project folders and a history of what was declared when. It needs a user table, a session and somewhere for that history to live, none of which this prototype has.",
+    why: "An account would hold saved specifications, project folders and a history of what was declared when. It needs a user table, a session and somewhere for that history to live, none of which this prototype has.",
   },
   favourites: {
     name: "Favourites",
@@ -53,21 +53,25 @@ export default async function InDevelopmentPage({
   const current = (feature && FEATURES[feature]) || null;
 
   return (
-    <Container className="py-16 sm:py-24">
-      <div className="grid gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,28rem)] lg:gap-20">
-        <div className="lg:max-w-[38rem]">
+    <Container className="py-12 sm:py-16">
+      {/* The text starts at the page's own left margin, level with the bar
+          above and the footer below, and the sheet furniture sits in the middle
+          of the space left over beside it — the same placement the About sheet
+          head uses, so a stamp is always found in the same part of the page. */}
+      <div className="grid items-start gap-12 lg:grid-cols-2 lg:gap-16">
+        <div className="lg:max-w-[40rem]">
           <p className="label">Sheet not issued</p>
-          <h1 className="display mt-6 max-w-[14ch] text-[clamp(2.5rem,6vw,4.5rem)] leading-[0.98]">
+          <h1 className="display t-hero mt-5 max-w-[16ch]">
             {current ? current.name : "This part"} is in development
           </h1>
 
-          <p className="mt-8 text-lg text-muted sm:text-xl">
+          <p className="lead mt-7 text-lg sm:text-xl">
             {current
               ? current.why
               : "Some of the furniture on this site is drawn but not built. This prototype is about choosing and justifying a product, not buying one."}
           </p>
 
-          <p className="mt-6 text-muted">
+          <p className="mt-6 max-w-[62ch] text-muted">
             Out of scope for the prototype. Everything the catalogue itself does — search, filter,
             compare, and read a declared value back to the standard it is declared against — is
             built and working.
@@ -82,16 +86,21 @@ export default async function InDevelopmentPage({
         </div>
 
         {/* The stamp, and the revision table under it. Both are how a drawing
-            office says "not yet" — and both are true here. */}
-        <div>
-          <div className="stamp" role="img" aria-label="Not issued for construction">
-            <span className="stamp-line">Not issued</span>
-            <span className="stamp-line">for construction</span>
-            <span className="stamp-rule" />
-            <span className="stamp-meta">Kernbau · prototype · rev {current?.rev ?? "—"}</span>
+            office says "not yet" — and both are true here. The stamp and the
+            line that references it are set as one, centred in the half of the
+            page they are given rather than ranged along its edge. */}
+        <div className="w-full lg:ps-20">
+          <div className="flex flex-col items-start gap-7 sm:gap-8">
+            <p className="label">Sheet rev {current?.rev ?? "—"} · not issued</p>
+            <div className="stamp" role="img" aria-label="Not issued for construction">
+              <span className="stamp-line">Not issued</span>
+              <span className="stamp-line">for construction</span>
+              <span className="stamp-rule" />
+              <span className="stamp-meta">Kernbau · prototype · rev {current?.rev ?? "—"}</span>
+            </div>
           </div>
 
-          <table className="mt-12 w-full text-left">
+          <table className="mt-12 w-full max-w-[30rem] text-left">
             <caption className="label pb-3 text-left">Revision history</caption>
             <thead>
               <tr className="border-y rule">

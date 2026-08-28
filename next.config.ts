@@ -9,7 +9,11 @@ const nextConfig: NextConfig = {
     formats: ["image/avif", "image/webp"],
     deviceSizes: [420, 640, 828, 1080, 1440, 1920],
     imageSizes: [96, 128, 192, 256, 384, 512],
-    // Source images never change, so optimised derivatives can be cached hard.
+    // A photograph's address carries a hash of its contents (see lib/media.ts),
+    // so an address really does always mean the same bytes and its derivatives
+    // can be cached for as long as the browser is willing to keep them. Without
+    // that hash this line is a trap: replacing a photograph would leave the old
+    // one on screen for a year in every browser that had already loaded it.
     minimumCacheTTL: 60 * 60 * 24 * 365,
   },
 };

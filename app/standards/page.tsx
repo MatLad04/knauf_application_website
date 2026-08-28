@@ -26,10 +26,8 @@ export default function StandardsPage() {
     <Container className="py-14 sm:py-20">
       <Enter className="max-w-[62rem]">
         <p className="label">Declared against</p>
-        <h1 className="display mt-6 max-w-[17ch] text-[clamp(2.25rem,6vw,4.25rem)]">
-          The documents behind the numbers
-        </h1>
-        <p className="mt-7 max-w-[62ch] text-lg text-muted sm:text-xl">
+        <h1 className="display t-page mt-5 max-w-[19ch]">The documents behind the numbers</h1>
+        <p className="lead mt-6 max-w-[62ch]">
           Every figure in this catalogue is a declared value, and a declared value is only a value
           because a document says what was measured, how, and what the result is allowed to be
           called. These are the five that decide it.
@@ -45,9 +43,7 @@ export default function StandardsPage() {
 
                 <span className="register-body">
                   <span className="mono register-ref">{standard.reference}</span>
-                  <span className="display mt-2 block text-[clamp(1.125rem,2vw,1.5rem)]">
-                    {standard.title}
-                  </span>
+                  <span className="display t-sub mt-2 block">{standard.title}</span>
                   <span className="mt-2.5 block max-w-[62ch] text-sm text-muted">
                     {standard.lead.split(". ")[0]}.
                   </span>

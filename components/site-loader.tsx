@@ -7,12 +7,12 @@ import CuttingMat from "./cutting-mat";
 /**
  * Two different jobs, deliberately not the same surface.
  *
- * The first visit gets the blue mat. It stays up for exactly as long as the
- * page needs and no less than `MIN_VISIBLE`: the figure climbs towards — never
- * to — ninety-odd per cent while things are still arriving, runs to 100 the
- * moment they have, holds there long enough to be read, and only then lifts.
- * A loading screen that vanishes at 87% has told you nothing; one that flashes
- * past on a warm cache reads as a glitch.
+ * The first visit gets the cutting mat, and the mat is drawn by the load: the
+ * figure climbs towards — never to — ninety-odd per cent while things are still
+ * arriving and runs to 100 the moment they have. Then it stops and waits. A
+ * loading screen that vanishes at 87% has told you nothing, and one that takes
+ * itself away the instant it finishes was never meant to be read; this one is
+ * lifted by the reader, with the button that appears at the hundred.
  *
  * A navigation gets a veil, and the veil goes up on the *click*. Driven off the
  * arrival instead — which is what a `usePathname` effect gives you — the new
@@ -31,10 +31,8 @@ const KEY = "kernbau-booted";
 
 /** The mat is never up for less than this, however fast the page arrives. */
 const MIN_VISIBLE = 1050;
-/** How long 100% is held before the mat lifts. */
-const COMPLETE_HOLD = 520;
-/** Matches `mat-out` in the stylesheet. */
-const LIFT = 620;
+/** Matches `mat-out` in the stylesheet — the slow half of the dissolve. */
+const LIFT = 940;
 /** Matches `veil-out`, which includes its own hold at full cover. */
 const REVEAL = 520;
 /**
@@ -64,13 +62,15 @@ export default function SiteLoader() {
     let booted = true;
     try {
       booted = sessionStorage.getItem(KEY) === "1";
-      sessionStorage.setItem(KEY, "1");
     } catch {
       booted = false;
     }
     if (stillness() || booted) return;
 
     set("boot");
+    // Anything on the page that wants to arrive *after* the mat — the counters
+    // in the title block — waits on this rather than on a guessed delay.
+    document.documentElement.dataset.booting = "1";
 
     const started = performance.now();
     let frame = 0;
@@ -106,6 +106,18 @@ export default function SiteLoader() {
         setPercent(Math.round(from + (100 - from) * eased));
 
         if (t === 1) {
+          // The session is marked as booted here rather than when the effect
+          // starts. Claiming it up front means an effect that mounts, tears
+          // down and mounts again — which is what React does in development,
+          // and what any future double mount would do — finds the flag already
+          // set on the second pass and never starts the run, leaving the mat
+          // printed at nought. Marking it at the hundred also says the true
+          // thing: the mat has been seen.
+          try {
+            sessionStorage.setItem(KEY, "1");
+          } catch {
+            /* Private browsing. The mat runs again; nothing else depends on it. */
+          }
           set("done");
           return;
         }
@@ -118,15 +130,16 @@ export default function SiteLoader() {
     return () => cancelAnimationFrame(frame);
   }, [set]);
 
-  // 100% is held, then the mat lifts, then it is gone. Split into two timers so
-  // the hold is a state a reader can see rather than a number that flashes.
+  // At a hundred the mat stops and waits: it is a sheet somebody may want to
+  // read, and a screen that takes itself away after half a second is a screen
+  // nobody was ever meant to look at. The only thing that lifts it is Enter.
   useEffect(() => {
-    if (phase === "done") {
-      const t = window.setTimeout(() => set("leaving"), COMPLETE_HOLD);
-      return () => window.clearTimeout(t);
-    }
     if (phase === "leaving") {
-      const t = window.setTimeout(() => set("off"), LIFT);
+      const t = window.setTimeout(() => {
+        set("off");
+        delete document.documentElement.dataset.booting;
+        window.dispatchEvent(new Event("kernbau:entered"));
+      }, LIFT);
       return () => window.clearTimeout(t);
     }
   }, [phase, set]);
@@ -201,12 +214,28 @@ export default function SiteLoader() {
 
   return (
     <div className="loader" data-phase={phase} role="presentation">
-      <CuttingMat className="loader-mat" />
+      {/* The mat is printed by the figure rather than moved under it: the same
+          number the reader is watching draws the rules, strikes the guides and
+          sets the label, so 100% is the moment the drawing is finished. Both
+          the figure and the way in are printed into the label block by the mat
+          itself, so nothing on this screen is floated over the drawing. */}
+      <CuttingMat
+        progress={(phase === "boot" ? percent : 100) / 100}
+        enter={phase === "done"}
+        onEnter={() => set("leaving")}
+        className="loader-mat"
+      />
 
+      {/* Below `lg` the label block is off the edge of the cropped mat, so the
+          same two things are set as type on the blue instead. */}
       <p className="loader-figure" aria-hidden="true">
         <span>{phase === "boot" ? percent : 100}</span>
         <span className="loader-unit">%</span>
       </p>
+
+      <button type="button" className="loader-enter" onClick={() => set("leaving")}>
+        Enter the catalogue
+      </button>
 
       <p className="sr-only" role="status">
         {phase === "boot" ? "Loading the catalogue" : "Loaded"}

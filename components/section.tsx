@@ -19,9 +19,7 @@ export function Container({
   className?: string;
 }) {
   return (
-    <div className={`w-full px-5 sm:px-8 lg:px-12 xl:px-16 2xl:px-20 ${className}`}>
-      {children}
-    </div>
+    <div className={`w-full px-5 sm:px-8 lg:px-12 xl:px-16 2xl:px-20 ${className}`}>{children}</div>
   );
 }
 
@@ -45,7 +43,7 @@ export function SectionHead({
   return (
     <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
       <div>
-        <h2 id={id} className="display text-[clamp(1.75rem,3.6vw,2.75rem)]">
+        <h2 id={id} className="display t-section">
           {title}
         </h2>
         {lead && <p className="mt-3 max-w-[52ch] text-muted">{lead}</p>}

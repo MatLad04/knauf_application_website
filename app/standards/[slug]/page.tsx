@@ -52,10 +52,8 @@ export default async function StandardPage({ params }: { params: Promise<{ slug:
 
         <Enter className="mt-10 max-w-[64rem]">
           <p className="mono text-sm text-muted">{standard.reference}</p>
-          <h1 className="display mt-4 max-w-[20ch] text-[clamp(2rem,5vw,3.75rem)]">
-            {standard.title}
-          </h1>
-          <p className="mt-7 max-w-[64ch] text-lg text-muted sm:text-xl">{standard.lead}</p>
+          <h1 className="display t-page mt-4 max-w-[22ch]">{standard.title}</h1>
+          <p className="lead mt-6 max-w-[64ch]">{standard.lead}</p>
         </Enter>
 
         {/* The title block: what kind of document this is, and who issues it. */}
@@ -88,7 +86,7 @@ export default async function StandardPage({ params }: { params: Promise<{ slug:
 
             {standard.sections.map((section) => (
               <Reveal key={section.heading} className="mt-14">
-                <h2 className="display text-[clamp(1.375rem,2.6vw,1.875rem)]">{section.heading}</h2>
+                <h2 className="display t-sub">{section.heading}</h2>
                 {section.body.map((paragraph) => (
                   <p key={paragraph} className="mt-5 max-w-[68ch] text-muted">
                     {paragraph}
@@ -99,9 +97,7 @@ export default async function StandardPage({ params }: { params: Promise<{ slug:
 
             {standard.ladder && (
               <Reveal className="mt-16">
-                <h2 className="display text-[clamp(1.375rem,2.6vw,1.875rem)]">
-                  {standard.ladder.heading}
-                </h2>
+                <h2 className="display t-sub">{standard.ladder.heading}</h2>
                 <p className="mt-4 max-w-[62ch] text-muted">{standard.ladder.note}</p>
 
                 {/* Drawn as a ladder because that is what it is: an ordered

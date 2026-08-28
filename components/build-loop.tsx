@@ -28,7 +28,10 @@ const ADHESIVE_MM = 10;
 /** Base coat, mesh and render together, which is what goes on after the board. */
 const SKIN_MM = 16;
 
-const DEPTHS = [60, 100, 160];
+/** The three depths the loop steps through. Exported because the landing page
+ *  prints the figures for the last of them, and the drawing and the title block
+ *  under it must be quoting the same wall. */
+export const DEPTHS = [60, 100, 160];
 
 export default function BuildLoop({
   thermalConductivity = 0.035,
@@ -87,21 +90,10 @@ export default function BuildLoop({
         </pattern>
       </defs>
 
-      {/* The paper it is drawn on. */}
-      <g className="bl-grid">
-        <path
-          d={Array.from({ length: 8 }, (_, i) => `M0 ${i * 30}h380`).join("")}
-          stroke="currentColor"
-          strokeWidth="0.7"
-          fill="none"
-        />
-        <path
-          d={Array.from({ length: 13 }, (_, i) => `M${i * 30} 0v210`).join("")}
-          stroke="currentColor"
-          strokeWidth="0.7"
-          fill="none"
-        />
-      </g>
+      {/* The paper it is drawn on is not in here. It is ruled on the cell the
+          drawing sits in (`.plate-figure`), because a grid that stopped at the
+          edge of the drawing was a sheet inside a sheet — the ruling belongs to
+          the panel, and now it runs to all four edges of it. */}
 
       {/* Beat one: what is already there. */}
       <g className="bl-step" style={{ "--i": 0 } as React.CSSProperties}>

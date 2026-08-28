@@ -9,26 +9,18 @@ import {
   getCategories,
   getFamilies,
 } from "@/lib/catalogue";
-import { SUBSTRATES } from "@/lib/build-up";
-import { applicationImage, HERO_IMAGE, texture, type Texture } from "@/lib/media";
+import { assess, SUBSTRATES, worstFire } from "@/lib/build-up";
+import { applicationImage, texture, type Texture } from "@/lib/media";
+import Constructions from "@/components/constructions";
 import DraftingSheet from "@/components/drafting-sheet";
-import BuildLoop from "@/components/build-loop";
+import RollNumber from "@/components/roll-number";
+import BuildLoop, { DEPTHS } from "@/components/build-loop";
 import { Container } from "@/components/section";
 import { Enter, Reveal } from "@/components/motion";
 
 // Rendered per request: the catalogue lives in Postgres, which does not exist
 // at build time inside Docker.
 export const dynamic = "force-dynamic";
-
-const BUILD_UP = [
-  "Adhesive mortar",
-  "Insulation board",
-  "Mechanical anchor",
-  "Base coat",
-  "Reinforcement mesh",
-  "Primer",
-  "Thin-coat render",
-];
 
 type Stats = { products: number; categories: number; applications: number };
 type Row = { label: string; href: string };
@@ -82,7 +74,7 @@ export default async function HomePage() {
         label: application.name,
         href: `/products?application=${application.slug}`,
       })),
-      cta: { label: `All ${stats.applications} applications`, href: "/applications" },
+      cta: { label: `All ${stats.applications} applications`, href: "/#applications" },
     },
   ];
 
@@ -93,14 +85,14 @@ export default async function HomePage() {
       {/* The three ways in are their own section. Each one carries the first
           few of its own values, because a name that filters the catalogue is
           worth more than a photograph that does not. */}
-      <section aria-labelledby="ways-heading" className="border-t rule py-16 sm:py-20">
+      <section aria-labelledby="ways-heading" className="py-16 sm:py-20">
         <Container>
           <Reveal className="max-w-[62rem]">
             <p className="label">Where to start</p>
-            <h2 id="ways-heading" className="display mt-4 text-[clamp(1.75rem,3.6vw,2.75rem)]">
+            <h2 id="ways-heading" className="display t-section mt-3">
               Three ways into the catalogue
             </h2>
-            <p className="mt-5 max-w-[62ch] text-lg text-muted">
+            <p className="lead mt-4 max-w-[62ch]">
               A specification starts from what the product is made of, from the family it belongs
               to, or from the construction it is going into. Every name below is a filtered
               catalogue.
@@ -125,7 +117,7 @@ export default async function HomePage() {
                         className="texture object-cover"
                       />
                     </div>
-                    <h3 className="display mt-4 text-lg">{way.title}</h3>
+                    <h3 className="display t-sub mt-4">{way.title}</h3>
                     <p className="way-lead mt-2 text-sm">{way.lead}</p>
                   </div>
 
@@ -163,50 +155,7 @@ export default async function HomePage() {
         </Container>
       </section>
 
-      {/* What the catalogue is actually about: layer order and true thickness.
-          The photograph carries it, so the type sits beside it, not over it. */}
-      <section aria-labelledby="systems-heading" className="border-t rule py-20 sm:py-28">
-        <Container>
-          <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
-            <Reveal className="lg:max-w-[34rem]">
-              <h2 id="systems-heading" className="display text-[clamp(1.75rem,3.6vw,2.75rem)]">
-                A board is one layer of seven
-              </h2>
-              <p className="mt-4 max-w-[46ch] text-muted">
-                An insulation board is never installed alone, and it is approved as part of a
-                build-up rather than on its own. Every product page carries the system it belongs
-                to, in installation order.
-              </p>
-
-              <ol className="mt-10">
-                {BUILD_UP.map((layer, i) => (
-                  <li
-                    key={layer}
-                    className="flex items-baseline gap-5 border-b rule py-3.5 first:border-t"
-                  >
-                    <span className="mono text-xs text-muted">
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                    <span className="text-sm font-medium sm:text-base">{layer}</span>
-                  </li>
-                ))}
-              </ol>
-            </Reveal>
-
-            <Reveal>
-              <div className="media aspect-[4/3]">
-                <Image
-                  src={HERO_IMAGE.src}
-                  alt={HERO_IMAGE.alt}
-                  fill
-                  sizes="(max-width: 1024px) 100vw, 46rem"
-                  className="texture object-cover"
-                />
-              </div>
-            </Reveal>
-          </div>
-        </Container>
-      </section>
+      <Constructions applications={applications} />
 
       <ConfiguratorTrial buildUp={buildUp} />
     </>
@@ -214,46 +163,108 @@ export default async function HomePage() {
 }
 
 /**
- * The photograph is gone and the drawing is the ground: a section through the
- * wall this catalogue is about, to scale, with its layers dimensioned. The
- * first screen says what the thing is; the section under it says where to go.
+ * The first screen is a sheet.
+ *
+ * The paper is ruled in CSS and the drawing sits on it, fitted rather than
+ * cropped: the wall this catalogue is about, cut through at scale, dimensioned
+ * down the left, called out to the right, and with the sixteen millimetres of
+ * skin that decide the finish taken out in a detail balloon and drawn again at
+ * four times the size. Along the foot, where a sheet carries its title block,
+ * the catalogue states its own extent.
+ *
+ * Nothing here is decoration standing in for content: every figure in the block
+ * is queried and the depths in the drawing are the ones the configurator adds
+ * up.
  */
 function Hero({ stats }: { stats: Stats }) {
   return (
-    <section className="relative isolate flex min-h-[calc(100svh-var(--header-h))] flex-col overflow-hidden">
-      {/* Drawn in the theme's own ink, so it inverts with the rest of it. */}
-      <DraftingSheet className="absolute inset-0 -z-20 h-full w-full" />
+    <section className="hero">
+      {/* Ruled paper, and a wash that keeps the type off it. */}
+      <div className="hero-paper" aria-hidden="true" />
       <div className="sheet-wash absolute inset-0 -z-10" aria-hidden="true" />
 
-      {/* Two halves: the type takes the left one and sits centred in it, so it
-          reads against the drawing rather than against the edge of the page. */}
-      <Container className="grid flex-1 items-center py-20 sm:py-24 lg:grid-cols-2">
-        <div className="lg:mx-auto lg:max-w-[34rem]">
-          <Enter>
-            <h1 className="display max-w-[13ch] text-[clamp(2.5rem,6.5vw,4.75rem)]">
-              Every layer, declared
-            </h1>
-          </Enter>
-          <Enter delay={0.1}>
-            <p className="mt-6 max-w-[38ch] text-lg text-muted sm:text-xl">
-              {stats.products} insulation, reinforcement and render products, declared to the values
-              a Declaration of Performance actually carries.
-            </p>
-          </Enter>
-          <Enter delay={0.2}>
-            <a
-              href="#ways-heading"
-              className="scroll-cue group mt-12 inline-flex items-center gap-3 text-sm"
-            >
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-full border rule transition-colors group-hover:border-[color:var(--color-edge)]">
-                <CaretDown size={14} weight="bold" aria-hidden="true" />
-              </span>
-              Where to start
-            </a>
+      <Container className="hero-body">
+        <div className="hero-grid">
+          <div>
+            <Enter>
+              <p className="hero-eyebrow">External wall — ETICS · section 1:5</p>
+            </Enter>
+            <Enter delay={0.06}>
+              <h1 className="display hero-title mt-5 max-w-[12ch]">Every layer, declared</h1>
+            </Enter>
+            <Enter delay={0.14}>
+              <p className="hero-lead mt-7 max-w-[46ch]">
+                {stats.products} insulation, reinforcement and render products, declared to the
+                values a Declaration of Performance actually carries.
+              </p>
+            </Enter>
+            <Enter delay={0.22}>
+              <a
+                href="#ways-heading"
+                className="scroll-cue group mt-10 inline-flex items-center gap-3 text-sm"
+              >
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-full border rule transition-colors group-hover:border-[color:var(--color-edge)]">
+                  <CaretDown size={14} weight="bold" aria-hidden="true" />
+                </span>
+                Where to start
+              </a>
+            </Enter>
+          </div>
+
+          <Enter delay={0.1} className="hero-figure">
+            <DraftingSheet className="hero-drawing" />
           </Enter>
         </div>
       </Container>
+
+      {/* The title block, along the foot of the sheet where one belongs. */}
+      <Container>
+        <dl className="hero-block">
+          <Cell
+            term="Products declared"
+            value={String(stats.products)}
+            note="Every value to a DoP"
+            delay={120}
+          />
+          <Cell
+            term="Categories"
+            value={String(stats.categories)}
+            note="Material by material"
+            delay={260}
+          />
+          <Cell
+            term="Constructions"
+            value={String(stats.applications)}
+            note="Each drawn as a build-up"
+            delay={400}
+          />
+          <Cell term="Sheet" value="01/22" note="Kernbau · prototype" delay={540} />
+        </dl>
+      </Container>
     </section>
+  );
+}
+
+/** One cell of the hero's title block: a term, a figure, and what it is of. */
+function Cell({
+  term,
+  value,
+  note,
+  delay,
+}: {
+  term: string;
+  value: string;
+  note: string;
+  delay: number;
+}) {
+  return (
+    <div className="hero-cell">
+      <dt className="label">{term}</dt>
+      <dd className="hero-figure-value mono">
+        <RollNumber value={value} delay={delay} />
+      </dd>
+      <dd className="hero-cell-note">{note}</dd>
+    </div>
   );
 }
 
@@ -263,73 +274,134 @@ function Hero({ stats }: { stats: Stats }) {
  * It closes the landing page rather than sitting in the middle of it, because
  * it is the one thing here that is not a list of products: everything above is
  * "here is what we make", and this is "here is the number you actually have to
- * hand in". A closing CTA is also the honest place for it — the footer is next,
- * and a visitor who has read this far is looking for somewhere to go.
+ * hand in".
  *
- * It sits on the sunken ground rather than the page's, so it reads as a
- * different kind of block from the three sections above it without needing a
- * rule, a border or a colour the rest of the site does not use.
+ * It is drawn as a sheet, because that is what it produces. A construction
+ * drawing is not a picture with a caption — it is a frame containing a figure
+ * and a title block that certifies it, and the block is where the scale, the
+ * revision and the numbers live. So the section is one sheet: the four
+ * decisions ruled as a schedule on the left, the wall building itself on the
+ * right, and along the bottom the three figures the schedule produces, set at
+ * the size of the thing you are being asked for.
  *
- * The drawing beside it is the argument, moving: the wall goes up in
- * installation order and then steps through three depths, and the depth and the
- * U-value under it change with it. Both figures come from `lib/build-up.ts`,
- * which is the arithmetic the configurator itself runs, so this cannot
- * advertise a number the tool would not produce.
+ * Every figure comes from `lib/build-up.ts`, the arithmetic the configurator
+ * itself runs, so this cannot advertise a number the tool would not produce.
  */
 function ConfiguratorTrial({ buildUp }: { buildUp: BuildUp }) {
-  const board = buildUp.boards.find((b) => b.categorySlug === "mineral-wool") ?? buildUp.boards[0];
+  // The drawing steps through three fixed depths, so the family it draws has to
+  // be one that is actually made in all three — otherwise the title block would
+  // quote a board this catalogue does not sell.
+  const has = (b: BuildUp["boards"][number]) =>
+    DEPTHS.every((mm) => b.variants.some((v) => v.thicknessMm === mm));
+  const board =
+    buildUp.boards.find((b) => b.categorySlug === "mineral-wool" && has(b)) ??
+    buildUp.boards.find(has) ??
+    buildUp.boards[0];
   const substrate = SUBSTRATES[0]!;
   if (!board) return null;
 
-  return (
-    <section aria-labelledby="configurator-heading" className="closing">
-      <Container className="py-20 sm:py-28 lg:py-32">
-        <div className="grid items-center gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,32rem)] lg:gap-20">
-          <Reveal className="lg:max-w-[34rem]">
-            <p className="label">Configurator</p>
+  // The deepest of the three, which is where the drawing finishes.
+  const settled = DEPTHS.at(-1)!;
+  const { depthMm, u } = assess({
+    substrateMm: substrate.mm,
+    substrateR: substrate.r,
+    thermalConductivity: board.thermalConductivity,
+    thicknessMm: settled,
+  });
+  const fire = worstFire([board.reactionToFire, buildUp.adhesive?.reactionToFire ?? null]);
+  const render = buildUp.renders[0];
 
-            <h2
-              id="configurator-heading"
-              className="display mt-5 max-w-[16ch] text-[clamp(2rem,4.6vw,3.5rem)]"
-            >
+  // The four decisions the tool actually asks for, in the order it asks.
+  const decisions = [
+    { term: "Substrate", value: substrate.name, note: substrate.note },
+    { term: "Board", value: board.familyName, note: `λD ${board.thermalConductivity.toFixed(3)}` },
+    { term: "Depth", value: `${DEPTHS.join(" → ")} mm`, note: `${board.variants.length} made` },
+    {
+      term: "Finish",
+      value: render?.familyName ?? "Thin-coat render",
+      note: render?.code ?? "EN 15824",
+    },
+  ];
+
+  return (
+    <section aria-labelledby="configurator-heading">
+      <Container className="py-16 sm:py-20">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-8 gap-y-2">
+          <p className="label">Configurator</p>
+          <p className="label">Sheet 04 · external wall · ETICS</p>
+        </div>
+
+        <div className="plate mt-5">
+          {/* The left half of the sheet: what the tool asks, and why. The
+              schedule is the argument — four rows, and both figures under it
+              move when any of them does. */}
+          <div className="plate-brief">
+            <h2 id="configurator-heading" className="display t-page max-w-[15ch]">
               Configure the wall, not the board
             </h2>
-
-            <p className="mt-6 max-w-[50ch] text-lg text-muted">
-              The figure a specifier is asked for is the wall&rsquo;s, and it is printed on no board
-              in this catalogue: depth and U-value belong to the build-up. Four decisions —
-              substrate, board, depth, finish — and the section is drawn to scale while you make
-              them.
+            <p className="lead mt-4 max-w-[48ch]">
+              The figure a specifier is asked for is the wall’s, and it is printed on no board in
+              this catalogue: depth and U-value belong to the build-up.
             </p>
 
-            <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-4">
-              <Link href="/configurator" className="btn btn-primary px-7 py-4 text-base">
+            <dl className="plate-schedule mt-8">
+              {decisions.map((decision, i) => (
+                <div key={decision.term} className="plate-row">
+                  <span className="mono text-xs text-muted">{String(i + 1).padStart(2, "0")}</span>
+                  <dt className="label">{decision.term}</dt>
+                  <dd className="text-sm">
+                    {decision.value}
+                    <span className="mono ml-2 text-xs text-muted">{decision.note}</span>
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+
+          {/* The right half: the same four decisions, drawn. */}
+          <div className="plate-figure">
+            <BuildLoop thermalConductivity={board.thermalConductivity} />
+          </div>
+
+          {/* The title block. Three figures and the way in, each in a cell of
+              its own, divided by the grid’s own gaps rather than by borders —
+              so no corner ever carries a doubled hairline. */}
+          <dl className="plate-block">
+            <Figure term={`Wall depth at ${settled} mm`} value={String(depthMm)} unit="mm" />
+            <Figure term="U-value" value={u.toFixed(3)} unit={"W/(m²K)"} />
+            <Figure term="Reaction to fire" value={fire} unit="EN 13501-1" />
+            <div className="plate-cell plate-act">
+              <Link href="/configurator" className="btn btn-primary btn-row">
                 Open the configurator
-                <ArrowRight size={17} weight="bold" aria-hidden="true" />
+                <ArrowRight size={15} weight="bold" aria-hidden="true" />
               </Link>
-              <Link href="/products?application=external-wall" className="link text-sm">
+              <Link href="/products?application=external-wall" className="link mt-3 text-xs">
                 Or browse the external wall catalogue
               </Link>
             </div>
-
-            <p className="caption mt-8 max-w-[52ch]">
-              Kernbau does not exist and every declared value here is invented. The units, the
-              standards and the arithmetic are the ones a real datasheet uses, so the interface can
-              be judged honestly.
-            </p>
-          </Reveal>
-
-          <Reveal>
-            <div className="closing-figure">
-              <BuildLoop thermalConductivity={board.thermalConductivity} />
-            </div>
-            <p className="caption mt-4">
-              {board.familyName} on {substrate.name.toLowerCase()}. Indicative, and to the same
-              arithmetic the configurator runs.
-            </p>
-          </Reveal>
+          </dl>
         </div>
+
+        <p className="caption mt-4 max-w-[76ch]">
+          The drawing steps through {DEPTHS.join(", ")} mm of {board.familyName} on{" "}
+          {substrate.name.toLowerCase()}; the block reads the deepest of them. Kernbau does not
+          exist and every declared value here is invented — the units, the standards and the
+          arithmetic are the ones a real datasheet uses, so the interface can be judged honestly.
+        </p>
       </Container>
     </section>
+  );
+}
+
+/** One cell of the title block: a small term over a large measured figure. */
+function Figure({ term, value, unit }: { term: string; value: string; unit: string }) {
+  return (
+    <div className="plate-cell">
+      <dt className="label">{term}</dt>
+      <dd className="mt-2 flex items-baseline gap-1.5">
+        <span className="mono plate-value">{value}</span>
+        <span className="mono text-xs text-muted">{unit}</span>
+      </dd>
+    </div>
   );
 }

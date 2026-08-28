@@ -38,7 +38,18 @@ const EMBEDMENT_MM = 25;
 
 type Band = Layer & { y: number; height: number };
 
-export default function WallSection({ layers, totalMm }: { layers: Layer[]; totalMm: number }) {
+export default function WallSection({
+  layers,
+  totalMm,
+  hot = null,
+  onHover,
+}: {
+  layers: Layer[];
+  totalMm: number;
+  /** The id of the layer being pointed at, in the drawing or in the legend. */
+  hot?: string | null;
+  onHover?: (id: string | null) => void;
+}) {
   const drawn = layers.filter((layer) => layer.mm > 0 && layer.hatch !== null);
   const scale = (BOTTOM - TOP) / totalMm;
 
@@ -63,6 +74,8 @@ export default function WallSection({ layers, totalMm }: { layers: Layer[]; tota
       className="specimen"
       role="img"
       aria-label={`Section through the build-up: ${Math.round(totalMm)} millimetres overall, with a ${board?.mm ?? 0} millimetre insulation board.`}
+      onMouseLeave={onHover ? () => onHover(null) : undefined}
+      data-hot={hot ?? undefined}
     >
       <HatchDefs />
 
@@ -81,20 +94,42 @@ export default function WallSection({ layers, totalMm }: { layers: Layer[]; tota
         </text>
       </g>
 
-      {/* The wall. One rect per layer, at its declared depth. */}
+      {/* The wall. One rect per layer, at its declared depth.
+
+          Each band is also the thing you point at. The schedule beside the
+          drawing and the drawing itself are the same layers said twice, so
+          pointing at either one says it in the other — which is the only cheap
+          way to answer the question a list of layers always raises: *which* of
+          these is the 2 mm one. A band 1 px tall is unpointable, so every band
+          carries a hit area at least this deep over the top of it. */}
       {bands.map((band) => (
-        <rect
+        <g
           key={band.id}
-          className="band"
-          x={LEFT}
-          y={band.y}
-          width={RIGHT - LEFT}
-          height={band.height}
-          style={{ y: `${band.y}px`, height: `${band.height}px` }}
-          fill={`url(#${hatchFor(band.hatch!)})`}
-          stroke="var(--color-edge)"
-          strokeWidth="1"
-        />
+          data-band={band.id}
+          data-hot={hot === band.id ? "true" : undefined}
+          className="band-group"
+          onMouseEnter={onHover ? () => onHover(band.id) : undefined}
+        >
+          <rect
+            className="band"
+            x={LEFT}
+            y={band.y}
+            width={RIGHT - LEFT}
+            height={band.height}
+            style={{ y: `${band.y}px`, height: `${band.height}px` }}
+            fill={`url(#${hatchFor(band.hatch!)})`}
+            stroke="var(--color-edge)"
+            strokeWidth="1"
+          />
+          <rect
+            className="band-hit"
+            x={LEFT}
+            y={band.y + band.height / 2 - Math.max(band.height, 7) / 2}
+            width={RIGHT - LEFT}
+            height={Math.max(band.height, 7)}
+            fill="transparent"
+          />
+        </g>
       ))}
 
       {/* The anchor. Two rects rather than a path, so it can follow the board

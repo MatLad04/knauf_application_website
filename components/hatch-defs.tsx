@@ -43,6 +43,49 @@ export default function HatchDefs() {
         <circle cx="7" cy="12.5" r="0.6" className="hatch-fill" />
         <path d="M8 2.5 l2.5 1.5 M1 10 l2 1.5" className="hatch-stroke" strokeWidth="0.8" />
       </pattern>
+
+      {/* The four substrates, drawn as four different things.
+
+          They were one pattern between them, and three of the four are also
+          200 mm deep — so choosing a different wall to fix to changed two
+          numbers and nothing you could see, which made the first control on
+          the page look broken. A drawing distinguishes masonry from concrete
+          by how it is hatched, and so does this. */}
+
+      {/* Dense concrete block: coursed, with the aggregate showing. */}
+      <pattern id="hatch-block" width="30" height="16" patternUnits="userSpaceOnUse">
+        <path d="M0 0.5 H30 M0 8.5 H30" className="hatch-stroke" strokeWidth="0.9" />
+        <path d="M15 0.5 V8.5 M0 8.5 V16 M30 8.5 V16" className="hatch-stroke" strokeWidth="0.9" />
+        <circle cx="6" cy="4.5" r="0.7" className="hatch-fill" />
+        <circle cx="22" cy="12" r="0.6" className="hatch-fill" />
+      </pattern>
+
+      {/* Aircrete: the air is the material, so the voids are the pattern. */}
+      <pattern id="hatch-aircrete" width="11" height="11" patternUnits="userSpaceOnUse">
+        <circle cx="3" cy="3" r="1.5" className="hatch-stroke" strokeWidth="0.7" fill="none" />
+        <circle cx="8.5" cy="7.5" r="1.9" className="hatch-stroke" strokeWidth="0.7" fill="none" />
+        <circle cx="8" cy="1.5" r="0.9" className="hatch-stroke" strokeWidth="0.6" fill="none" />
+        <circle cx="1.5" cy="9" r="1" className="hatch-stroke" strokeWidth="0.6" fill="none" />
+      </pattern>
+
+      {/* Solid brickwork: stretcher bond, half-lapped. */}
+      <pattern id="hatch-brick" width="24" height="12" patternUnits="userSpaceOnUse">
+        <path d="M0 0.5 H24 M0 6.5 H24" className="hatch-stroke" strokeWidth="0.9" />
+        <path d="M12 0.5 V6.5 M0 6.5 V12 M24 6.5 V12" className="hatch-stroke" strokeWidth="0.9" />
+      </pattern>
+
+      {/* Reinforced concrete: aggregate, and the steel that makes it that. */}
+      <pattern id="hatch-concrete" width="16" height="16" patternUnits="userSpaceOnUse">
+        <circle cx="3.5" cy="4" r="1.2" className="hatch-fill" />
+        <circle cx="11" cy="9.5" r="1" className="hatch-fill" />
+        <circle cx="6" cy="13" r="0.7" className="hatch-fill" />
+        <circle cx="13.5" cy="2" r="0.6" className="hatch-fill" />
+        <path
+          d="M9 3 l2.5 2 M1 10 l2 1.6 M12 13 l2.5 1.5"
+          className="hatch-stroke"
+          strokeWidth="0.8"
+        />
+      </pattern>
     </defs>
   );
 }
@@ -55,6 +98,12 @@ export function hatchFor(categorySlug: string): string {
     "adhesives-base-coats": "hatch-mortar",
     "render-finishes": "hatch-mortar",
     reinforcement: "hatch-mesh",
+    // One per substrate, so the first control on the configurator redraws the
+    // wall rather than only recalculating it.
+    "sub-dense-block": "hatch-block",
+    "sub-aircrete": "hatch-aircrete",
+    "sub-brick": "hatch-brick",
+    "sub-concrete": "hatch-concrete",
   };
   return map[categorySlug] ?? "hatch-masonry";
 }
