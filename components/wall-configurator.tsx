@@ -1,13 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowClockwise, ArrowRight, Basket, Heart } from "@phosphor-icons/react/dist/ssr";
 import type { BuildUp } from "@/lib/catalogue";
 import { lambda, productNameLines } from "@/lib/format";
 import { compose, SUBSTRATES } from "@/lib/build-up";
 import HatchDefs, { hatchFor } from "./hatch-defs";
-import WallSection from "./wall-section";
+import WallSection, { type Pulse } from "./wall-section";
 import AnimatedNumber from "./animated-number";
 import { Enter } from "./motion";
 
@@ -70,6 +70,9 @@ const SUBSTRATE_CODES: Record<string, string> = {
   concrete: "SUB-RC",
 };
 
+/** How long a band's pulse runs. The same figure as `band-swell` in the sheet. */
+const PULSE_MS = 720;
+
 export default function WallConfigurator({ buildUp }: { buildUp: BuildUp }) {
   const { boards, renders, adhesive, baseCoat, mesh, primer, anchors } = buildUp;
 
@@ -81,6 +84,36 @@ export default function WallConfigurator({ buildUp }: { buildUp: BuildUp }) {
   // Which layer is being pointed at, in the drawing or in the schedule beside
   // it. One piece of state for both, because it is one question.
   const [hot, setHot] = useState<string | null>(null);
+
+  /**
+   * Which layer the last choice moved, so the drawing can show it.
+   *
+   * Four groups of controls sit beside a section of seven layers, and choosing
+   * in one of them changes a band that may be seven pixels tall somewhere in
+   * the middle of it. The drawing already answers *what* the wall now is; this
+   * is how it answers *which part of it you just changed* — the band pulses
+   * once and settles back, and the row for it in the legend marks with it.
+   *
+   * Every control says what it moves rather than the drawing working it out. It
+   * is four lines of bookkeeping against a derivation that would have to know
+   * that depth and board are the same band, that the substrate is its own, and
+   * that swapping a render moves the layer named for it and not the four coats
+   * under it.
+   */
+  const [pulse, setPulse] = useState<Pulse | null>(null);
+  const pulses = useRef(0);
+  const show = (...ids: string[]) => {
+    pulses.current += 1;
+    setPulse({ ids, n: pulses.current });
+  };
+
+  // Cleared when it is over, so the attribute is gone before the next one
+  // arrives and the legend row fades out rather than being cut.
+  useEffect(() => {
+    if (!pulse) return;
+    const done = setTimeout(() => setPulse(null), PULSE_MS);
+    return () => clearTimeout(done);
+  }, [pulse]);
 
   const [substrateId, setSubstrateId] = useState(SUBSTRATES[0]!.id);
   const [boardFamily, setBoardFamily] = useState(defaultBoard ?? "");
@@ -128,10 +161,39 @@ export default function WallConfigurator({ buildUp }: { buildUp: BuildUp }) {
     renderSlug === (renders[0]?.slug ?? "");
 
   const reset = () => {
+    // What it puts back, so the drawing shows the undo the same way it shows a
+    // choice — and shows only the layers that were actually not at their start.
+    const moved: string[] = [];
+    if (substrateId !== SUBSTRATES[0]!.id) moved.push("substrate");
+    if (boardFamily !== defaultBoard || thickness !== null) moved.push("board");
+    if (renderSlug !== (renders[0]?.slug ?? "")) moved.push("render");
+
     setSubstrateId(SUBSTRATES[0]!.id);
     setBoardFamily(defaultBoard ?? "");
     setThickness(null);
     setRenderSlug(renders[0]?.slug ?? "");
+    if (moved.length > 0) show(...moved);
+  };
+
+  // Each control, and the band in the drawing it moves. The pairing is stated
+  // here once rather than inferred in the drawing: 02 and 03 are two questions
+  // about the same band, and 04 moves the layer named for the render and not
+  // the four coats under it.
+  const pickSubstrate = (id: string) => {
+    setSubstrateId(id);
+    show("substrate");
+  };
+  const pickBoard = (family: string) => {
+    setBoardFamily(family);
+    show("board");
+  };
+  const pickDepth = (mm: number) => {
+    setThickness(mm);
+    show("board");
+  };
+  const pickRender = (slug: string) => {
+    setRenderSlug(slug);
+    show("render");
   };
 
   const buildUpName = productNameLines(board.familyName, `${variant.thicknessMm} mm`);
@@ -186,14 +248,14 @@ export default function WallConfigurator({ buildUp }: { buildUp: BuildUp }) {
             onKeyDown={arrows(
               SUBSTRATES.map((o) => o.id),
               substrateId,
-              setSubstrateId,
+              pickSubstrate,
             )}
           >
             {SUBSTRATES.map((option) => (
               <Tile
                 key={option.id}
                 active={option.id === substrateId}
-                onSelect={() => setSubstrateId(option.id)}
+                onSelect={() => pickSubstrate(option.id)}
                 code={SUBSTRATE_CODES[option.id] ?? "SUB"}
                 name={option.name}
                 hatch={`sub-${option.id}`}
@@ -214,14 +276,14 @@ export default function WallConfigurator({ buildUp }: { buildUp: BuildUp }) {
             onKeyDown={arrows(
               boards.map((o) => o.family),
               board.family,
-              setBoardFamily,
+              pickBoard,
             )}
           >
             {boards.map((option) => (
               <Tile
                 key={option.family}
                 active={option.family === board.family}
-                onSelect={() => setBoardFamily(option.family)}
+                onSelect={() => pickBoard(option.family)}
                 code={option.variants[0]?.code.replace(/-\d+$/, "") ?? option.family}
                 name={option.familyName}
                 hatch={option.categorySlug}
@@ -245,10 +307,15 @@ export default function WallConfigurator({ buildUp }: { buildUp: BuildUp }) {
             role="radiogroup"
             aria-label="Board depth in millimetres"
             className="depths"
+            // Two rows, filled across, so a scale still reads left to right.
+            // The count is the component's to know, not the stylesheet's: five
+            // depths is three columns and six is three as well, and neither is
+            // something `auto-fit` can be told.
+            style={{ "--depth-cols": Math.ceil(board.variants.length / 2) } as React.CSSProperties}
             onKeyDown={arrows(
               board.variants.map((v) => String(v.thicknessMm)),
               String(variant.thicknessMm),
-              (mm) => setThickness(Number(mm)),
+              (mm) => pickDepth(Number(mm)),
             )}
           >
             {board.variants.map((v) => {
@@ -261,7 +328,7 @@ export default function WallConfigurator({ buildUp }: { buildUp: BuildUp }) {
                   aria-checked={active}
                   tabIndex={active ? 0 : -1}
                   data-active={active ? "true" : undefined}
-                  onClick={() => setThickness(v.thicknessMm)}
+                  onClick={() => pickDepth(v.thicknessMm)}
                   className="depth"
                 >
                   <span className="depth-mm">{v.thicknessMm}</span>
@@ -312,17 +379,17 @@ export default function WallConfigurator({ buildUp }: { buildUp: BuildUp }) {
             onKeyDown={arrows(
               renders.map((o) => o.slug),
               finish?.slug ?? "",
-              setRenderSlug,
+              pickRender,
             )}
           >
             {renders.map((option) => (
               <Tile
                 key={option.slug}
                 active={option.slug === (finish?.slug ?? "")}
-                onSelect={() => setRenderSlug(option.slug)}
+                onSelect={() => pickRender(option.slug)}
                 code={option.code}
                 name={option.familyName}
-                hatch="render-finishes"
+                hatch={`render-${option.family}`}
                 // Grain is 2.0 mm on all three, so a column of it decides
                 // nothing; the fire class is what this group settles, and it
                 // is the one figure that differs between the options.
@@ -359,6 +426,7 @@ export default function WallConfigurator({ buildUp }: { buildUp: BuildUp }) {
                   layers={built.layers}
                   totalMm={built.depthMm}
                   hot={hot}
+                  pulse={pulse}
                   onHover={setHot}
                 />
               </div>
@@ -378,6 +446,7 @@ export default function WallConfigurator({ buildUp }: { buildUp: BuildUp }) {
                     <li
                       key={layer.id}
                       data-hot={hot === layer.id ? "true" : undefined}
+                      data-pulse={pulse?.ids.includes(layer.id) ? "true" : undefined}
                       onMouseEnter={() => setHot(layer.id)}
                       className="legend-row"
                     >

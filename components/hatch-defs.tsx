@@ -30,6 +30,51 @@ export default function HatchDefs() {
         <circle cx="6" cy="5.5" r="0.7" className="hatch-fill" />
       </pattern>
 
+      {/* The three renders, drawn as the three different materials they are.
+
+          They were one stipple between them, which made the group that settles
+          the system's fire class the one group whose choice the drawing did not
+          register. Each is distinguished the way a finish schedule distinguishes
+          them: by what the binder does to the surface. */}
+
+      {/* Mineral render: cement and sand, floated. A coarse open aggregate. */}
+      <pattern id="hatch-render-mineral" width="9" height="9" patternUnits="userSpaceOnUse">
+        <circle cx="2" cy="2.5" r="1" className="hatch-fill" />
+        <circle cx="6.5" cy="6" r="0.85" className="hatch-fill" />
+        <circle cx="7" cy="1.5" r="0.5" className="hatch-fill" />
+      </pattern>
+
+      {/* Silicate render: a mineral binder, laid off as a scraped finish — so
+          the grain is dragged, and the drag is the pattern. */}
+      <pattern id="hatch-render-silicate" width="9" height="9" patternUnits="userSpaceOnUse">
+        <path d="M0 2.5 H9 M0 7 H9" className="hatch-stroke" strokeWidth="0.55" />
+        <circle cx="3" cy="4.75" r="0.7" className="hatch-fill" />
+        <circle cx="7.5" cy="0.5" r="0.6" className="hatch-fill" />
+      </pattern>
+
+      {/* Silicone render: a polymer film over the grain, which closes the
+          surface — an even, tight lattice rather than an open one. */}
+      <pattern id="hatch-render-silicone" width="7" height="7" patternUnits="userSpaceOnUse">
+        <circle
+          cx="1.75"
+          cy="1.75"
+          r="0.95"
+          className="hatch-stroke"
+          strokeWidth="0.5"
+          fill="none"
+        />
+        <circle
+          cx="5.25"
+          cy="5.25"
+          r="0.95"
+          className="hatch-stroke"
+          strokeWidth="0.5"
+          fill="none"
+        />
+        <circle cx="5.25" cy="1.75" r="0.4" className="hatch-fill" />
+        <circle cx="1.75" cy="5.25" r="0.4" className="hatch-fill" />
+      </pattern>
+
       {/* Reinforcement mesh: grid. */}
       <pattern id="hatch-mesh" width="6" height="6" patternUnits="userSpaceOnUse">
         <path d="M0 0 H6 M0 0 V6" className="hatch-stroke" strokeWidth="0.7" />
@@ -97,6 +142,10 @@ export function hatchFor(categorySlug: string): string {
     "wood-fibre": "hatch-fibre",
     "adhesives-base-coats": "hatch-mortar",
     "render-finishes": "hatch-mortar",
+    // One per render family, for the same reason the substrates have one each.
+    "render-mineral": "hatch-render-mineral",
+    "render-silicate": "hatch-render-silicate",
+    "render-silicone": "hatch-render-silicone",
     reinforcement: "hatch-mesh",
     // One per substrate, so the first control on the configurator redraws the
     // wall rather than only recalculating it.

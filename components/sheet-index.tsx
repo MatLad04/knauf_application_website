@@ -25,8 +25,8 @@ type App = Application & { productCount: number };
  * The mark is the same signal the sheets light their own layers with.
  *
  * Everything it renders is server-rendered markup and every image below it is
- * already requested; the observer only ever sets an attribute, so nothing here
- * loads, measures or reflows as you scroll.
+ * already requested; the frame callback only ever sets an attribute and a
+ * custom property, so nothing here loads or reflows as you scroll.
  */
 export default function SheetIndex({ applications }: { applications: App[] }) {
   const [active, setActive] = useState<string | null>(applications[0]?.slug ?? null);
@@ -35,31 +35,8 @@ export default function SheetIndex({ applications }: { applications: App[] }) {
 
   const deepest = Math.max(...applications.map((a) => a.buildUp.length), 1);
 
-  useEffect(() => {
-    const sheets = applications
-      .map((a) => document.getElementById(`app-${a.slug}`))
-      .filter((el): el is HTMLElement => el !== null);
-    if (sheets.length === 0) return;
-
-    // Which sheet is being read is a question about the middle of the screen,
-    // not about the top of it: a band across the centre of the viewport, and
-    // whichever sheet is crossing it is the one marked. Anything driven off the
-    // top edge marks the next sheet while you are still reading this one.
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) setActive(entry.target.id.replace(/^app-/, ""));
-        }
-      },
-      { rootMargin: "-45% 0px -45% 0px", threshold: 0 },
-    );
-
-    sheets.forEach((sheet) => observer.observe(sheet));
-    return () => observer.disconnect();
-  }, [applications]);
-
   /**
-   * How far through each construction the reader is, as a fraction.
+   * Which construction is being read, and how far through it the reader is.
    *
    * Read off the scroll position rather than played on a trigger, which is the
    * whole difference: a triggered animation runs once, finishes, and then the
@@ -73,11 +50,33 @@ export default function SheetIndex({ applications }: { applications: App[] }) {
    */
   useEffect(() => {
     const sheets = applications.map((a) => document.getElementById(`app-${a.slug}`));
+    const run = document.getElementById("constructions-run");
     let frame = 0;
 
     const measure = () => {
       frame = 0;
       const vh = window.innerHeight;
+
+      // The line the run hangs from: the underside of the banner once it has
+      // stuck, published by the stage. On the narrow layout there is no pinned
+      // line and a sheet is simply read as it passes the middle of the screen.
+      const pinned = run
+        ? parseFloat(getComputedStyle(run).getPropertyValue("--pin-top") || "")
+        : NaN;
+      const line = window.innerWidth >= 1024 && pinned > 0 ? pinned + 1 : vh / 2;
+
+      // Which one is being read: the last sheet whose head has reached that
+      // line. Measured rather than observed, because two sheets meet exactly on
+      // it — one ends where the next begins — and an observer watching a band
+      // across the screen answers with whichever of them crossed it last, so
+      // the register marked a different construction going up than coming down.
+      let mark = applications[0]?.slug ?? null;
+      for (let i = 0; i < sheets.length; i += 1) {
+        const sheet = sheets[i];
+        if (sheet && sheet.getBoundingClientRect().top <= line) mark = applications[i]!.slug;
+      }
+      setActive(mark);
+
       setFills(
         sheets.map((sheet) => {
           if (!sheet) return 0;

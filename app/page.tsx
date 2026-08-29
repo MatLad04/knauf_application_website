@@ -12,6 +12,7 @@ import {
 import { assess, SUBSTRATES, worstFire } from "@/lib/build-up";
 import { applicationImage, texture, type Texture } from "@/lib/media";
 import Constructions from "@/components/constructions";
+import CatalogueOpening from "@/components/catalogue-opening";
 import DraftingSheet from "@/components/drafting-sheet";
 import RollNumber from "@/components/roll-number";
 import BuildLoop, { DEPTHS } from "@/components/build-loop";
@@ -156,6 +157,12 @@ export default async function HomePage() {
       </section>
 
       <Constructions applications={applications} />
+
+      {/* The other way in, between the two sections it sits between: the
+          constructions above start from what is being built, the configurator
+          below starts from a wall, and this starts from the figure somebody was
+          handed. */}
+      <CatalogueOpening products={stats.products} />
 
       <ConfiguratorTrial buildUp={buildUp} />
     </>

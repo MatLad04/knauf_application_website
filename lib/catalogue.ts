@@ -879,6 +879,15 @@ export type BoardFamily = {
 export type BuildUpPart = {
   slug: string;
   code: string;
+  /**
+   * The family key, and what the part is drawn as.
+   *
+   * Three renders that are the same hatch are three options you cannot tell
+   * apart in the drawing they change, which is the one place the choice is
+   * supposed to show. Mineral, silicate and silicone are different materials
+   * and a section draws them differently.
+   */
+  family: string;
   name: string;
   /** The name without the variant on the end, which is what a schedule prints. */
   familyName: string;
@@ -946,6 +955,7 @@ export async function getBuildUp(): Promise<BuildUp> {
   const part = (row: BuildUpRow): BuildUpPart => ({
     slug: row.slug,
     code: row.code,
+    family: row.family,
     name: row.name,
     familyName: row.family_name,
     reactionToFire: row.reaction_to_fire,

@@ -419,10 +419,6 @@
     background: var(--color-sunken);
   }
 
-  .layer-row[data-hot="true"] .layer-rule {
-    background: var(--color-signal);
-  }
-
   /* Pointing at a layer in the list beside the drawing holds it in the
      drawing: everything else goes quiet, and the band, its leader and its
      number stay. The list and the section are the same seven things said two
@@ -755,20 +751,18 @@
     white-space: nowrap;
   }
 
-  /* --- The constructions, and the register beside them ----------------------
+  /* --- The constructions, and the banner over them -------------------------
 
-     One grid for the whole section. The five sheets run down the first column
-     and the sheet list is pinned in the second, so the index is still on screen
-     when the thing it indexes goes past: you always know which of the five you
-     are in, and the list is a control rather than a table of contents you
-     scrolled through once.
+     One band across the top of the section carries what the section is and the
+     register of what is in it, and it stays there for the whole run: the five
+     constructions go past underneath it, so the claim they are evidence for is
+     still on the page while you are reading them, and the line of the register
+     belonging to the one on the stage is marked.
 
-     Below the width that holds a rail, the register goes back under the head,
-     where a contents list normally is. */
+     It is sticky against `.constructions`, which is a block rather than a grid
+     for exactly this reason — a sticky grid item is confined to its own grid
+     area, which for a one-row band is no travel at all. */
   .constructions {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 3rem 0;
     padding-block: 3.5rem 4rem;
   }
 
@@ -776,6 +770,47 @@
     .constructions {
       padding-block: 4rem 5rem;
     }
+  }
+
+  /* The page gutter, by name.
+
+     `Container` sets it as Tailwind padding and two things in this section have
+     to cancel it: the drawing, which reaches out through most of it, and the
+     band above the drawing, whose background has to reach at least as far or
+     there is a strip of screen where the one passes the other with nothing in
+     between. Written once here, they cannot disagree about how wide it is. */
+  .constructions {
+    --page-gutter: 1.25rem;
+  }
+
+  @media (width >= 40rem) {
+    .constructions {
+      --page-gutter: 2rem;
+    }
+  }
+
+  @media (width >= 64rem) {
+    .constructions {
+      --page-gutter: 3rem;
+    }
+  }
+
+  @media (width >= 80rem) {
+    .constructions {
+      --page-gutter: 4rem;
+    }
+  }
+
+  @media (width >= 96rem) {
+    .constructions {
+      --page-gutter: 5rem;
+    }
+  }
+
+  .constructions-banner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2.5rem 0;
   }
 
   .constructions-head-grid {
@@ -790,40 +825,51 @@
     }
   }
 
-  .constructions-sheets {
-    display: grid;
-    gap: 5rem;
+  /* Pinned, the band is not free: every millimetre of it is a millimetre the
+     drawing under it does not get. The head keeps its type and loses its air. */
+  @media (width >= 64rem) {
+    .constructions-head-grid {
+      gap: 1.5rem 2rem;
+    }
   }
 
-  @media (width >= 40rem) {
-    .constructions-sheets {
-      gap: 7rem;
+  /* Wide enough for the run to sit under it rather than beside it, the banner
+     is pinned. Opaque, because the words and the drawing pass behind it.
+
+     The air above the title is padding on the band rather than a larger sticky
+     offset, so it is there in both states: stuck under the header and standing
+     in the flow of the page. Pinned, it is the only thing holding the heading
+     off the header — and a heading of this size set hard against a bar reads as
+     an overflow rather than as the top of something. */
+  @media (width >= 64rem) {
+    .constructions-banner {
+      position: sticky;
+      inset-block-start: var(--header-h);
+      z-index: 3;
+      background: var(--color-surface);
+      padding-block: 2rem 1.25rem;
+      /* Opaque as far right as the screen goes, while the sheet list stays
+         exactly where the measure puts it: the margin lets the band's ground out
+         through the gutter and the padding holds its contents back.
+
+         Without it the band stopped at the measure and the drawing did not — it
+         reaches out past that now — so in the strip between the two, a callout
+         riding up out of the section at the end of the run came out from under
+         the band and was drawn beside the sheet list. */
+      margin-inline-end: calc(-1 * var(--page-gutter));
+      padding-inline-end: var(--page-gutter);
     }
   }
 
   @media (width >= 90rem) {
-    .constructions {
+    .constructions-banner {
       grid-template-columns: minmax(0, 1fr) minmax(0, 16rem);
       column-gap: 5rem;
-    }
-
-    .constructions-head,
-    .constructions-sheets {
-      grid-column: 1;
+      align-items: start;
     }
 
     .constructions-head-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    /* Pinned for the length of the section, and no longer than that: the rail
-       is a child of the grid, so it releases at the last sheet on its own. */
-    .sheet-index {
-      grid-column: 2;
-      grid-row: 1 / span 2;
-      position: sticky;
-      inset-block-start: calc(var(--header-h) + 3rem);
-      align-self: start;
     }
   }
 
@@ -923,28 +969,6 @@
 
   .sheet-row[data-active="true"] .sheet-count {
     color: var(--color-ink);
-  }
-
-  /* Each sheet is separated by the space around it, not by a rule across the
-     page; the only lines left in this section are the ones with a value on
-     either side of them. */
-  .construction-sheet {
-    scroll-margin-block-start: calc(var(--header-h) + 1rem);
-  }
-
-  /* A layer in a build-up list, drawn at its depth. The rule is not decoration:
-     a 2 mm mesh and a 140 mm slab are both one line of text, and this is the
-     only thing in the row that says they are not the same size. */
-  .layer-rule {
-    display: block;
-    inline-size: var(--depth, 40%);
-    max-inline-size: 8rem;
-    block-size: 2px;
-    flex-shrink: 0;
-    background: var(--color-edge);
-    opacity: 0.55;
-    /* Struck out from the left, the way a schedule is filled in. */
-    transform-origin: left center;
   }
 
   /* The search bar. The one pill-shaped control that is not a chip, because it
@@ -1816,6 +1840,39 @@
     }
   }
 
+  /* Beside the renders, on two rows.
+
+     The group that settles the depth has one short control and three figures
+     under it; the group beside it has three options. On one row the depths took
+     a fifth of the height its neighbour took and the figures sat at the foot of
+     a band of nothing. Two rows is the same scale at twice the depth — still
+     filled across, so it still reads left to right — and it closes the gap
+     rather than papering over it.
+
+     The column count is written by the component, because it is a fact about
+     the board: five depths is three columns and six is three as well, and
+     `auto-fit` cannot be told either. */
+  @media (width >= 82rem) {
+    .step-c {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .depths {
+      grid-template-columns: repeat(var(--depth-cols, 3), minmax(0, 1fr));
+      grid-auto-flow: row;
+      grid-auto-rows: minmax(0, 1fr);
+      flex: 1;
+    }
+
+    /* Ruled off at the foot of the group, which is the foot of the last render
+       beside it: the two groups are one row of the sheet and they end on the
+       same line. */
+    .depth-figures {
+      margin-block-start: 0.9375rem;
+    }
+  }
+
   /* A button per depth, each carrying the resistance it buys. A slider would
      say every value between two stops exists; a board is made in six depths
      and nothing in between. */
@@ -2138,6 +2195,99 @@
 
   .legend-row[data-hot="true"] .legend-name {
     color: var(--color-signal);
+  }
+
+  /* --- Being shown a layer -------------------------------------------------
+
+     Pointing at a band is one gesture and it deliberately moves nothing.
+     Choosing is the other, and it gets the other treatment: the band the choice
+     just moved swells out of the wall and settles back into it, once. Four
+     groups of controls sit beside a drawing of forty-odd millimetres of render
+     over two hundred of block, and without this the answer to "which part of
+     that did I just change" is somewhere in a legend of seven rows. The layer
+     answers for itself instead, by being the one thing on the sheet that moved.
+
+     How far it swells is the band's own, set as a variable where the band is
+     drawn — see `SWELL_Y` in `components/wall-section.tsx` for why it cannot be
+     one ratio for all seven.
+
+     Two identical animations, and the only reason there are two is that a CSS
+     animation restarts when its name changes and at nothing else. Choosing
+     depth after depth pulses the same band over and over; alternating the name
+     is what makes the second click a second pulse rather than the tail of the
+     first. */
+  @keyframes band-swell-a {
+    0% {
+      transform: scale(1, 1);
+      stroke: var(--color-edge);
+      stroke-width: 1;
+    }
+    38% {
+      transform: scale(var(--swell-x, 1.09), var(--swell-y, 1.06));
+      stroke: var(--color-signal);
+      stroke-width: 2;
+    }
+    100% {
+      transform: scale(1, 1);
+      stroke: var(--color-edge);
+      stroke-width: 1;
+    }
+  }
+
+  @keyframes band-swell-b {
+    0% {
+      transform: scale(1, 1);
+      stroke: var(--color-edge);
+      stroke-width: 1;
+    }
+    38% {
+      transform: scale(var(--swell-x, 1.09), var(--swell-y, 1.06));
+      stroke: var(--color-signal);
+      stroke-width: 2;
+    }
+    100% {
+      transform: scale(1, 1);
+      stroke: var(--color-edge);
+      stroke-width: 1;
+    }
+  }
+
+  /* About its own middle, so a band grows into the wall on both sides rather
+     than dragging one edge across it. `fill-box` is re-read as the box changes,
+     which is what keeps the board centred through a depth change — the one
+     pulse that fires while its band is also being resized. */
+  .band-group .band {
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+
+  .band-group[data-pulse="a"] .band {
+    animation: band-swell-a 720ms ease-in-out;
+  }
+
+  .band-group[data-pulse="b"] .band {
+    animation: band-swell-b 720ms ease-in-out;
+  }
+
+  /* The row for it marks at the same time, in the same soft ground pointing at
+     it uses: the drawing and the schedule are the same layers twice, and a
+     choice is answered in both or it is answered in neither. */
+  .legend-row[data-pulse="true"] {
+    background: var(--color-signal-soft);
+  }
+
+  .legend-row[data-pulse="true"] .legend-name {
+    color: var(--color-signal);
+  }
+
+  /* Asked for less motion: the band still answers, it just does not move to do
+     it. Set on the rect rather than the group, so it beats the inline scale the
+     drawing writes there without needing `!important` to do it. */
+  @media (prefers-reduced-motion: reduce) {
+    .band-group[data-pulse] .band {
+      --swell-x: 1;
+      --swell-y: 1;
+    }
   }
 
   /* Only a `<rect>` has geometry a browser will animate, which is why every
@@ -2599,118 +2749,6 @@
     font-size: 8px;
     letter-spacing: 1.2px;
     fill: var(--color-muted);
-  }
-
-  /* --- The turning photograph ---------------------------------------------
-
-     A construction has more to say than a photograph of it can, and it used to
-     say it on a page of its own — which was a stop on the way to the catalogue
-     rather than a destination. So the second face is the back of the first: the
-     card turns, and the note is on the other side of the thing it describes. */
-  .turn {
-    perspective: 1600px;
-  }
-
-  /* The turn itself is the feedback, but it takes most of a second — so the
-     card also rings while it is focused, which lands immediately. */
-  .turn:focus-visible {
-    outline: none;
-  }
-
-  .turn:focus-visible .media {
-    box-shadow: 0 0 0 2px var(--color-signal);
-  }
-
-  .turn-inner {
-    position: relative;
-    transform-style: preserve-3d;
-    transition: transform 0.7s var(--ease-out);
-  }
-
-  .turn:hover .turn-inner,
-  .turn:focus-visible .turn-inner,
-  .turn[data-turned="true"] .turn-inner {
-    transform: rotateY(180deg);
-  }
-
-  .turn-face {
-    backface-visibility: hidden;
-  }
-
-  .turn-back {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    transform: rotateY(180deg);
-    border: 1px solid var(--color-rule);
-    border-radius: var(--radius-media);
-    background: var(--color-raised);
-    padding: clamp(1.25rem, 2.6vw, 2rem);
-  }
-
-  /* The drawing takes whatever the note leaves, centred in it. */
-  .turn-figure {
-    flex: 1;
-    display: grid;
-    place-items: center;
-    min-block-size: 0;
-    padding-block: 0.75rem;
-  }
-
-  .turn-figure svg {
-    max-block-size: 100%;
-  }
-
-  /* The instruction, so the turn is offered rather than discovered. It goes
-     when the card is turned — an instruction to do the thing you have already
-     done is noise. */
-  .turn-hint {
-    position: absolute;
-    z-index: 2;
-    inset-block-end: 0.875rem;
-    inset-inline-start: 0.875rem;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4375rem;
-    border-radius: var(--radius-pill);
-    border: 1px solid color-mix(in srgb, var(--color-surface) 55%, transparent);
-    background: color-mix(in srgb, var(--color-surface) 82%, transparent);
-    backdrop-filter: blur(6px);
-    padding: 0.3125rem 0.6875rem;
-    font-family: var(--font-mono);
-    font-size: 0.625rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--color-ink);
-    transition: opacity 0.25s var(--ease-out);
-  }
-
-  .turn:hover .turn-hint,
-  .turn:focus-visible .turn-hint {
-    opacity: 0;
-  }
-
-  /* No pointer, no hover: the note sits under the photograph instead of behind
-     it, which is the same information without a gesture that does not exist. */
-  @media (hover: none) {
-    .turn {
-      perspective: none;
-    }
-
-    .turn-inner {
-      transform: none !important;
-    }
-
-    .turn-back {
-      position: static;
-      transform: none;
-      margin-block-start: 1rem;
-    }
-
-    .turn-hint {
-      display: none;
-    }
   }
 
   /* The blue wash a photograph takes when the thing it is on is hovered.
@@ -3337,6 +3375,13 @@
     font-size: 0.8125rem;
   }
 
+  /* One size up, for the one button on a page that is the page's whole point. */
+  .btn-lg {
+    gap: 0.75rem;
+    padding: 1rem 1.625rem;
+    font-size: 1.0625rem;
+  }
+
   /* The CTA that closes a list is as wide as the list, so it reads as its last
      row rather than as a pill dropped underneath it. The label stays centred
      with its arrow beside it: pushed to opposite edges the two stop reading as
@@ -3732,6 +3777,625 @@
 
   .link:hover {
     text-decoration-thickness: 2px;
+  }
+
+  /* --- The other way in ------------------------------------------------------
+
+     The constructions above start from what is being built. This starts from
+     the figure somebody was handed instead — and a figure handed to a specifier
+     is a constraint, which is written as an inequality.
+
+     So the section is three inequalities, and each one is a door. It is not a
+     card deck and it is not the configurator's plate: there is no frame around
+     it at all. It opens on the heavy rule a drawing sheet starts under, the
+     argument is set once on the left, and the three constraints are ruled off
+     beside it the way a schedule of declared values is ruled off — because
+     that is the document this is standing in for. */
+  .opening {
+    padding-block: 4.5rem 5rem;
+  }
+
+  @media (width >= 64rem) {
+    .opening {
+      padding-block: 6rem 7rem;
+    }
+  }
+
+  .opening-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem 2rem;
+    padding-block-end: 0.75rem;
+  }
+
+  /* The sheet starts here. Heavier than a hairline, because this is a division
+     between two arguments rather than between two rows of one. */
+  .opening-body {
+    border-block-start: 2px solid var(--color-ink);
+    padding-block-start: 2.5rem;
+    display: grid;
+    gap: 3rem 0;
+  }
+
+  .opening-title {
+    max-inline-size: 14ch;
+    font-size: clamp(2.25rem, 5vw, 4rem);
+    line-height: 0.98;
+  }
+
+  .opening-act {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-block-start: 2.5rem;
+  }
+
+  .opening-doors {
+    display: grid;
+    gap: 2rem 2.5rem;
+  }
+
+  /* Three across only where a constraint fits on one line. Narrower, they are
+     three rows of a schedule instead, which is the same document. */
+  @media (width >= 56rem) {
+    .opening-doors {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  /* The argument on one side and the constraints on the other, which is the
+     same division the section above it makes between its words and its
+     drawing. */
+  @media (width >= 64rem) {
+    .opening-body {
+      grid-template-columns: minmax(0, 38fr) minmax(0, 62fr);
+      column-gap: 5rem;
+      padding-block-start: 3rem;
+      align-items: start;
+    }
+
+    .opening-doors {
+      gap: 0 2.5rem;
+    }
+  }
+
+  /* One constraint: the value it is on, the limit, what that buys, and how many
+     products clear it. The count is the honest part — the door says what is
+     behind it before you open it. */
+  .door {
+    display: grid;
+    grid-template-rows: auto auto auto 1fr auto;
+    gap: 0.5rem 0;
+    block-size: 100%;
+    align-content: start;
+  }
+
+  /* Drawn to full width in the rule's own grey, then struck through in the
+     signal from the left when the door is live — the same gesture the sheet
+     list uses to fill in a build-up. */
+  .door-rule {
+    position: relative;
+    display: block;
+    block-size: 2px;
+    background: var(--color-rule);
+    margin-block-end: 0.75rem;
+  }
+
+  .door-rule::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--color-signal);
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 0.4s var(--ease-out);
+  }
+
+  .door:hover .door-rule::after,
+  .door:focus-visible .door-rule::after {
+    transform: scaleX(1);
+  }
+
+  .door-term {
+    color: var(--color-muted);
+  }
+
+  /* Greek carries meaning: λ is not Λ, so the symbol keeps its case. */
+  .door-term.symbol {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    letter-spacing: 0.06em;
+  }
+
+  .door-limit {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    font-size: clamp(1.75rem, 2.6vw, 2.375rem);
+    line-height: 1.05;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-ink);
+    transition: color 0.2s ease;
+  }
+
+  .door-unit {
+    font-size: 0.6875rem;
+    letter-spacing: 0.04em;
+    color: var(--color-muted);
+  }
+
+  .door-note {
+    max-inline-size: 26ch;
+    font-size: 0.875rem;
+    line-height: 1.45;
+    color: var(--color-muted);
+    padding-block-end: 1.25rem;
+  }
+
+  /* The count is the door's handle, so it is drawn as one.
+
+     It was a line of small monospace with an arrow after it, which is how this
+     site writes a count and not how it writes a control — and the count is the
+     one part of a door you are meant to act on. Given the outline the page
+     already uses for "and the rest of them" at the foot of a list, the three
+     doors end the way the three ways in above them end, and the section stops
+     being three paragraphs that happen to be links.
+
+     Not `.btn`: it is a span inside the anchor rather than an anchor of its own,
+     because the whole door is the target and a link inside a link is not a
+     thing. So the chrome is the button's, written against the same tokens, and
+     it is the door's own hover that fills it. */
+  .door-count {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    inline-size: 100%;
+    border: 1px solid var(--color-edge);
+    border-radius: var(--radius-control);
+    padding: 0.5625rem 0.875rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1.2;
+    white-space: nowrap;
+    color: var(--color-ink);
+    transition:
+      color 0.25s ease,
+      border-color 0.25s ease;
+  }
+
+  /* The struck fill, behind the label rather than over it. */
+  .door-count::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: var(--color-ink);
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 0.45s var(--ease-out);
+  }
+
+  .door-count svg {
+    transition: transform 0.35s var(--ease-out);
+  }
+
+  .door:hover .door-count::before,
+  .door:focus-visible .door-count::before {
+    transform: scaleX(1);
+  }
+
+  .door:hover .door-count,
+  .door:focus-visible .door-count {
+    border-color: var(--color-ink);
+    color: var(--color-surface);
+  }
+
+  .door:hover .door-count svg,
+  .door:focus-visible .door-count svg {
+    transform: translateX(3px);
+  }
+
+  .door:hover .door-limit,
+  .door:focus-visible .door-limit {
+    color: var(--color-signal);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .door-rule::after,
+    .door-count::before,
+    .door-count svg {
+      transition: none;
+    }
+  }
+
+  /* --- The run: words in one column, the drawing pinned in the other --------
+
+     The five constructions used to be five sheets, each with its own
+     photograph. They are one drawing now, and it is pinned for the length of
+     the words so that going from one construction to the next is a thing that
+     happens to an object rather than a cut between two pictures.
+
+     Below the width that holds two columns the drawing goes above the words,
+     still pinned, because a stack seen at an angle needs its width more than a
+     paragraph does. */
+  .constructions-run {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    margin-block-start: 2.5rem;
+  }
+
+  /* One construction is one block, and one block is a screenful of dwell: long
+     enough for the drawing to arrive, open and be read.
+
+     A little over a screenful, because the block is what the changeover is
+     measured in. Half of it is the morph from one build-up to the next, and the
+     scroll is the reader's own now — the stage no longer drives the page from
+     block to block, it only draws it onto the nearest one once it has stopped
+     (see the magnet in `components/stack/ConstructionStage.tsx`). So the length
+     of the transition is however far the reader scrolls, and this is what makes
+     that far enough to watch at an ordinary speed. */
+  .constructions-block {
+    min-block-size: 96vh;
+    scroll-margin-block-start: calc(var(--header-h) + 1rem);
+  }
+
+  @media (width >= 64rem) {
+    /* Each construction's words are stuck at the line the banner ends on, by
+       the browser, and the scroll loop touches nothing but their opacity.
+
+       They used to be held there by hand: laid one on top of another and
+       translated down the page by exactly the scroll offset, once a frame. That
+       is a sticky element written in JavaScript, and it is a sticky element that
+       is always one frame late — the page scrolls on the compositor and the
+       transform arrives after it, so through a flick or a momentum scroll the
+       words visibly shivered against everything around them. Nothing written
+       from a scroll position can be steady, and this had to be steady: it is a
+       paragraph, and you read it while you move.
+
+       Stuck properly, it does not move at all while it is being read, and what
+       it does at the end of its own block — lets go and rides up as the next one
+       comes up from below — is the transition rather than a flaw in it. The
+       fades are set so that the one leaving is gone before it has travelled far
+       and the one arriving only appears over the last of its rise. */
+    /* Hung from the line, not centred in what the banner leaves.
+
+       Centring it was tried and put back. The five descriptions are close enough
+       in length that it bought very little, and what it cost was the one thing
+       this column has that the drawing does not: a top edge. Five constructions
+       whose titles all begin at the same line read as five entries of one
+       register; five whose titles each begin somewhere else read as five pages.
+       The drawing beside it is centred because a drawing has no reading order to
+       start. */
+    .constructions-copy-inner {
+      position: sticky;
+      inset-block-start: var(--pin-top, 18rem);
+      will-change: opacity;
+    }
+
+    .constructions-run {
+      margin-block-start: 1.5rem;
+    }
+  }
+
+  /* What is left of the run under the last construction.
+
+     The run does not step out of itself: past the last construction the page is
+     the page again, and this is what it scrolls through on the way to the next
+     section — enough for the pinned column to let go in, and enough of a beat
+     that the last build-up is left rather than cut away from. */
+  .constructions-close {
+    block-size: 34vh;
+  }
+
+  .constructions-foot {
+    padding-block-start: 3.5rem;
+  }
+
+  /* The register sits in the banner now rather than in a rail of its own, so
+     it needs neither a column nor a sticky of its own. */
+  .sheet-index {
+    align-self: start;
+  }
+
+  @media (width >= 64rem) {
+    .constructions-run {
+      grid-template-columns: minmax(0, 33fr) minmax(0, 67fr);
+      column-gap: 2.5rem;
+      align-items: start;
+    }
+
+    /* What is left of the screen once the banner has taken its share of it.
+       The drawing is the subject of this section, so it gets the rest.
+
+       The cap comes off the column and goes onto the drawing inside it, so that
+       the column is always the whole of the space and the drawing is centred in
+       it. Left on the column, a window tall enough for the cap to bite gave a
+       column shorter than the space, stuck to the top of it — and a drawing that
+       sat high with the leftover under it while the words beside it were centred
+       in the whole. */
+    .constructions-stage-col {
+      block-size: calc(100svh - var(--pin-top, 18rem) - 1rem);
+      min-block-size: 24rem;
+      position: sticky;
+      inset-block-start: var(--pin-top, 18rem);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      /* Out through most of the page gutter, until the air on its right is the
+         same as the air on its left.
+
+         The measure is what holds a line of text to a readable length and
+         nothing in this cell is a line of text — it is a solid with two columns
+         of labels either side of it — so stopped at the gutter the drawing was
+         giving up the last inch of the screen to nothing at all, and it was the
+         drawing that needed it: the room it is fitted into is the room left over
+         once the labels have taken theirs.
+
+         What is left is exactly the column gap, which is what the drawing has
+         between itself and the words on the other side. That is the whole of the
+         centring: equal air on both sides means the drawing sits in the middle
+         of the space between the last word and the edge of the screen, and it
+         goes on doing so at every width because both halves of it are named here
+         rather than measured. Taken all the way to the edge instead, the labels
+         ended up six pixels off it. */
+      margin-inline-end: calc(2.5rem - var(--page-gutter));
+    }
+
+    .constructions-stage-col .stack-stage {
+      max-block-size: 48rem;
+    }
+  }
+
+  /* Narrow: there is no room beside a labelled solid for the labels, so the
+     turning stack is not drawn at all and each construction gets the flat
+     section this site has always drawn, in with its own words. */
+  @media (width < 64rem) {
+    .constructions-stage-col {
+      display: none;
+    }
+
+    .constructions-block {
+      min-block-size: 0;
+      padding-block: 2rem 3rem;
+    }
+
+    .constructions-run {
+      margin-block-start: 2rem;
+    }
+
+    .constructions-close {
+      block-size: 0;
+    }
+  }
+
+  .construction-detail {
+    margin-block-start: 2rem;
+  }
+
+  .construction-detail-figure {
+    border: 1px solid var(--color-rule);
+    border-radius: var(--radius-media);
+    background: var(--color-raised);
+    padding: 0.5rem;
+  }
+
+  .construction-detail-figure svg {
+    inline-size: 100%;
+    block-size: auto;
+    display: block;
+  }
+
+  @media (width >= 64rem) {
+    .construction-detail {
+      display: none;
+    }
+  }
+
+  .constructions-fallback {
+    display: grid;
+    gap: 2rem;
+    padding-block: 1rem;
+  }
+
+  /* --- The stage ------------------------------------------------------------
+
+     A stack of layers, drawn as solids, turned by the scroll position. Every
+     face is an outline plus a hatch at low opacity: the layers are stacked one
+     behind another and a solid fill on the near one would hide the six behind
+     it. It is also simply how this site draws a section. */
+  .stack-stage {
+    position: relative;
+    inline-size: 100%;
+    block-size: 100%;
+    touch-action: pan-y;
+  }
+
+  .stack-viewport {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    /* The scene is drawn from the middle of the stage outward, and the callouts
+       project onto the same origin. */
+    perspective-origin: 50% 50%;
+  }
+
+  .stack-scene,
+  .stack-group,
+  .stack-slab {
+    transform-style: preserve-3d;
+  }
+
+  .stack-scene {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 50%;
+    inline-size: 0;
+    block-size: 0;
+    will-change: transform;
+  }
+
+  .stack-group {
+    position: absolute;
+    inset: 0;
+  }
+
+  .stack-slab {
+    position: absolute;
+    inset: 0;
+    color: var(--color-muted);
+  }
+
+  .stack-slab:focus-visible {
+    outline: none;
+  }
+
+  .stack-face {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    backface-visibility: visible;
+    /* Written every frame by the loop; declared here so the first paint is not
+       a pile of unrotated squares. */
+    transform-origin: 50% 50%;
+  }
+
+  .stack-face svg {
+    display: block;
+    overflow: visible;
+  }
+
+  /* The sheet each face is drawn on, and the reason the open stack reads.
+     Opaque: a layer covers the ones behind it except for the strip the
+     explosion has opened, and those strips are the bands of a section. */
+  .stack-sheet {
+    fill: var(--color-raised);
+  }
+
+  /* The layer being pointed at, in the drawing or in its callout. The outline
+     goes to the signal and the hatch comes up with it; everything else was
+     already dimmed by the loop. */
+  .stack-slab[data-held="true"] .stack-face svg rect[stroke] {
+    stroke: var(--color-signal);
+    stroke-width: 1.5;
+  }
+
+  .stack-slab[data-held="true"],
+  .stack-slab:focus-visible {
+    color: var(--color-signal);
+  }
+
+  /* --- The callouts ---------------------------------------------------------
+
+     Flat on the glass above the geometry, never in it: nothing inside a
+     perspective transform stays upright, and a sheared number is not a number.
+     Two columns down the margins, each label tied to its layer by a leader that
+     re-solves every frame while the object turns. */
+  .stack-callouts {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .stack-leaders {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    overflow: visible;
+  }
+
+  .stack-leader {
+    fill: none;
+    stroke: var(--color-edge);
+    stroke-width: 1;
+    opacity: 0.5;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .stack-anchor-dot {
+    fill: var(--color-edge);
+    opacity: 0.75;
+  }
+
+  .stack-callout {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 50%;
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    max-inline-size: 9.75rem;
+    pointer-events: auto;
+    cursor: default;
+    transition: color 0.15s ease;
+  }
+
+  .stack-callout[data-side="right"] {
+    flex-direction: row-reverse;
+    text-align: end;
+  }
+
+  .stack-callout-n {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    line-height: 1.35;
+    color: var(--color-muted);
+    flex-shrink: 0;
+  }
+
+  .stack-callout-body {
+    display: block;
+    min-inline-size: 0;
+  }
+
+  .stack-callout-name {
+    display: block;
+    font-size: 0.8125rem;
+    line-height: 1.3;
+    color: var(--color-ink);
+    text-wrap: balance;
+  }
+
+  /* The one thing a name cannot say and the drawing is entirely about. It sits
+     under the name rather than beside it so a two-line name still leaves the
+     figure on its own line and the column stays a column. */
+  .stack-callout-mm {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    line-height: 1.5;
+    color: var(--color-muted);
+  }
+
+  .stack-callout[data-on="true"] .stack-callout-n,
+  .stack-callout[data-on="true"] .stack-callout-name,
+  .stack-callout[data-on="true"] .stack-callout-mm {
+    color: var(--color-signal);
+  }
+
+  .stack-leader[data-on="true"] {
+    stroke: var(--color-signal);
+    opacity: 0.9;
+  }
+
+  @media (width < 64rem) {
+    .stack-callout {
+      max-inline-size: 7.5rem;
+    }
+
+    .stack-callout-name {
+      font-size: 0.75rem;
+    }
   }
 }
 
@@ -4334,28 +4998,6 @@ html[data-search-open] .search-bar {
   }
   100% {
     opacity: 0;
-  }
-}
-
-/* The build-up on each sheet is filled in the same way the register above it
-   was, one line after the next with its rule struck out from the left — so the
-   index and the thing it indexes move alike, and the connection between them is
-   something you watch happen rather than something you are told. */
-@supports (animation-timeline: view()) {
-  @media (prefers-reduced-motion: no-preference) {
-    .construction-sheet .layer-row {
-      animation: register-in linear both;
-      animation-timeline: view();
-      animation-range: entry 6% cover 26%;
-      animation-delay: calc(var(--i) * 0.05s);
-    }
-
-    .construction-sheet .layer-rule {
-      animation: register-draw linear both;
-      animation-timeline: view();
-      animation-range: entry 8% cover 34%;
-      animation-delay: calc(var(--i) * 0.05s);
-    }
   }
 }
 

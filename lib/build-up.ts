@@ -125,6 +125,8 @@ export type Part = {
   code: string;
   familyName: string;
   reactionToFire: string | null;
+  /** The material key the band is hatched from, where the part has a choice. */
+  family?: string;
 } | null;
 
 export type Choice = {
@@ -207,7 +209,16 @@ export function compose(choice: Choice): Composition {
     line("base-coat", "Base coat", choice.baseCoat, NOMINAL.baseCoat, "adhesives-base-coats"),
     line("mesh", "Reinforcement mesh", choice.mesh, NOMINAL.mesh, "reinforcement"),
     line("primer", "Primer", choice.primer, NOMINAL.primer, "adhesives-base-coats"),
-    line("render", "Thin-coat render", finish, NOMINAL.render, "render-finishes"),
+    // Keyed to the render itself rather than to the category: swapping a
+    // mineral render for a silicone one changes the fire class of the whole
+    // system, and it should change something you can see as well.
+    line(
+      "render",
+      "Thin-coat render",
+      finish,
+      NOMINAL.render,
+      finish ? `render-${finish.family}` : "render-finishes",
+    ),
   ];
 
   return {
