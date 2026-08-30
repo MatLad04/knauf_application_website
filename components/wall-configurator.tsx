@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowClockwise, ArrowRight, Basket, Heart } from "@phosphor-icons/react/dist/ssr";
 import type { BuildUp } from "@/lib/catalogue";
 import { lambda, productNameLines } from "@/lib/format";
 import { compose, SUBSTRATES } from "@/lib/build-up";
 import HatchDefs, { hatchFor } from "./hatch-defs";
-import WallSection, { type Pulse } from "./wall-section";
+import WallSection from "./wall-section";
 import AnimatedNumber from "./animated-number";
 import { Enter } from "./motion";
 
@@ -70,9 +70,6 @@ const SUBSTRATE_CODES: Record<string, string> = {
   concrete: "SUB-RC",
 };
 
-/** How long a band's pulse runs. The same figure as `band-swell` in the sheet. */
-const PULSE_MS = 720;
-
 export default function WallConfigurator({ buildUp }: { buildUp: BuildUp }) {
   const { boards, renders, adhesive, baseCoat, mesh, primer, anchors } = buildUp;
 
@@ -84,36 +81,6 @@ export default function WallConfigurator({ buildUp }: { buildUp: BuildUp }) {
   // Which layer is being pointed at, in the drawing or in the schedule beside
   // it. One piece of state for both, because it is one question.
   const [hot, setHot] = useState<string | null>(null);
-
-  /**
-   * Which layer the last choice moved, so the drawing can show it.
-   *
-   * Four groups of controls sit beside a section of seven layers, and choosing
-   * in one of them changes a band that may be seven pixels tall somewhere in
-   * the middle of it. The drawing already answers *what* the wall now is; this
-   * is how it answers *which part of it you just changed* — the band pulses
-   * once and settles back, and the row for it in the legend marks with it.
-   *
-   * Every control says what it moves rather than the drawing working it out. It
-   * is four lines of bookkeeping against a derivation that would have to know
-   * that depth and board are the same band, that the substrate is its own, and
-   * that swapping a render moves the layer named for it and not the four coats
-   * under it.
-   */
-  const [pulse, setPulse] = useState<Pulse | null>(null);
-  const pulses = useRef(0);
-  const show = (...ids: string[]) => {
-    pulses.current += 1;
-    setPulse({ ids, n: pulses.current });
-  };
-
-  // Cleared when it is over, so the attribute is gone before the next one
-  // arrives and the legend row fades out rather than being cut.
-  useEffect(() => {
-    if (!pulse) return;
-    const done = setTimeout(() => setPulse(null), PULSE_MS);
-    return () => clearTimeout(done);
-  }, [pulse]);
 
   const [substrateId, setSubstrateId] = useState(SUBSTRATES[0]!.id);
   const [boardFamily, setBoardFamily] = useState(defaultBoard ?? "");
@@ -161,40 +128,19 @@ export default function WallConfigurator({ buildUp }: { buildUp: BuildUp }) {
     renderSlug === (renders[0]?.slug ?? "");
 
   const reset = () => {
-    // What it puts back, so the drawing shows the undo the same way it shows a
-    // choice — and shows only the layers that were actually not at their start.
-    const moved: string[] = [];
-    if (substrateId !== SUBSTRATES[0]!.id) moved.push("substrate");
-    if (boardFamily !== defaultBoard || thickness !== null) moved.push("board");
-    if (renderSlug !== (renders[0]?.slug ?? "")) moved.push("render");
-
     setSubstrateId(SUBSTRATES[0]!.id);
     setBoardFamily(defaultBoard ?? "");
     setThickness(null);
     setRenderSlug(renders[0]?.slug ?? "");
-    if (moved.length > 0) show(...moved);
   };
 
-  // Each control, and the band in the drawing it moves. The pairing is stated
-  // here once rather than inferred in the drawing: 02 and 03 are two questions
-  // about the same band, and 04 moves the layer named for the render and not
-  // the four coats under it.
-  const pickSubstrate = (id: string) => {
-    setSubstrateId(id);
-    show("substrate");
-  };
-  const pickBoard = (family: string) => {
-    setBoardFamily(family);
-    show("board");
-  };
-  const pickDepth = (mm: number) => {
-    setThickness(mm);
-    show("board");
-  };
-  const pickRender = (slug: string) => {
-    setRenderSlug(slug);
-    show("render");
-  };
+  // Each control, and the part of the wall it sets. Named rather than inlined,
+  // because the depth control hands them to a keyboard helper as well as to a
+  // click, and 02 and 03 are two questions about the same band.
+  const pickSubstrate = (id: string) => setSubstrateId(id);
+  const pickBoard = (family: string) => setBoardFamily(family);
+  const pickDepth = (mm: number) => setThickness(mm);
+  const pickRender = (slug: string) => setRenderSlug(slug);
 
   const buildUpName = productNameLines(board.familyName, `${variant.thicknessMm} mm`);
 
@@ -426,7 +372,6 @@ export default function WallConfigurator({ buildUp }: { buildUp: BuildUp }) {
                   layers={built.layers}
                   totalMm={built.depthMm}
                   hot={hot}
-                  pulse={pulse}
                   onHover={setHot}
                 />
               </div>
@@ -446,7 +391,6 @@ export default function WallConfigurator({ buildUp }: { buildUp: BuildUp }) {
                     <li
                       key={layer.id}
                       data-hot={hot === layer.id ? "true" : undefined}
-                      data-pulse={pulse?.ids.includes(layer.id) ? "true" : undefined}
                       onMouseEnter={() => setHot(layer.id)}
                       className="legend-row"
                     >

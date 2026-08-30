@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef } from "react";
 
 import { CONSTRUCTIONS } from "@/data/constructions";
-import { clamp, easeInOut, wantsStill } from "@/lib/motion-loop";
+import { clamp, wantsStill } from "@/lib/motion-loop";
 import Callouts, { type CalloutHandle } from "./Callouts";
 import LayerStack, { type StackHandle } from "./LayerStack";
 import PatternSprite from "./patterns";
@@ -16,7 +16,6 @@ import {
   PRE_ROLL,
   STOPS,
   computeFrame,
-  presenceOfWords,
   shutCeiling,
 } from "./timeline";
 
@@ -112,31 +111,18 @@ function at(y: number, marks: number[]): number {
 /**
  * When a construction's words leave, and when the next one's arrive.
  *
- * Nowhere here any more. They used to be four constants of their own, set by
- * hand to sit either side of the drawing's changeover, and the two drifted apart
- * every time the handover was retimed: the drawing was arriving a fifth of a
- * block before the paragraph naming it, which reads as a fault rather than as a
- * sequence.
+ * Not here, and not in blocks of scroll. Every version of this that lived in
+ * this file was a curve — how far the reader is from a stop, turned into an
+ * opacity — and every one of them was laid over a paragraph that was also
+ * *moving*, because a block of words stuck by the browser climbs half a screen
+ * to reach its line. Two things at once, both of them tied to the scroll, and
+ * the scroll arrives in notches: the climb steps, so the fade steps with it.
  *
- * The words are read off `presenceOfWords` in the timeline now — the drawing's
- * own curve, on the same argument that decides how much of each stack is on the
- * stage, with one allowance made in it for the fact that a paragraph is laid out
- * and a drawing is not. The object and its name begin together because they
- * begin on the same number; the name finishes arriving when it reaches the line
- * it is going to, because until it does, it is still moving.
- *
- * They are read off the followed position, not the true one — which is the
- * second half of the same fix. A fade window is a tenth of a block wide and a
- * block is a screenful, so it is about a hundred pixels of scroll: read straight
- * off the wheel, one notch took a paragraph from fully there to fully gone, and
- * a paragraph that changes state inside a single notch does not fade, it blinks.
- * On the followed position the same notch arrives as a movement.
- *
- * The old reasoning for reading the true position was that where a block of
- * words *is* on the page is the browser's answer and not ours. That is still
- * true and no longer relevant: it applied when this wrote transforms, and all it
- * writes now is an opacity, which is not laid out and cannot disagree with
- * anything.
+ * The words do not move any more. They are pinned at the line, all five in the
+ * same place, and the only thing this decides is which one is being read. The
+ * appearing and the disappearing are a CSS transition on a class — one clock,
+ * its own speed, and nothing about it is a function of where the page is. See
+ * `.constructions-copy-inner` in the stylesheet.
  */
 
 /**
@@ -190,20 +176,54 @@ const FOLLOW = 0.18;
 
 /** Under this, in pixels per second, the page counts as having stopped. */
 const REST_SPEED = 30;
-/** And it has to have stopped for this long, so a pause mid-flick is not one. */
-const REST_MS = 140;
+/**
+ * And it has to have stopped for this long, so a pause mid-flick is not one.
+ *
+ * Two frames and a little. It was more than twice this, and what the extra
+ * bought was a fifth of a second in which the page had stopped, the words had
+ * stopped with it part-way up the screen, and nothing had begun to move yet.
+ * That gap is most of what read as the text restarting — it is long enough for
+ * the eye to settle on a paragraph in the wrong place and notice it is there.
+ * All this figure has to do is tell a stop from the pause between two notches
+ * of a wheel, and it does not need a fifth of a second to do it.
+ */
+const REST_MS = 60;
 
 /**
- * The pull: proportional to how far it has to go, between these two.
+ * The settle: a critically damped spring, not a timed move.
  *
- * A fixed duration is wrong at both ends of the range it has to cover — a
- * fifteen-pixel correction taken over half a second is a drift, and half a
- * block taken over the same is a lurch. The floor is there because even the
- * smallest pull has to be visibly a movement rather than a jump.
+ * A duration with an ease on it was the other half of what made the arrival
+ * read as two movements. However fast the reader had been going, the curve
+ * began from a standstill — so the end of their scroll was a full stop, and the
+ * pull that followed a beat later was plainly a second, separate thing that
+ * happened to the page rather than the end of the first.
+ *
+ * A spring has neither a duration nor a start. It is handed the speed the
+ * reader was still carrying and simply continues it, so the tail of the scroll
+ * and the whole of the settle are one movement with one velocity running
+ * through it. Critically damped, so it lands rather than bouncing; and fast at
+ * first and slow at the end, which is the shape anything coming to rest has.
+ *
+ * The stiffness is the only figure, and it sets the settle rather than the
+ * distance: near or far, the page arrives in about the same three quarters of a
+ * second, moving as fast as it has to at the start to do so. That is right for
+ * this in a way a duration never was — a fifteen-pixel correction and half a
+ * block are the same gesture at two sizes, not two different ones.
  */
-const PULL_MIN_MS = 320;
-const PULL_MAX_MS = 900;
-const PULL_MS_PER_PX = 0.8;
+const SETTLE_W = 12;
+/**
+ * Near enough, and slow enough, that there is nothing left to write.
+ *
+ * A pixel and a half, not a tenth of one. A spring approaches its rest rather
+ * than reaching it, so the figure here is not accuracy, it is where the motion
+ * ends: held to a tenth of a pixel the last four pixels took as long as the
+ * first hundred and forty, and a paragraph creeping the last of the way is the
+ * same fault as one that halts part-way, told slowly.
+ */
+const SETTLE_PX = 1.5;
+const SETTLE_V = 90;
+/** And a ceiling, so a settle that is being fought can never run on forever. */
+const SETTLE_MAX_MS = 1400;
 
 /** Near enough to a stop, in blocks, that pulling would only be fussing. */
 const AT_STOP = 0.015;
@@ -289,6 +309,18 @@ export default function ConstructionStage({
     let pinned = 0;
     /** Where the top of each block sits in the document. */
     let marks: number[] = [];
+    /**
+     * The run's own extent, and the height of the tallest of the five texts.
+     *
+     * Between them, the only question the words ask of the scroll: whether the
+     * section is on the screen at all. Inside it one construction is up; either
+     * side of it, none is.
+     */
+    let runTop = 0;
+    let runBottom = 0;
+    let deckH = 0;
+    /** Which construction's words are up, so the class is only ever touched on a change. */
+    let shown = -1;
     /** The header the page hangs under, in pixels. */
     let headerPx = 0;
     /** The drawing's own position along the run, a short step behind the scroll. */
@@ -298,12 +330,13 @@ export default function ConstructionStage({
     let lastY = window.scrollY;
     /** How long it has been still, in milliseconds. Capped: it only has to pass. */
     let rest = 0;
-    /** The pull, if one is running, and where it is taking the page. */
+    /** The settle, if one is running: where it is going, where it has got to,
+     *  and how fast it is going there. */
     let pulling = false;
-    let pullFrom = 0;
     let pullTo = 0;
+    let pullPos = 0;
+    let pullVel = 0;
     let pullAt = 0;
-    let pullMs = PULL_MIN_MS;
     /** The last position we wrote, read back, so we can tell ours from theirs. */
     let wroteY = 0;
     /** Nothing pulls before this. Set when a reader scrolls out of a pull. */
@@ -340,6 +373,23 @@ export default function ConstructionStage({
       // cadence and the words on another, and by the fifth construction they
       // are half a screen apart. One stop is one block, by construction.
       marks = blocks.map((block) => block.getBoundingClientRect().top + window.scrollY);
+
+      // The column the words are shown in. They are out of the flow, so the
+      // box they would have had has to be handed back to them — and handed back
+      // here, once, rather than found again every frame.
+      const column = run.querySelector<HTMLElement>(".constructions-copy");
+      if (column) {
+        const col = column.getBoundingClientRect();
+        run.style.setProperty("--copy-x", `${Math.round(col.left)}px`);
+        run.style.setProperty("--copy-w", `${Math.round(col.width)}px`);
+      }
+
+      // Read after the column is published, because the width is what wraps the
+      // paragraphs and the wrapping is what sets the height.
+      const runBox = run.getBoundingClientRect();
+      runTop = runBox.top + window.scrollY;
+      runBottom = runTop + runBox.height;
+      deckH = copy.reduce((tall, inner) => Math.max(tall, inner.offsetHeight), 0);
 
       // The labels are static text and their widths are cached on them; a
       // resize can rewrap them, so the cache goes when the size does.
@@ -388,9 +438,11 @@ export default function ConstructionStage({
       // does nothing until the viewport is wide enough to hold it.
       if (size.w <= 0 || size.h <= 0) {
         if (stage.style.visibility !== "hidden") stage.style.visibility = "hidden";
-        for (const block of copy) {
-          block.style.opacity = "";
-          block.style.visibility = "";
+        // Narrow: the words are ordinary page content again, one after
+        // another, and none of them is the one being read.
+        if (shown >= 0) {
+          copy[shown]?.classList.remove("is-reading");
+          shown = -1;
         }
         return;
       }
@@ -403,25 +455,43 @@ export default function ConstructionStage({
       // below it happens while the page is moving.
       if (!still && marks.length >= 2) {
         const y = window.scrollY;
-        // The only speedometer there is: where it was a frame ago.
-        const speed = Math.abs(y - lastY) / dt;
+        // The only speedometer there is: where it was a frame ago. Signed, now,
+        // because the settle is handed this rather than starting from nothing.
+        const vel = (y - lastY) / dt;
+        const speed = Math.abs(vel);
         lastY = y;
+
+        /**
+         * One step of the spring, written straight onto the page.
+         *
+         * Integrated on a position of its own rather than on the page's: the
+         * page rounds to a whole pixel, and rounded, the last of the travel
+         * would stall rather than arrive.
+         */
+        const settle = () => {
+          const gap = pullTo - pullPos;
+          pullVel += (SETTLE_W * SETTLE_W * gap - 2 * SETTLE_W * pullVel) * dt;
+          pullPos += pullVel * dt;
+          if (
+            (Math.abs(gap) < SETTLE_PX && Math.abs(pullVel) < SETTLE_V) ||
+            now - pullAt > SETTLE_MAX_MS
+          ) {
+            pullPos = pullTo;
+            pulling = false;
+          }
+          window.scrollTo(0, Math.round(pullPos));
+          // Read back rather than assumed: the page may be at its own end, or
+          // rounding to a device pixel, and next frame has to compare against
+          // where it really is or it will mistake us for the reader.
+          wroteY = window.scrollY;
+          lastY = wroteY;
+        };
 
         if (pulling) {
           // Somewhere we did not put it. That is a scroll, whatever fired it —
           // a device this has no listener for, a momentum tail, an anchor.
-          if (Math.abs(y - wroteY) > HIJACK_PX) {
-            release(now);
-          } else {
-            const t = Math.min((now - pullAt) / pullMs, 1);
-            window.scrollTo(0, Math.round(pullFrom + (pullTo - pullFrom) * easeInOut(t)));
-            // Read back rather than assumed: the page may be at its own end, or
-            // rounding to a device pixel, and next frame has to compare against
-            // where it really is or it will mistake us for the reader.
-            wroteY = window.scrollY;
-            lastY = wroteY;
-            if (t >= 1) pulling = false;
-          }
+          if (Math.abs(y - wroteY) > HIJACK_PX) release(now);
+          else settle();
         } else if (now >= coolUntil) {
           // Capped, because it only ever has to clear the threshold — left to
           // grow it would overflow on a page nobody is looking at.
@@ -435,14 +505,23 @@ export default function ConstructionStage({
             // lets go of the page by itself at the end rather than by a test.
             if (here > -REACH_UP && Math.abs(here - want) > AT_STOP) {
               const to = yOf(want);
-              const far = Math.abs(to - y);
-              pullFrom = y;
               pullTo = to;
+              pullPos = y;
+              // Handed the speed the reader still had, while they still had it
+              // and while it was going the right way. That is the whole of what
+              // makes this one movement instead of two: the settle does not
+              // start, it carries on.
+              pullVel =
+                Math.sign(to - y) === Math.sign(vel) ? clamp(vel, -REST_SPEED, REST_SPEED) : 0;
               pullAt = now;
-              pullMs = clamp(220 + far * PULL_MS_PER_PX, PULL_MIN_MS, PULL_MAX_MS);
               wroteY = y;
               pulling = true;
               rest = 0;
+              // Begun on the frame it is decided rather than on the one after
+              // it. A frame in which the reader has stopped, the page has
+              // stopped and nothing has started is a frame of exactly the halt
+              // this whole arrangement exists to take out.
+              settle();
             }
           }
         } else {
@@ -454,7 +533,8 @@ export default function ConstructionStage({
 
       // How far the run has got, in stops: which block is at the pinned line,
       // and how far past it.
-      const raw = at(window.scrollY + pinned, marks);
+      const scrolled = window.scrollY;
+      const raw = at(scrolled + pinned, marks);
 
       // The drawing follows the scroll rather than being it.
       //
@@ -479,17 +559,18 @@ export default function ConstructionStage({
       const fit = Math.max(Math.min((size.w - 2 * GUTTER) / BOX.w, size.h / BOX.h), 0.2);
       scene.current?.apply({ camera: state.camera, dt, still, fit });
 
-      // The words: nothing but an opacity, on the drawing's own curve — with the
-      // one allowance the drawing does not need, for the fact that these travel.
-      for (let i = 0; i < copy.length; i += 1) {
-        const block = copy[i]!;
-        const alpha = presenceOfWords(pos - i);
-        if (alpha <= 0.001) {
-          if (block.style.visibility !== "hidden") block.style.visibility = "hidden";
-          continue;
-        }
-        if (block.style.visibility === "hidden") block.style.visibility = "";
-        block.style.opacity = alpha.toFixed(3);
+      // The words: which construction is being read, and nothing else.
+      //
+      // The same answer the drawing is using, so the paragraph and the object
+      // it names can never be one construction apart. And only while the run is
+      // actually pinned — the words are fixed to the viewport now, so above and
+      // below the section there is no one to show.
+      const line = scrolled + pinned;
+      const reading = line >= runTop && line <= runBottom - deckH ? state.reading : -1;
+      if (reading !== shown) {
+        if (shown >= 0) copy[shown]?.classList.remove("is-reading");
+        if (reading >= 0) copy[reading]?.classList.add("is-reading");
+        shown = reading;
       }
 
       const active = hot.current ?? -1;
@@ -550,6 +631,10 @@ export default function ConstructionStage({
       }
     };
 
+    // Said before anything is measured, because it is what takes the words out
+    // of the flow, and the column has to be measured with them already out of it.
+    run.classList.add("constructions-live");
+
     measure();
     frame = requestAnimationFrame(tick);
     window.addEventListener("resize", measure);
@@ -577,10 +662,10 @@ export default function ConstructionStage({
       watch.disconnect();
       window.removeEventListener("resize", measure);
       for (const kind of inputs) window.removeEventListener(kind, interrupt);
-      for (const block of copy) {
-        block.style.opacity = "";
-        block.style.visibility = "";
-      }
+      run.classList.remove("constructions-live");
+      run.style.removeProperty("--copy-x");
+      run.style.removeProperty("--copy-w");
+      for (const block of copy) block.classList.remove("is-reading");
     };
   }, [runId, bannerId, stacks, callouts]);
 

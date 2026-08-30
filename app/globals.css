@@ -2197,99 +2197,6 @@
     color: var(--color-signal);
   }
 
-  /* --- Being shown a layer -------------------------------------------------
-
-     Pointing at a band is one gesture and it deliberately moves nothing.
-     Choosing is the other, and it gets the other treatment: the band the choice
-     just moved swells out of the wall and settles back into it, once. Four
-     groups of controls sit beside a drawing of forty-odd millimetres of render
-     over two hundred of block, and without this the answer to "which part of
-     that did I just change" is somewhere in a legend of seven rows. The layer
-     answers for itself instead, by being the one thing on the sheet that moved.
-
-     How far it swells is the band's own, set as a variable where the band is
-     drawn — see `SWELL_Y` in `components/wall-section.tsx` for why it cannot be
-     one ratio for all seven.
-
-     Two identical animations, and the only reason there are two is that a CSS
-     animation restarts when its name changes and at nothing else. Choosing
-     depth after depth pulses the same band over and over; alternating the name
-     is what makes the second click a second pulse rather than the tail of the
-     first. */
-  @keyframes band-swell-a {
-    0% {
-      transform: scale(1, 1);
-      stroke: var(--color-edge);
-      stroke-width: 1;
-    }
-    38% {
-      transform: scale(var(--swell-x, 1.09), var(--swell-y, 1.06));
-      stroke: var(--color-signal);
-      stroke-width: 2;
-    }
-    100% {
-      transform: scale(1, 1);
-      stroke: var(--color-edge);
-      stroke-width: 1;
-    }
-  }
-
-  @keyframes band-swell-b {
-    0% {
-      transform: scale(1, 1);
-      stroke: var(--color-edge);
-      stroke-width: 1;
-    }
-    38% {
-      transform: scale(var(--swell-x, 1.09), var(--swell-y, 1.06));
-      stroke: var(--color-signal);
-      stroke-width: 2;
-    }
-    100% {
-      transform: scale(1, 1);
-      stroke: var(--color-edge);
-      stroke-width: 1;
-    }
-  }
-
-  /* About its own middle, so a band grows into the wall on both sides rather
-     than dragging one edge across it. `fill-box` is re-read as the box changes,
-     which is what keeps the board centred through a depth change — the one
-     pulse that fires while its band is also being resized. */
-  .band-group .band {
-    transform-box: fill-box;
-    transform-origin: center;
-  }
-
-  .band-group[data-pulse="a"] .band {
-    animation: band-swell-a 720ms ease-in-out;
-  }
-
-  .band-group[data-pulse="b"] .band {
-    animation: band-swell-b 720ms ease-in-out;
-  }
-
-  /* The row for it marks at the same time, in the same soft ground pointing at
-     it uses: the drawing and the schedule are the same layers twice, and a
-     choice is answered in both or it is answered in neither. */
-  .legend-row[data-pulse="true"] {
-    background: var(--color-signal-soft);
-  }
-
-  .legend-row[data-pulse="true"] .legend-name {
-    color: var(--color-signal);
-  }
-
-  /* Asked for less motion: the band still answers, it just does not move to do
-     it. Set on the rect rather than the group, so it beats the inline scale the
-     drawing writes there without needing `!important` to do it. */
-  @media (prefers-reduced-motion: reduce) {
-    .band-group[data-pulse] .band {
-      --swell-x: 1;
-      --swell-y: 1;
-    }
-  }
-
   /* Only a `<rect>` has geometry a browser will animate, which is why every
      part of this drawing that moves is one. */
   .band {
@@ -4049,23 +3956,28 @@
   }
 
   @media (width >= 64rem) {
-    /* Each construction's words are stuck at the line the banner ends on, by
-       the browser, and the scroll loop touches nothing but their opacity.
+    /* The five texts are laid one on top of another at the line the banner ends
+       on, and the only thing that ever happens to them is that one is replaced
+       by the next.
 
-       They used to be held there by hand: laid one on top of another and
-       translated down the page by exactly the scroll offset, once a frame. That
-       is a sticky element written in JavaScript, and it is a sticky element that
-       is always one frame late — the page scrolls on the compositor and the
-       transform arrives after it, so through a flick or a momentum scroll the
-       words visibly shivered against everything around them. Nothing written
-       from a scroll position can be steady, and this had to be steady: it is a
-       paragraph, and you read it while you move.
+       They do not travel, and that is the whole of the rule. Every arrangement
+       this has had before now moved them: stuck by the browser, a paragraph
+       rides up from below the fold to its line and then holds, so what the
+       reader watches is a block of text climbing half a screen — and because
+       the climb is the page's, it advances exactly as far as each notch of the
+       wheel and no further. Faded on top of that, the fade inherits the same
+       stutter. There is no way to smooth a movement that is the scroll.
 
-       Stuck properly, it does not move at all while it is being read, and what
-       it does at the end of its own block — lets go and rides up as the next one
-       comes up from below — is the transition rather than a flaw in it. The
-       fades are set so that the one leaving is gone before it has travelled far
-       and the one arriving only appears over the last of its rise. */
+       So the words are taken out of the flow and pinned at the line, all five
+       in the same place. Nothing about them is a function of the scroll
+       position any more: the loop decides which construction is being read, and
+       that is a class. The appearing and the disappearing are a CSS transition
+       from there — one clock, running at its own speed, on the compositor.
+
+       Out of the flow means the column has to be handed back to them: the five
+       blocks still stand in the page at their own heights, because the length
+       of them is what the run is walked in, and `--copy-x` and `--copy-w` are
+       that column's box, written once per resize. */
     /* Hung from the line, not centred in what the banner leaves.
 
        Centring it was tried and put back. The five descriptions are close enough
@@ -4075,10 +3987,34 @@
        register; five whose titles each begin somewhere else read as five pages.
        The drawing beside it is centred because a drawing has no reading order to
        start. */
-    .constructions-copy-inner {
-      position: sticky;
+
+    /* Only once the stage is running. Without script the five are ordinary
+       page content, one after another, and every word of them is readable. */
+    .constructions-live .constructions-copy-inner {
+      position: fixed;
       inset-block-start: var(--pin-top, 18rem);
+      inset-inline-start: var(--copy-x, 0px);
+      inline-size: var(--copy-w, 30rem);
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
       will-change: opacity;
+      /* Going, and gone before the next one starts: a crossfade of two
+         paragraphs standing in the same place is two paragraphs printed over
+         each other, which is not a transition, it is a smudge. */
+      transition:
+        opacity 220ms ease-in,
+        visibility 0s linear 220ms;
+    }
+
+    /* And arriving, once the one before it has gone. */
+    .constructions-live .constructions-copy-inner.is-reading {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      transition:
+        opacity 320ms ease-out 220ms,
+        visibility 0s linear 0s;
     }
 
     .constructions-run {

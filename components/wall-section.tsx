@@ -36,56 +36,18 @@ const BOTTOM = 374;
  */
 const EMBEDMENT_MM = 25;
 
-/**
- * How far a band swells at the peak of its pulse, in drawing units per edge.
- *
- * Per edge and not as a ratio, which is the whole of why this is two numbers
- * and a cap rather than one factor. The substrate is a fifth of the drawing and
- * the render is seven units of it: a scale that is a plain movement on the
- * first is invisible on the second, and one that reads on the second throws the
- * first across the sheet. What is held constant is roughly how much a band
- * grows by, not by how much — so every layer's pulse is the same size on the
- * screen whatever the layer is worth in millimetres.
- */
-const SWELL_Y = 4.5;
-const SWELL_X = 6;
-
-/**
- * And the most a band may be scaled by, for the thinnest of them.
- *
- * A 1 mm primer is under a unit deep, and grown by a constant it would be
- * multiplied by ten and cover the four layers around it. Capped, the thinnest
- * bands pulse less than the constant asks for — but they pulse, they stay
- * inside the wall, and the edge lighting in the signal is what carries them.
- */
-const SWELL_CAP = 1.9;
-
-/**
- * Which layer the last choice moved, and a nonce.
- *
- * The nonce is not decoration. A CSS animation restarts when its name changes
- * and at nothing else, so choosing depth after depth would pulse the board once
- * and then sit still; the parity of this alternates the animation between two
- * identical names, which is what makes the second click a second pulse rather
- * than the tail of the first.
- */
-export type Pulse = { ids: string[]; n: number };
-
 type Band = Layer & { y: number; height: number };
 
 export default function WallSection({
   layers,
   totalMm,
   hot = null,
-  pulse = null,
   onHover,
 }: {
   layers: Layer[];
   totalMm: number;
   /** The id of the layer being pointed at, in the drawing or in the legend. */
   hot?: string | null;
-  /** The layers the last choice moved, which pulse once and settle back. */
-  pulse?: Pulse | null;
   onHover?: (id: string | null) => void;
 }) {
   const drawn = layers.filter((layer) => layer.mm > 0 && layer.hatch !== null);
@@ -145,18 +107,6 @@ export default function WallSection({
           key={band.id}
           data-band={band.id}
           data-hot={hot === band.id ? "true" : undefined}
-          // Two names, alternating, because that is the only thing a CSS
-          // animation restarts on. See `Pulse`.
-          data-pulse={pulse?.ids.includes(band.id) ? (pulse.n % 2 === 0 ? "a" : "b") : undefined}
-          style={
-            {
-              "--swell-x": (1 + (2 * SWELL_X) / (RIGHT - LEFT)).toFixed(4),
-              "--swell-y": Math.min(
-                1 + (2 * SWELL_Y) / Math.max(band.height, 0.5),
-                SWELL_CAP,
-              ).toFixed(4),
-            } as React.CSSProperties
-          }
           className="band-group"
           onMouseEnter={onHover ? () => onHover(band.id) : undefined}
         >

@@ -301,33 +301,24 @@ export function presence(d: number): number {
   return d >= 0 ? 1 - smoothstep(0, FADE_OUT_BY, t) : smoothstep(FADE_IN_FROM, 1, t);
 }
 
-/** Where in a block the drawing starts coming back. */
-const ARRIVES_AT = MOVE_IN + FADE_IN_FROM * (MOVE_OUT - MOVE_IN);
-
 /**
- * The same, for the block of words rather than for the drawing.
+ * Where the block of words is weighed, and why it is not weighed here.
  *
- * Identical on the way out, and different on the way in — and the difference is
- * the one thing the words have that the drawing does not, which is a position on
- * the page. The drawing is pinned and does not move, so it can finish arriving
- * whenever it likes. A block of words is laid out: until its own block reaches
- * the line it is ordinary page content, travelling up at the speed of the
- * scroll, and it only stops when it gets there.
+ * It used to be, on a curve of its own laid over the drawing's. Both are wrong
+ * for it in the same way. A curve in this file is a function of how far the
+ * reader is from a stop, and the words are not that: they are laid out, and
+ * where they sit on the screen at a given scroll position is the browser's
+ * answer to a sticky rather than ours. Faded against blocks, the opacity and
+ * the travel were two clocks that agreed at the stops and nowhere in between —
+ * which is exactly where an arrival is watched. The paragraph became visible
+ * while it was still low on the screen, and then had to make the rest of its
+ * journey at nearly full strength: one arrival, seen as two.
  *
- * Given the drawing's window it was therefore fully opaque a third of a block
- * early, and then had to travel the rest of the way at full strength and halt.
- * That is what read as two moves — the text appearing, and then the text going
- * up a step to where it belonged.
- *
- * So it begins exactly when the drawing begins, and finishes not when the
- * drawing finishes but when it lands. The rise and the fade are then the same
- * movement and they end on the same frame: it arrives once, and settling into
- * place is the last of the arriving rather than something that happens to it
- * afterwards.
+ * So the stage fades them off their own position on the screen instead. They
+ * come up as they come up, and having come up they are there. See
+ * `ConstructionStage`, which computes that position as arithmetic rather than
+ * reading it back, and so pays no layout for it.
  */
-export function presenceOfWords(d: number): number {
-  return d >= 0 ? presence(d) : smoothstep(ARRIVES_AT - 1, 0, d);
-}
 
 /** The frame at a position along the run. Pure: reads nothing, writes nothing. */
 export function computeFrame(pos: number): Frame {

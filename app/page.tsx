@@ -338,14 +338,22 @@ function ConfiguratorTrial({ buildUp }: { buildUp: BuildUp }) {
           <p className="label">Sheet 04 · external wall · ETICS</p>
         </div>
 
-        <div className="plate mt-5">
+        {/* The section's own heading, and the "or" in it is load-bearing: this
+            is the alternative to the five drawn applications above. Set at the
+            same size as theirs, because it is the same kind of claim. */}
+        <h2
+          id="configurator-heading"
+          className="display mt-5 max-w-[18ch] text-[clamp(2.25rem,5vw,4rem)] leading-[0.98]"
+        >
+          Or configure your own solution
+        </h2>
+
+        <div className="plate mt-8 sm:mt-10">
           {/* The left half of the sheet: what the tool asks, and why. The
               schedule is the argument — four rows, and both figures under it
               move when any of them does. */}
           <div className="plate-brief">
-            <h2 id="configurator-heading" className="display t-page max-w-[15ch]">
-              Configure the wall, not the board
-            </h2>
+            <h3 className="display t-page max-w-[15ch]">Configure the wall, not the board</h3>
             <p className="lead mt-4 max-w-[48ch]">
               The figure a specifier is asked for is the wall’s, and it is printed on no board in
               this catalogue: depth and U-value belong to the build-up.
