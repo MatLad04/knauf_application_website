@@ -82,13 +82,12 @@ export default function ServicesPage() {
             <div>
               <p className="label">Services</p>
               <h1 id="services-heading" className="display t-page mt-5 max-w-[22ch]">
-                Specification, calculation, inspection
+                What Kernbau does around the products
               </h1>
               <p className="lead mt-6 max-w-[62ch]">
-                A declared value is only worth what the detail around it is worth. These five are
-                what Kernbau does between the datasheet and the finished wall, in the order a job
-                meets them — and each one is described by what it puts in your hands, not by how
-                helpful it is.
+                A declared value is only worth what the detail around it is worth. These five sit
+                between the datasheet and the finished wall, in the order a job meets them — and
+                each one is described by what it puts in your hands, not by how helpful it is.
               </p>
             </div>
 

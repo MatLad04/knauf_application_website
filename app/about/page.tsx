@@ -106,7 +106,7 @@ export default function AboutPage() {
           it says the single truest thing about a catalogue of invented boards. */}
       <section className="border-b rule">
         <Container className="py-12 sm:py-16">
-          <p className="label">About</p>
+          <p className="label">The company and the data</p>
 
           {/* The eyebrow, the title and the stamp all start from the same top
               edge: centred against a taller neighbour, the title floated half a
@@ -114,8 +114,12 @@ export default function AboutPage() {
               blocks rather than as one head. */}
           <div className="mt-5 grid items-start gap-x-12 gap-y-9 lg:grid-cols-2">
             <div>
-              <h1 className="display t-hero max-w-[20ch]">
-                Invented products, real specification framework
+              {/* Broken by hand: the claim is a pair, and a width that holds
+                  "invented products," on one line is wide enough to pull "real
+                  standards" up beside it. */}
+              <h1 className="display t-hero">
+                <span className="block">Invented products,</span>
+                <span className="block">real standards</span>
               </h1>
 
               <p className="lead mt-6 max-w-[62ch]">
