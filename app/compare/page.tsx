@@ -52,7 +52,7 @@ export default async function ComparePage({
   if (products.length === 0) {
     return (
       <Container className="py-24">
-        <h1 className="display t-page max-w-2xl">Nothing selected yet</h1>
+        <h1 className="display t-page max-w-2xl">Nothing to compare yet</h1>
         <p className="mt-5 max-w-[58ch] text-muted">
           Pick up to three products in the catalogue and they line up here, declared value against
           declared value.

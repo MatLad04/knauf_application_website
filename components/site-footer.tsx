@@ -90,7 +90,7 @@ export default function SiteFooter() {
             the other — and the wordmark closes underneath them, starting at the
             same left edge every other line in the footer starts at. */}
         <div className="mt-12 border-t rule pt-8">
-          <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-4">
+          <div className="relative flex flex-wrap items-center justify-between gap-x-6 gap-y-4">
             <div className="flex flex-wrap items-center gap-2">
               <Link href="/standards" className="label mr-2 hover:text-signal">
                 Declared against
@@ -108,7 +108,7 @@ export default function SiteFooter() {
 
             <a
               href="#main"
-              className="group inline-flex shrink-0 items-center gap-2 text-sm hover:text-signal"
+              className="group inline-flex shrink-0 items-center gap-2 text-sm hover:text-signal lg:absolute lg:top-1/2 lg:left-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2"
             >
               <ArrowUp
                 size={16}

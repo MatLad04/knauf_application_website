@@ -553,10 +553,15 @@
      lettered in. */
   .hero-eyebrow {
     font-family: var(--font-mono);
-    font-size: 0.875rem;
-    letter-spacing: 0.16em;
+    font-size: clamp(0.875rem, 0.95vw, 1.0625rem);
+    letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: var(--color-muted);
+    /* Struck in ink rather than muted: it is what the company makes, read
+       over the name of the company, so it is a strapline rather than a
+       caption. Set a shade smaller than the line it replaced — it carries
+       three times the characters and has to hold one line in the hero's
+       narrower flank. */
+    color: var(--color-ink);
   }
 
   .hero-figure {
@@ -1560,12 +1565,16 @@
        them now. */
     .config-head {
       grid-area: 2 / 1 / 3 / 3;
-      --head-foot: 4.08rem;
+      /* All of it, over and under the title together. Split rather than spent
+         at one end, so the title is centred in the band between the verb and
+         the rule while the head occupies exactly the depth it did before. */
+      --head-slack: 4.58rem;
+      --head-foot: calc(var(--head-slack) / 2);
       margin-block-end: -0.25rem;
     }
 
     .config-verb {
-      margin-block-end: 0.5rem;
+      margin-block-end: calc(var(--head-slack) / 2);
     }
 
     .step-a,
@@ -3843,7 +3852,11 @@
       grid-template-columns: repeat(2, minmax(0, 1fr));
       column-gap: 2.5rem;
       row-gap: 2.5rem;
-      align-items: start;
+      /* Hung from the foot of each row rather than from its head: the reading
+         sits on the same line the claim ends on, and the caveat on the line
+         the way in ends on. The tall cell of each row sets the row's depth
+         either way, so only the shorter of the two actually moves. */
+      align-items: end;
     }
 
     .opening-title {

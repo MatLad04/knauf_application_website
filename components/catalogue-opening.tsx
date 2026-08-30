@@ -97,12 +97,12 @@ export default async function CatalogueOpening({ products }: { products: number 
                 to: the way in under the claim, the caveat under the reading. */}
             <div className="opening-brief">
               <h2 id="catalogue-heading" className="display opening-title">
-                Start from the number instead
+                Start from the number
               </h2>
               <p className="lead opening-lead max-w-[46ch]">
-                A requirement does not always arrive as a construction. Often it arrives as a figure
-                — and a figure is a constraint, not a product. Each of these is one, already
-                applied.
+                A requirement often arrives as a figure: a conductivity to hit, a fire class the
+                building height demands, a depth the reveal will take. A figure is a constraint, not
+                a product. Each of these is one, already applied.
               </p>
 
               <div className="opening-act">

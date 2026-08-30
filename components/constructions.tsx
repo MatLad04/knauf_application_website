@@ -54,22 +54,21 @@ export default function Constructions({ applications }: { applications: App[] })
                   <p className="label">Applications</p>
                   <h2
                     id="constructions-heading"
-                    className="display mt-5 max-w-[18ch] text-[clamp(2.25rem,5vw,4rem)] leading-[0.98]"
+                    className="display mt-5 max-w-[24ch] text-[clamp(2.25rem,5vw,4rem)] leading-[0.98]"
                   >
-                    Five applications, layer by layer
+                    Walls, roofs and floors, layer by layer
                   </h2>
                 </div>
 
                 <p className="lead sm:col-start-1">
-                  A specification starts from what is being built, not from a catalogue. Each
-                  construction below is drawn as the build-up it is approved as, in installation
-                  order, with the Kernbau products approved for it one click away.
+                  Each construction below is drawn as the build-up it is approved as, in
+                  installation order, with every Kernbau product approved for it one click away.
                 </p>
                 <p className="text-sm leading-relaxed text-muted sm:col-start-2">
                   The order matters as much as the products in it: a system is assessed as a whole
-                  under ETAG 004, so a layer swapped for an equivalent-looking one is a different
-                  system — which is why the catalogue filters by construction and not only by
-                  material.
+                  under ETAG 004, the European approval route for these build-ups, so a layer
+                  swapped for an equivalent-looking one is a different system — which is why the
+                  catalogue filters by construction and not only by material.
                 </p>
               </div>
             </div>

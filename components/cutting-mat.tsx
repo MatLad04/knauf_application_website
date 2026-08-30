@@ -53,16 +53,16 @@ const NOTE_H = B - 26 - (NOTE_Y - 34);
 const FOOT_Y = NOTE_Y + 424;
 
 const MANIFESTO = [
-  "Seventy-four insulation, reinforcement",
-  "and render products, declared the way a",
-  "European datasheet declares them.",
+  "74 insulation, reinforcement and ",
+  "render products, carrying the values a",
+  "European datasheet actually carries.",
   "",
   "λD in W/(m·K). Reaction to fire as a",
-  "Euroclass. Every value traceable to a",
-  "Declaration of Performance.",
+  "Euroclass. Depth in mm.",
+  "Every one of them is a filter",
   "",
-  "The company is invented. The framework",
-  "around it is not.",
+  "The catalogue is a prototype.",
+  "The framework around it is not.",
 ];
 
 /* The caution and its code strip sit in the band the manifesto leaves above the

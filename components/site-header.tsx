@@ -47,7 +47,7 @@ const NAV = [
  * page rather than being a control that does nothing.
  */
 const ACCOUNT = [
-  { href: "/in-development?feature=account", icon: User, label: "Hallo! Sign in", text: true },
+  { href: "/in-development?feature=account", icon: User, label: "Sign in", text: true },
   { href: "/in-development?feature=favourites", icon: Heart, label: "Favourites" },
   { href: "/in-development?feature=basket", icon: Basket, label: "Basket" },
 ];

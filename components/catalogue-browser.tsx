@@ -210,10 +210,11 @@ export default function CatalogueBrowser({
               reason: six filters would otherwise take three lines and move the
               catalogue down the screen while you were reading it. */}
           <div className="toolbar-row flex min-w-0 flex-1 items-center gap-4">
-            <h1 aria-live="polite" className="shrink-0 text-sm font-normal">
+            <h1 className="sr-only">Products — insulation, reinforcement and render</h1>
+            <p aria-live="polite" className="shrink-0 text-sm">
               <span className="mono">{total}</span> {plural(total, "result")}
               {query.q && <span className="text-muted"> for “{query.q}”</span>}
-            </h1>
+            </p>
 
             {chips.length > 0 && (
               <>

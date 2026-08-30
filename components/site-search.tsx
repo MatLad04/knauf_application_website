@@ -127,7 +127,7 @@ export default function SiteSearch({
             type="text"
             autoComplete="off"
             value={term}
-            placeholder="What are you looking for?"
+            placeholder="Search by name, code or declared value"
             aria-expanded={open}
             aria-controls={open ? `${listId}-panel` : undefined}
             onFocus={() => setOpen(true)}

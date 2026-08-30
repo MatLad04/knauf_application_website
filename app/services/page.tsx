@@ -81,8 +81,8 @@ export default function ServicesPage() {
           <div className="grid gap-x-16 gap-y-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
             <div>
               <p className="label">Services</p>
-              <h1 id="services-heading" className="display t-page mt-5 lg:whitespace-nowrap">
-                Beyond the products
+              <h1 id="services-heading" className="display t-page mt-5 max-w-[22ch]">
+                Specification, calculation, inspection
               </h1>
               <p className="lead mt-6 max-w-[62ch]">
                 A declared value is only worth what the detail around it is worth. These five are

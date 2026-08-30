@@ -59,7 +59,7 @@ export default async function HomePage() {
     },
     {
       title: "Families",
-      lead: "A family is one datasheet and one photograph across every thickness it is made in.",
+      lead: "One slab, one datasheet, and every thickness it is made in.",
       image: texture("eps"),
       rows: families.map((family) => ({
         label: family.name,
@@ -89,17 +89,16 @@ export default async function HomePage() {
       <section aria-labelledby="ways-heading" className="py-16 sm:py-20">
         <Container>
           <Reveal className="max-w-[62rem]">
-            <p className="label">Where to start</p>
+            <p className="label">Browse</p>
             <h2
               id="ways-heading"
               className="display mt-4 max-w-[18ch] scroll-mt-[calc(var(--header-h)+2.5rem)] text-[clamp(2.25rem,5vw,4rem)] leading-[0.98]"
             >
-              Three ways into the catalogue
+              Three ways to browse the catalogue
             </h2>
             <p className="lead mt-4 max-w-[62ch]">
-              A specification starts from what the product is made of, from the family it belongs
-              to, or from the construction it is going into. Every name below is a filtered
-              catalogue.
+              Every name below is a filtered catalogue. Start from what the product is made of, from
+              the family it belongs to, or from the construction it is going into.
             </p>
           </Reveal>
 
@@ -197,15 +196,22 @@ function Hero({ stats }: { stats: Stats }) {
         <div className="hero-grid">
           <div>
             <Enter>
-              <p className="hero-eyebrow">External wall — ETICS · section 1:5</p>
+              <p className="hero-eyebrow">Insulation, reinforcement and render systems</p>
             </Enter>
             <Enter delay={0.06}>
-              <h1 className="display hero-title mt-5 max-w-[12ch]">Every layer, declared</h1>
+              {/* Broken by hand rather than by width: the name takes the first
+                  line and what it makes takes the second, so the break is the
+                  same on every screen the two lines fit on. */}
+              <h1 className="display hero-title mt-4">
+                <span className="block">Kernbau</span>
+                <span className="block">building materials</span>
+              </h1>
             </Enter>
             <Enter delay={0.14}>
               <p className="hero-lead mt-7 max-w-[46ch]">
-                {stats.products} insulation, reinforcement and render products, declared to the
-                values a Declaration of Performance actually carries.
+                {stats.products} products across {stats.categories} material categories and{" "}
+                {stats.applications} constructions, each with its declared performance. Search by
+                value, compare any three, or configure a whole build-up and read its U-value.
               </p>
             </Enter>
             <Enter delay={0.22}>
@@ -216,7 +222,7 @@ function Hero({ stats }: { stats: Stats }) {
                 <span className="flex size-9 shrink-0 items-center justify-center rounded-full border rule transition-colors group-hover:border-[color:var(--color-edge)]">
                   <CaretDown size={14} weight="bold" aria-hidden="true" />
                 </span>
-                Where to start
+                Browse the catalogue
               </a>
             </Enter>
           </div>
@@ -233,7 +239,7 @@ function Hero({ stats }: { stats: Stats }) {
           <Cell
             term="Products declared"
             value={String(stats.products)}
-            note="Every value to a DoP"
+            note="Every value declared"
             delay={120}
           />
           <Cell
@@ -248,7 +254,7 @@ function Hero({ stats }: { stats: Stats }) {
             note="Each drawn as a build-up"
             delay={400}
           />
-          <Cell term="Sheet" value="01/22" note="Kernbau · prototype" delay={540} />
+          <Cell term="Sheet" value="01/22" note="External wall · section 1:5" delay={540} />
         </dl>
       </Container>
     </section>
@@ -348,7 +354,7 @@ function ConfiguratorTrial({ buildUp }: { buildUp: BuildUp }) {
           id="configurator-heading"
           className="display mt-5 max-w-[18ch] text-[clamp(2.25rem,5vw,4rem)] leading-[0.98]"
         >
-          Or configure your own solution
+          Configure the wall, not the board
         </h2>
 
         <div className="plate mt-8 sm:mt-10">
@@ -356,7 +362,7 @@ function ConfiguratorTrial({ buildUp }: { buildUp: BuildUp }) {
               schedule is the argument — four rows, and both figures under it
               move when any of them does. */}
           <div className="plate-brief">
-            <h3 className="display t-page max-w-[15ch]">Configure the wall, not the board</h3>
+            <h3 className="display t-page max-w-[20ch]">Substrate, board, depth, finish</h3>
             <p className="lead mt-4 max-w-[48ch]">
               The figure a specifier is asked for is the wall’s, and it is printed on no board in
               this catalogue: depth and U-value belong to the build-up.
@@ -402,9 +408,9 @@ function ConfiguratorTrial({ buildUp }: { buildUp: BuildUp }) {
 
         <p className="caption mt-4 max-w-[76ch]">
           The drawing steps through {DEPTHS.join(", ")} mm of {board.familyName} on{" "}
-          {substrate.name.toLowerCase()}; the block reads the deepest of them. Kernbau does not
-          exist and every declared value here is invented — the units, the standards and the
-          arithmetic are the ones a real datasheet uses, so the interface can be judged honestly.
+          {substrate.name.toLowerCase()}; the block reads the deepest of them. Every figure in the
+          block is the one the configurator itself computes, so nothing here is a number the tool
+          would not produce.
         </p>
       </Container>
     </section>
