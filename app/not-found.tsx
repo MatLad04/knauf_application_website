@@ -23,12 +23,14 @@ const CODE = [
 export default function NotFound() {
   return (
     <Container className="py-12 sm:py-16">
-      {/* Two halves. The text keeps the page's own left margin, and the sheet
-          furniture sits in the middle of the space left over beside it — the
-          same placement the About sheet head uses, so a stamp is always found
-          in the same part of the page. */}
-      <div className="grid items-start gap-12 lg:grid-cols-2 lg:gap-16">
-        <div className="lg:max-w-[40rem]">
+      {/* Four columns, and the same four the footer is set on — same count,
+          same gutter — so the sheet furniture starts on the page's own third
+          column line rather than in the middle of a half. Ranged on a column
+          line it agrees with the footer beneath it; centred in a half it agreed
+          with nothing, and was eight pixels and a five-rem indent away from the
+          only vertical on the page a reader can actually see. */}
+      <div className="grid items-start gap-x-12 gap-y-12 lg:grid-cols-4">
+        <div className="lg:col-span-2 lg:max-w-[40rem]">
           <p className="label">Drawing not found</p>
           <h1 className="display t-page mt-5 max-w-[17ch]">That page is not in the catalogue</h1>
 
@@ -46,7 +48,7 @@ export default function NotFound() {
           </div>
         </div>
 
-        <div className="w-full lg:ps-20">
+        <div className="w-full lg:col-span-2">
           {/* The status code itself, struck at drawing-number size with the
               line under it that says what it means. A reader who arrived here
               from a broken link recognises the three digits before they read a

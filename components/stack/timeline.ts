@@ -60,13 +60,14 @@ const POSES: Stop[] = [
   // the pairing is the honest one to make, since a flat roof and a pitched roof
   // are the same build-up in the same order, laid at two different angles.
   { construction: 2, camera: { rotY: -47, rotX: -26, roll: -16, scale: 0.97, z: 0 } },
-  // 04 Floor & screed — and 05 with it, held at the same view as the flat roof.
+  // 04 Floor & screed — held at the pitched roof's angle, roll and all.
   //
-  // These three are the ones where the sheets are wide and the layers are many,
-  // and this is the angle at which that reads: high enough to show the top of
-  // every sheet, square enough to keep the faces broad. Varying it per
-  // construction bought nothing here and cost the comparison between them.
-  { construction: 3, camera: { rotY: -38, rotX: -29, roll: 0, scale: 0.96, z: 0 } },
+  // Square on, it was the flattest drawing of the five: seven sheets seen very
+  // nearly face-first, so the thing the drawing exists to show — that they are
+  // seven separate things at seven depths — was the one thing hardest to read
+  // in it. Raked and rolled with the two roofs, the near edge of every sheet
+  // comes into view and the build-up reads as a build-up.
+  { construction: 3, camera: { rotY: -47, rotX: -26, roll: -16, scale: 0.97, z: 0 } },
   // 05 Internal partition — the same again, a shade less from above: it is
   // symmetrical about its studs and that is a thing you read from the face.
   { construction: 4, camera: { rotY: -38, rotX: -27, roll: 0, scale: 1, z: 0 } },
@@ -320,14 +321,24 @@ export function presence(d: number): number {
  * reading it back, and so pays no layout for it.
  */
 
-/** The frame at a position along the run. Pure: reads nothing, writes nothing. */
-export function computeFrame(pos: number): Frame {
-  const p = clamp(pos, -PRE_ROLL, LAST);
-  const i = Math.min(Math.max(Math.floor(p), 0), LAST - 1);
-  const f = p - i;
-
-  const a = STOPS[i]!;
-  const b = STOPS[i + 1]!;
+/**
+ * The frame for a handover between any two stops, at any point through it.
+ *
+ * The run's own frame is the special case where the two are neighbours and the
+ * point through it is where the reader is standing. A jump is the general one:
+ * the sheet list can ask for the fifth construction from the first, and what
+ * has to happen then is one build-up drawing itself shut and one drawing itself
+ * apart — not three of them doing both on the way past.
+ *
+ * Which is why this takes the pair as arguments rather than deriving it from a
+ * position. Everything about the changeover is the same either way — the same
+ * windows, the same easing, the same fall back through the swap — because it is
+ * the same changeover; the only thing a jump changes is which two constructions
+ * are on either side of it.
+ */
+function frameBetween(from: number, to: number, f: number, pos: number): Frame {
+  const a = STOPS[from]!;
+  const b = STOPS[to]!;
 
   const t = clamp((f - MOVE_IN) / (MOVE_OUT - MOVE_IN));
   const blend = easeInOut(t);
@@ -344,7 +355,7 @@ export function computeFrame(pos: number): Frame {
 
   // The volume a construction is drawn inside through the swap: the two depths,
   // blended, so it starts and ends as each one's own.
-  const envelope = mix(SPREADS[i]!, SPREADS[i + 1]!, blend);
+  const envelope = mix(SPREADS[from]!, SPREADS[to]!, blend);
 
   // The same two windows the words are on, and by the same call.
   const leaving = presence(f);
@@ -353,26 +364,48 @@ export function computeFrame(pos: number): Frame {
   const live: Live[] = [];
   if (leaving > 0.001)
     live.push({
-      stop: i,
+      stop: from,
       weight: leaving,
-      distance: p - i,
-      stretch: envelope / SPREADS[i]!,
+      distance: f,
+      stretch: envelope / SPREADS[from]!,
       direction: -1,
     });
   if (arriving > 0.001)
     live.push({
-      stop: i + 1,
+      stop: to,
       weight: arriving,
-      distance: p - (i + 1),
-      stretch: envelope / SPREADS[i + 1]!,
+      distance: f - 1,
+      stretch: envelope / SPREADS[to]!,
       direction: 1,
     });
 
   return {
-    pos: p,
+    pos,
     camera,
     live,
     // The copy has changed over by the time the object has, not after it.
-    reading: STOPS[blend < 0.5 ? i : i + 1]!.construction,
+    reading: STOPS[blend < 0.5 ? from : to]!.construction,
   };
+}
+
+/** The frame at a position along the run. Pure: reads nothing, writes nothing. */
+export function computeFrame(pos: number): Frame {
+  const p = clamp(pos, -PRE_ROLL, LAST);
+  const i = Math.min(Math.max(Math.floor(p), 0), LAST - 1);
+  return frameBetween(i, i + 1, p - i, p);
+}
+
+/**
+ * The frame partway through a jump, from one named construction to another.
+ *
+ * `t` runs nought to one over the whole of it and is a clock, not a position:
+ * the page is smooth-scrolling underneath and may be crossing three blocks to
+ * get there, and reading the run off that scroll is exactly what made a jump
+ * open and shut every construction it passed. The handover is played instead,
+ * on the run's own window, so the two constructions the reader named are the
+ * only two that ever move.
+ */
+export function jumpFrame(from: number, to: number, t: number): Frame {
+  const p = clamp(t);
+  return frameBetween(from, to, MOVE_IN + p * (MOVE_OUT - MOVE_IN), from + (to - from) * p);
 }

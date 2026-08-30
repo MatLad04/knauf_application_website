@@ -90,7 +90,10 @@ export default async function HomePage() {
         <Container>
           <Reveal className="max-w-[62rem]">
             <p className="label">Where to start</p>
-            <h2 id="ways-heading" className="display t-section mt-3">
+            <h2
+              id="ways-heading"
+              className="display mt-4 max-w-[18ch] scroll-mt-[calc(var(--header-h)+2.5rem)] text-[clamp(2.25rem,5vw,4rem)] leading-[0.98]"
+            >
               Three ways into the catalogue
             </h2>
             <p className="lead mt-4 max-w-[62ch]">

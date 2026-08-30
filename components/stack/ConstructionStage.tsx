@@ -16,7 +16,9 @@ import {
   PRE_ROLL,
   STOPS,
   computeFrame,
+  jumpFrame,
   shutCeiling,
+  type Frame,
 } from "./timeline";
 
 /**
@@ -267,6 +269,18 @@ const HIJACK_PX = 3;
 const OPEN_SECONDS = 1.15;
 const SHUT_SECONDS = 0.75;
 
+/**
+ * How long a jump takes, in milliseconds.
+ *
+ * A jump is a changeover played on a clock rather than read off the scroll, so
+ * this is the whole of it: one build-up shuts and goes, the stage is clear for
+ * a beat, and the one that was asked for arrives and comes apart. Long enough
+ * that all three are seen — that is the point of playing it at all rather than
+ * cutting — and close enough to the browser's own smooth scroll that the page
+ * and the drawing arrive together.
+ */
+const JUMP_MS = 900;
+
 export default function ConstructionStage({
   runId,
   bannerId,
@@ -341,6 +355,21 @@ export default function ConstructionStage({
     let wroteY = 0;
     /** Nothing pulls before this. Set when a reader scrolls out of a pull. */
     let coolUntil = 0;
+    /**
+     * A jump, if one is playing: which construction it is leaving, which one it
+     * was asked for, and when it started.
+     *
+     * While it runs the scroll is ignored entirely. The page is smooth-scrolling
+     * underneath and may be crossing three blocks to get where it is going, and
+     * following it is exactly what made the sheet list open and shut every
+     * construction between here and there.
+     */
+    let jumping = false;
+    let jumpFrom = 0;
+    let jumpTo = 0;
+    let jumpAt = 0;
+    /** Which construction is on the stage, so a jump knows where it is leaving from. */
+    let atStop = 0;
 
     /**
      * Where the run is on the page, and how big the stage is.
@@ -426,6 +455,9 @@ export default function ConstructionStage({
       // end of a trackpad gesture, and taken at face value they cancel the pull
       // the moment the gesture that earned it finishes.
       if (event.type === "wheel" && Math.abs((event as WheelEvent).deltaY) < 1) return;
+      // Scrolling out of a jump ends it: the reader has taken the run back, and
+      // wherever they are is now the truth about which construction is on.
+      if (event.type === "wheel" || event.type === "touchmove") jumping = false;
       if (pulling) release(performance.now());
     };
 
@@ -453,7 +485,7 @@ export default function ConstructionStage({
 
       // The magnet. Nothing above this line is ever prevented, and nothing
       // below it happens while the page is moving.
-      if (!still && marks.length >= 2) {
+      if (!still && !jumping && marks.length >= 2) {
         const y = window.scrollY;
         // The only speedometer there is: where it was a frame ago. Signed, now,
         // because the settle is handed this rather than starting from nothing.
@@ -536,25 +568,42 @@ export default function ConstructionStage({
       const scrolled = window.scrollY;
       const raw = at(scrolled + pinned, marks);
 
-      // The drawing follows the scroll rather than being it.
-      //
-      // One exponential step per frame, framerate-independent, and snapped once
-      // it is within a thousandth of a block so it settles rather than creeping.
-      // The words are not put through this — they are stuck by the browser and
-      // their opacity has to agree with where they actually are — but everything
-      // the drawing does is a movement, and a movement wants a shape.
-      if (!following) {
-        follow = raw;
-        following = true;
+      let state: Frame;
+
+      if (jumping) {
+        // Played, not followed. The page is going wherever it is going; this is
+        // the one changeover the reader asked for, on its own clock.
+        const t = (now - jumpAt) / JUMP_MS;
+        if (t >= 1) {
+          jumping = false;
+          follow = jumpTo;
+          state = computeFrame(jumpTo);
+        } else {
+          state = jumpFrame(jumpFrom, jumpTo, t);
+        }
       } else {
-        follow += (raw - follow) * (1 - Math.exp(-dt / FOLLOW));
-        if (Math.abs(raw - follow) < 0.001) follow = raw;
+        // The drawing follows the scroll rather than being it.
+        //
+        // One exponential step per frame, framerate-independent, and snapped
+        // once it is within a thousandth of a block so it settles rather than
+        // creeping. Everything the drawing does is a movement, and a movement
+        // wants a shape.
+        if (!following) {
+          follow = raw;
+          following = true;
+        } else {
+          follow += (raw - follow) * (1 - Math.exp(-dt / FOLLOW));
+          if (Math.abs(raw - follow) < 0.001) follow = raw;
+        }
+
+        // Asked for less motion: the drawing still answers the scroll, but it
+        // arrives at each stop already open rather than coming apart on the way.
+        const pos = still ? Math.round(Math.max(0, Math.min(raw, LAST))) : follow;
+        state = computeFrame(pos);
       }
 
-      // Asked for less motion: the drawing still answers the scroll, but it
-      // arrives at each stop already open rather than coming apart on the way.
-      const pos = still ? Math.round(Math.max(0, Math.min(raw, LAST))) : follow;
-      const state = computeFrame(pos);
+      // Where a jump would be leaving from, if one were asked for now.
+      atStop = state.reading;
 
       const fit = Math.max(Math.min((size.w - 2 * GUTTER) / BOX.w, size.h / BOX.h), 0.2);
       scene.current?.apply({ camera: state.camera, dt, still, fit });
@@ -569,7 +618,13 @@ export default function ConstructionStage({
       const reading = line >= runTop && line <= runBottom - deckH ? state.reading : -1;
       if (reading !== shown) {
         if (shown >= 0) copy[shown]?.classList.remove("is-reading");
-        if (reading >= 0) copy[reading]?.classList.add("is-reading");
+        if (reading >= 0) {
+          // The wait before words appear is owed to the words leaving, and on
+          // the way into the run there are none: the first construction should
+          // come up with its drawing rather than a beat behind it.
+          run.style.setProperty("--words-in-delay", shown >= 0 ? "200ms" : "0ms");
+          copy[reading]?.classList.add("is-reading");
+        }
         shown = reading;
       }
 
@@ -657,12 +712,38 @@ export default function ConstructionStage({
     const inputs = ["wheel", "touchstart", "touchmove", "keydown", "pointerdown"] as const;
     for (const kind of inputs) window.addEventListener(kind, interrupt, { passive: true });
 
+    /**
+     * The sheet list asked for a construction by name.
+     *
+     * Answered as one changeover between the two named, however far apart they
+     * are in the run: the one on the stage draws itself shut and goes, and the
+     * one asked for arrives and comes apart. The words change over with it,
+     * because they are read off the same frame.
+     */
+    const jump = (event: Event) => {
+      if (still) return;
+      const id = (event as CustomEvent<{ id?: string }>).detail?.id;
+      if (!id) return;
+      const to = blocks.findIndex((block) => block.id === id);
+      if (to < 0 || to === atStop) return;
+      jumpFrom = atStop;
+      jumpTo = to;
+      jumpAt = performance.now();
+      jumping = true;
+      // A jump is the reader placing the page themselves; the magnet has
+      // nothing to correct and should not be waiting to.
+      pulling = false;
+    };
+    window.addEventListener("kernbau:anchor", jump);
+
     return () => {
       cancelAnimationFrame(frame);
       watch.disconnect();
       window.removeEventListener("resize", measure);
       for (const kind of inputs) window.removeEventListener(kind, interrupt);
+      window.removeEventListener("kernbau:anchor", jump);
       run.classList.remove("constructions-live");
+      run.style.removeProperty("--words-in-delay");
       run.style.removeProperty("--copy-x");
       run.style.removeProperty("--copy-w");
       for (const block of copy) block.classList.remove("is-reading");

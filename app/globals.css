@@ -538,14 +538,14 @@
      than a section heading. It is the whole argument in three words, so it is
      set at the size of an argument. */
   .hero-title {
-    font-size: clamp(2.5rem, 5.4vw, 4.5rem);
-    line-height: 0.96;
-    letter-spacing: -0.03em;
+    font-size: clamp(3rem, 6.6vw, 5.75rem);
+    line-height: 0.94;
+    letter-spacing: -0.034em;
   }
 
   .hero-lead {
-    font-size: clamp(1.0625rem, 1.25vw, 1.3125rem);
-    line-height: 1.5;
+    font-size: clamp(1.1875rem, 1.6vw, 1.5rem);
+    line-height: 1.45;
     color: var(--color-muted);
   }
 
@@ -553,7 +553,7 @@
      lettered in. */
   .hero-eyebrow {
     font-family: var(--font-mono);
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
     letter-spacing: 0.16em;
     text-transform: uppercase;
     color: var(--color-muted);
@@ -1354,7 +1354,12 @@
     justify-content: space-between;
     gap: 1.5rem;
     border-block-end: 2px solid var(--color-ink);
-    padding-block: var(--head-lead) 0.875rem;
+    /* Named, because reset rides on this rule and has to know how far down it
+       is. The figure changes with the layout — see the `lg` head, where it is
+       tuned against the centring of the whole sheet — and a control pinned to
+       a rule cannot be pinned to one guess at where the rule is. */
+    --head-foot: 0.875rem;
+    padding-block: var(--head-lead) var(--head-foot);
   }
 
   /* The subject of the sheet, set in the two lines the product page sets it in
@@ -1555,7 +1560,7 @@
        them now. */
     .config-head {
       grid-area: 2 / 1 / 3 / 3;
-      padding-block-end: 4.08rem;
+      --head-foot: 4.08rem;
       margin-block-end: -0.25rem;
     }
 
@@ -1610,6 +1615,20 @@
     display: inline-flex;
     align-items: center;
     gap: 0.375rem;
+    /* Down onto the rule it belongs to.
+    
+       The head's foot is set for the title, and above `lg` it is set for
+       something else again — the sheet is centred, so the room under the title
+       is tuned against the margin above it and runs to four rems. Reset is not
+       a line of type and owes that room nothing: sharing it, it floated most of
+       an inch clear of the line and read as a control placed near the head
+       rather than as the far end of it.
+    
+       So it is pulled back to a fixed gap above the rule, off the head's own
+       figure rather than off a guess at it — and it stays in the flex flow
+       while it does, because taken out of it a long title on a narrow screen
+       would run underneath it. */
+    margin-block-end: calc(0.5rem - var(--head-foot, 0.875rem));
     font-family: var(--font-mono);
     font-size: 0.6875rem;
     letter-spacing: 0.1em;
@@ -3473,6 +3492,10 @@
     inset-block: 0.5rem;
     inset-inline-start: 0.375rem;
     inline-size: 1px;
+    /* Drawn rather than printed — see `cutline-draw` at the foot of the sheet.
+       Clipped and not scaled, because the chain is a gradient with its dashes
+       set in pixels and a stretched chain is a different convention. */
+    clip-path: inset(0 0 0 0);
     /* Long dash, gap, short dash, gap — the chain of a section line. */
     background: repeating-linear-gradient(
       to bottom,
@@ -3627,17 +3650,49 @@
     margin-block-start: 0.5rem;
   }
 
-  .note {
-    display: grid;
-    grid-template-columns: 3.5rem minmax(0, 1fr);
-    gap: 0.5rem 1rem;
-    border-block-end: 1px solid var(--color-rule);
-    padding-block: 0.875rem;
+  /* The margin the numbers sit in, and the gutter between it and the prose.
+     Stated once for the whole section, because the group head is set on these
+     columns too: the whole point of numbering notes in a margin is that the
+     title and every note under it begin on one line, and two declarations of
+     the same measurement are two measurements waiting to disagree. */
+  .notes-section {
+    --note-margin: 4.5rem;
+    --note-gutter: 1.25rem;
   }
 
+  /* The head of a group, on the notes' own columns: the number in the margin,
+     the name where the prose starts. */
+  .notes-group {
+    display: grid;
+    grid-template-columns: var(--note-margin, 4.5rem) minmax(0, 1fr);
+    column-gap: var(--note-gutter, 1.25rem);
+    align-items: baseline;
+  }
+
+  .note {
+    display: grid;
+    grid-template-columns: var(--note-margin, 4.5rem) minmax(0, 1fr);
+    gap: 0.5rem var(--note-gutter, 1.25rem);
+    border-block-end: 1px solid var(--color-rule);
+    padding-block: 1.125rem;
+  }
+
+  /* The two column heads of the sheet — the notes on one side, the references
+     on the other. They are section headings doing the work of a caption, and at
+     the label's own weight they read as neither: a muted eleven-pixel line over
+     a column of eighteen-pixel prose is a thing you have to go looking for. In
+     ink, and a shade larger, they are still captions and they are findable. */
+  .notes-title {
+    font-size: 0.8125rem;
+    color: var(--color-ink);
+  }
+
+  /* The number keeps pace with the prose beside it. Left where it was, a
+     schedule set at reading size is numbered in something you have to lean in
+     for, and the margin stops reading as a column of references. */
   .note-no {
-    font-size: 0.6875rem;
-    line-height: 1.7;
+    font-size: 0.8125rem;
+    line-height: 1.65;
     color: var(--color-muted);
   }
 
@@ -3732,12 +3787,16 @@
     line-height: 0.98;
   }
 
+  .opening-lead {
+    margin-block-start: 1.5rem;
+  }
+
   .opening-act {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
     margin-block-start: 2.5rem;
+  }
+
+  .opening-aside {
+    margin-block-start: 1rem;
   }
 
   .opening-doors {
@@ -3756,15 +3815,66 @@
   /* The argument on one side and the constraints on the other, which is the
      same division the section above it makes between its words and its
      drawing. */
+  /* Three columns for the whole sheet, argument and doors alike.
+
+     It used to be two — the words on the left in a narrow column and the three
+     doors crowded into the right — and the two halves shared no vertical at
+     all. Now the claim, its reading and each door are on the same three
+     columns, so the rule over the first door starts exactly under the first
+     word of the heading. The brief takes two of the three and leaves the last
+     one open; nothing goes in it, and that is the point of it.
+
+     The brief carries its own grid rather than a subgrid, and the arithmetic is
+     why it can: two equal columns spanning `2c + gap`, gutted by the same gap,
+     are two columns of exactly `c`. It lines up with the doors because it is
+     the same measurement, not because it was matched to it. */
   @media (width >= 64rem) {
     .opening-body {
-      grid-template-columns: minmax(0, 38fr) minmax(0, 62fr);
-      column-gap: 5rem;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      column-gap: 2.5rem;
       padding-block-start: 3rem;
+      align-items: start;
+      row-gap: 4rem;
+    }
+
+    .opening-brief {
+      grid-column: 1 / span 2;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: 2.5rem;
+      row-gap: 2.5rem;
       align-items: start;
     }
 
+    .opening-title {
+      grid-area: 1 / 1;
+    }
+
+    .opening-lead {
+      grid-area: 1 / 2;
+      margin-block-start: 0;
+    }
+
+    .opening-act {
+      grid-area: 2 / 1;
+      margin-block-start: 0;
+    }
+
+    .opening-aside {
+      grid-area: 2 / 2;
+      margin-block-start: 0;
+    }
+
+    /* The way in is the width of the claim above it. A pill sized to its own
+       words in a column this wide reads as a stray control; ruled to the
+       column, it reads as the foot of that column. */
+    .opening-search {
+      inline-size: 100%;
+      justify-content: center;
+    }
+
     .opening-doors {
+      grid-column: 1 / -1;
       gap: 0 2.5rem;
     }
   }
@@ -4003,17 +4113,24 @@
          paragraphs standing in the same place is two paragraphs printed over
          each other, which is not a transition, it is a smudge. */
       transition:
-        opacity 220ms ease-in,
-        visibility 0s linear 220ms;
+        opacity 200ms ease-in,
+        visibility 0s linear 200ms;
     }
 
-    /* And arriving, once the one before it has gone. */
+    /* And arriving, once the one before it has gone — but only if there was
+       one, which is what the custom property is for.
+    
+       The wait is the length of the outgoing fade and it is owed to the
+       outgoing paragraph, not to the incoming one. Arriving at the run there is
+       no outgoing paragraph: the first construction was queueing behind a fade
+       that was not happening, and came up a fifth of a second after the drawing
+       it belongs to. The stage sets this to nought when the stage is empty. */
     .constructions-live .constructions-copy-inner.is-reading {
       opacity: 1;
       visibility: visible;
       pointer-events: auto;
       transition:
-        opacity 320ms ease-out 220ms,
+        opacity 300ms ease-out var(--words-in-delay, 200ms),
         visibility 0s linear 0s;
     }
 
@@ -4480,6 +4597,11 @@ html[data-search-open] .search-bar {
   opacity: 0;
   pointer-events: none;
   color: rgba(255, 255, 255, 0.82);
+  /* An SVG group scales about the origin of the user space it is drawn in, not
+     about itself, so without this the press throws the cell off the corner of
+     the sheet instead of pushing it in. */
+  transform-box: fill-box;
+  transform-origin: center;
   transition:
     color 0.2s ease,
     opacity 0.2s ease;
@@ -4507,39 +4629,30 @@ html[data-search-open] .search-bar {
   }
 }
 
-/* Pressed. Everything else on the cell stops — the breath included — and the
-   only thing left is the press itself: the rule struck once, hard, and held
-   while the mat goes. A control that keeps breathing after you have used it has
-   not registered that you used it. */
-.loader[data-phase="leaving"] .mat-enter {
-  animation: mat-enter-press 0.34s cubic-bezier(0.3, 0, 0.2, 1) both;
-}
+/* Pressed. Nothing lights up and nothing thickens: the cell is pushed in and
+   comes back, which is what a button under a finger does and the only thing a
+   button under a finger does. It used to strike the rule white and hold it
+   there, and a rule struck at more than twice its weight in pure white is not a
+   press, it is a highlight — the one mark on the sheet that is not drawn.
 
-.loader[data-phase="leaving"] .mat-enter rect {
-  animation: mat-enter-press-rule 0.34s cubic-bezier(0.3, 0, 0.2, 1) both;
+   Everything running stops with it, the breath included: a control that keeps
+   breathing after you have used it has not registered that you used it.
+
+   `scale` and not a scaling `transform`, so it composes with the translate the
+   cell arrives on rather than replacing it. */
+.loader[data-phase="leaving"] .mat-enter {
+  animation: mat-enter-press 0.3s cubic-bezier(0.34, 0, 0.2, 1) both;
 }
 
 @keyframes mat-enter-press {
   0% {
-    color: rgba(255, 255, 255, 0.9);
+    scale: 1;
   }
-  30% {
-    color: #fff;
-  }
-  100% {
-    color: #fff;
-  }
-}
-
-@keyframes mat-enter-press-rule {
-  0% {
-    stroke-width: 1.3;
-  }
-  30% {
-    stroke-width: 2.8;
+  38% {
+    scale: 0.955;
   }
   100% {
-    stroke-width: 2.2;
+    scale: 1;
   }
 }
 
@@ -4548,7 +4661,18 @@ html[data-search-open] .search-bar {
   stroke-width: 2;
 }
 
-.mat-enter[data-ready="true"]:focus-visible {
+/* Chrome's own focus ring, refused — and refused on `:focus` rather than on
+   `:focus-visible`, which is the whole of why it was still being drawn.
+   `:focus-visible` is the right hook for an HTML control, because the UA paints
+   HTML focus rings through it; an SVG element with a `tabindex` is not covered
+   by that rule and gets `outline: auto` on plain `:focus`, so a mouse click
+   raised a five-pixel two-tone ring — white outside, blue inside — around a
+   drawing that has no other colour in it.
+   
+   Nothing is lost by refusing it. A keyboard arrival still says so, in the
+   drawing's own terms: the rule under `:focus-visible` below thickens and the
+   words go white, which is how a drawing marks a line. */
+.mat-enter:focus {
   outline: none;
 }
 
@@ -4841,9 +4965,172 @@ html[data-search-open] .search-bar {
   }
 
   .enter,
-  .reveal {
+  .reveal,
+  .station-plate {
     opacity: 1;
     transform: none;
+  }
+
+  .cutline::before {
+    clip-path: none;
+  }
+
+  .station-mark {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+/* --- The section line draws itself ---------------------------------------
+
+   The services page is one cut through one job, and a cut is something that
+   gets made. So the line is not printed on the page waiting to be scrolled
+   past: it is drawn down it, the stations are struck at it as it reaches them,
+   and the drawing across from each one comes up behind its words.
+
+   The range is what makes it read as drawing rather than as a progress bar.
+   `entry 30% exit 30%` is exactly as long as the line itself, so the tip
+   advances one pixel for every pixel of scroll and stays at a fixed height on
+   the screen — a little under a third of the way up it — for the whole of the
+   five. Any other range and the tip drifts up or down the screen as you go,
+   which reads as the line being played back rather than being made.
+
+   Scrubbed by the scroll like everything else here, so scrolling back up
+   un-draws it; and a browser without `view()` gets the finished line. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .cutline::before {
+      animation: cutline-draw linear both;
+      animation-timeline: view();
+      animation-range: entry 30% exit 30%;
+    }
+
+    /* Struck as the line arrives at it. `scale` and not `transform`, because
+       the mark is already carrying one — it is a square stood on its corner,
+       and above `lg` it is centred on the line with a translate as well. */
+    .station-mark {
+      animation: station-strike linear both;
+      animation-timeline: view();
+      animation-range: cover 22% cover 38%;
+    }
+
+    /* The words and the drawing beside them, developed rather than faded in.
+    
+       A soft edge is carried across each of them from the top down, so a
+       station resolves out of the page the way an image comes up in a tray:
+       the head of it is there before the foot is, and the foot is still a
+       gradient while the head is already readable. It is the same movement as
+       the line drawing itself down the page, one station at a time, which is
+       the only reason to prefer it to an opacity — an opacity says the block
+       arrived, this says it is being made.
+    
+       The soft edge is the mask's own, not a second element: `--station-reveal`
+       is where the opaque end of it has got to, and the forty per cent under
+       that is the feather. It is registered with `@property` below because an
+       unregistered custom property is a string, and a string does not
+       interpolate — the mask would jump from one end to the other.
+    
+       The drawing takes the same treatment a beat later. The station says what
+       it is first and shows what it issues second. */
+    .station-body,
+    .station-plate {
+      /* How much of the block the soft edge is spread over. Named once, because
+         the keyframe has to start the sweep exactly this far above the block —
+         any less and a station is faintly on screen before it should be, any
+         more and it stays hidden after the fade has begun. */
+      --station-feather: 20%;
+      -webkit-mask-image: linear-gradient(
+        to bottom,
+        #000 var(--station-reveal),
+        transparent calc(var(--station-reveal) + var(--station-feather))
+      );
+      mask-image: linear-gradient(
+        to bottom,
+        #000 var(--station-reveal),
+        transparent calc(var(--station-reveal) + var(--station-feather))
+      );
+      animation: station-pass linear both;
+      animation-timeline: view();
+      animation-range: cover 0% cover 100%;
+    }
+
+    .station-plate {
+      animation-range: cover 5% cover 100%;
+    }
+  }
+}
+
+/* Where the opaque end of the station's mask has got to, as a share of its own
+   height. Registered, so it is a percentage the browser can interpolate rather
+   than a piece of text it can only swap. Resting at a hundred, which is the
+   whole block visible — so anything that never runs the animation, and every
+   frame before it starts, has nothing masked. */
+@property --station-reveal {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 100%;
+}
+
+@keyframes cutline-draw {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes station-strike {
+  from {
+    opacity: 0;
+    scale: 0.25;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+/* Modelled on `pass`, which is what these used before: in over the first sixth
+   of the crossing, held for the long middle of it, and away at the end. What is
+   added is the mask, and it is added only on the way in — a station leaving is
+   leaving, and developing it backwards on the way out would be a second effect
+   competing with the first. */
+@keyframes station-pass {
+  0% {
+    --station-reveal: calc(-1 * var(--station-feather));
+    opacity: 0;
+    transform: translateY(38px);
+  }
+  /* Faint at the foot of the screen, but there.
+  
+     Two things are being balanced on this one figure. A station has to come up
+     out of nothing rather than arrive already solid — the dim-in used to be
+     over by the time one had risen a quarter of a screen, so it happened almost
+     entirely below the fold where there is nothing to see it in. But it also
+     has to be glimpsed: the last station on screen is a finished block of type
+     with air under it, and a reader who cannot see anything under it has been
+     given no reason to keep going.
+  
+     So the foot of the screen is not empty, it is a suggestion — enough of the
+     next heading to be read as a heading and not enough to be read. */
+  12% {
+    opacity: 0.2;
+  }
+  40% {
+    --station-reveal: 100%;
+    opacity: 1;
+    transform: none;
+  }
+  84% {
+    --station-reveal: 100%;
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    --station-reveal: 100%;
+    opacity: 0;
+    transform: translateY(-18px);
   }
 }
 

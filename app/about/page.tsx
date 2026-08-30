@@ -158,15 +158,15 @@ export default function AboutPage() {
       <Container className="py-14 sm:py-18">
         <div className="grid gap-x-16 gap-y-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,28rem)]">
           <div>
-            <h2 className="label">General notes</h2>
+            <h2 className="label notes-title">General notes</h2>
 
             {NOTES.map((section, g) => (
-              <Reveal key={section.group} className="mt-10 first:mt-6">
-                <div className="flex items-baseline gap-4 border-b-2 border-ink pb-2">
-                  <span className="mono text-xs text-muted">
+              <Reveal key={section.group} className="notes-section mt-10 first:mt-6">
+                <div className="notes-group border-b-2 border-ink pb-2">
+                  <span className="mono text-sm text-muted">
                     {String(g + 1).padStart(2, "0")}.00
                   </span>
-                  <h3 className="display t-sub">{section.group}</h3>
+                  <h3 className="display t-page">{section.group}</h3>
                 </div>
 
                 <ol className="notes">
@@ -175,7 +175,13 @@ export default function AboutPage() {
                       <span className="mono note-no">
                         {String(g + 1).padStart(2, "0")}.{String(n + 1).padStart(2, "0")}
                       </span>
-                      <p className="max-w-[72ch] text-sm leading-relaxed">{note}</p>
+                      {/* No measure cap. The notes column is the measure: it is
+                          the whole page below `lg` and the whole of what the
+                          reference margin leaves above it, and a note stopping
+                          at seventy characters left the right half of a sheet
+                          empty while the type on it was set small enough to
+                          need leaning into. */}
+                      <p className="text-base leading-relaxed sm:text-lg">{note}</p>
                     </li>
                   ))}
                 </ol>
@@ -192,7 +198,7 @@ export default function AboutPage() {
               register leaves with them. */}
           <div className="lg:sticky lg:top-[calc(var(--header-h)+2.5rem)] lg:max-h-[calc(100svh-var(--header-h)-4rem)] lg:self-start lg:overflow-y-auto lg:pt-8">
             <Reveal>
-              <h2 className="label">References</h2>
+              <h2 className="label notes-title">References</h2>
               <p className="mt-2 max-w-[52ch] text-sm text-muted">
                 Consulted for the shape of the data — the naming, units and classification systems.
                 No text or values were copied from any of them.

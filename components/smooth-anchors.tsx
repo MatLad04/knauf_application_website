@@ -34,6 +34,17 @@ export default function SmoothAnchors() {
 
       event.preventDefault();
       const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      // Said before the scroll starts, and said to anything that cares.
+      //
+      // A scroll is the wrong description of a jump for anything drawing off
+      // the scroll position. The construction stage is the case in point: asked
+      // for the fifth sheet from the first, it watched the page cross the three
+      // in between and opened and shut every one of them on the way past. What
+      // the reader asked for was one construction, so what they are owed is one
+      // construction leaving and one arriving.
+      window.dispatchEvent(new CustomEvent("kernbau:anchor", { detail: { id: target.id } }));
+
       target.scrollIntoView({ behavior: still ? "auto" : "smooth", block: "start" });
 
       // The hash still belongs in the URL — it is what makes the position

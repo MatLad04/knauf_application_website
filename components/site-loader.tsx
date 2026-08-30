@@ -7,7 +7,8 @@ import CuttingMat from "./cutting-mat";
 /**
  * Two different jobs, deliberately not the same surface.
  *
- * The first visit gets the cutting mat, and the mat is drawn by the load: the
+ * The first arrival at the front door gets the cutting mat — the bare root and
+ * nothing after it; see `atTheFrontDoor`. The mat is drawn by the load: the
  * figure climbs towards — never to — ninety-odd per cent while things are still
  * arriving and runs to 100 the moment they have. Then it stops and waits. A
  * loading screen that vanishes at 87% has told you nothing, and one that takes
@@ -43,6 +44,31 @@ const COVER_LIMIT = 2600;
 
 const stillness = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+/**
+ * Whether this load is somebody arriving at the site, or somebody arriving at a
+ * page of it.
+ *
+ * The mat is a front door, and a front door only makes sense at the front. A
+ * pasted product link, a filtered catalogue, a link into a section — each one
+ * is a request for a particular thing, made by somebody who has already been
+ * sent there, and answering it with a title block that has to be dismissed puts
+ * a door in the middle of a corridor. Worse, the thing they were sent to read
+ * is already printed underneath it.
+ *
+ * So: the bare root, and nothing after it. A query is a question about a page
+ * and a hash is a place inside one; either of them means the address is doing
+ * work, and an address doing work is not the front door.
+ *
+ * Read off `location` rather than off `usePathname`, because the two halves
+ * that matter here — the search and the hash — are not in the router's path at
+ * all, and asking one object for all three is the only way they cannot
+ * disagree.
+ */
+const atTheFrontDoor = () =>
+  window.location.pathname === "/" &&
+  window.location.search === "" &&
+  window.location.hash === "";
+
 export default function SiteLoader() {
   const pathname = usePathname();
   const [phase, setPhase] = useState<Phase>("off");
@@ -65,7 +91,7 @@ export default function SiteLoader() {
     } catch {
       booted = false;
     }
-    if (stillness() || booted) return;
+    if (stillness() || booted || !atTheFrontDoor()) return;
 
     set("boot");
     // Anything on the page that wants to arrive *after* the mat — the counters

@@ -58,8 +58,14 @@ export default async function InDevelopmentPage({
           above and the footer below, and the sheet furniture sits in the middle
           of the space left over beside it — the same placement the About sheet
           head uses, so a stamp is always found in the same part of the page. */}
-      <div className="grid items-start gap-12 lg:grid-cols-2 lg:gap-16">
-        <div className="lg:max-w-[40rem]">
+      {/* Four columns, and the same four the footer is set on — same count,
+          same gutter — so the sheet furniture starts on the page's own third
+          column line rather than in the middle of a half. Ranged on a column
+          line it agrees with the footer beneath it; centred in a half it agreed
+          with nothing, and was eight pixels and a five-rem indent away from the
+          only vertical on the page a reader can actually see. */}
+      <div className="grid items-start gap-x-12 gap-y-12 lg:grid-cols-4">
+        <div className="lg:col-span-2 lg:max-w-[40rem]">
           <p className="label">Sheet not issued</p>
           <h1 className="display t-hero mt-5 max-w-[16ch]">
             {current ? current.name : "This part"} is in development
@@ -87,9 +93,9 @@ export default async function InDevelopmentPage({
 
         {/* The stamp, and the revision table under it. Both are how a drawing
             office says "not yet" — and both are true here. The stamp and the
-            line that references it are set as one, centred in the half of the
-            page they are given rather than ranged along its edge. */}
-        <div className="w-full lg:ps-20">
+            line that references it are set as one, on the third column line —
+            the same line the footer's third heading is struck on. */}
+        <div className="w-full lg:col-span-2">
           <div className="flex flex-col items-start gap-7 sm:gap-8">
             <p className="label">Sheet rev {current?.rev ?? "—"} · not issued</p>
             <div className="stamp" role="img" aria-label="Not issued for construction">

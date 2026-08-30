@@ -86,26 +86,36 @@ export default async function CatalogueOpening({ products }: { products: number 
           </div>
 
           <Reveal className="opening-body">
+            {/* The argument, on the same three columns the doors below it are
+                on: the claim in the first, what it means in the second, and the
+                third left open — the sheet is not obliged to fill every cell,
+                and an empty one at the top of a schedule is what tells you the
+                schedule has columns at all.
+
+                The button and the note are their own row rather than a tail on
+                the end of the brief, so each sits under the thing it belongs
+                to: the way in under the claim, the caveat under the reading. */}
             <div className="opening-brief">
               <h2 id="catalogue-heading" className="display opening-title">
                 Start from the number instead
               </h2>
-              <p className="lead mt-6 max-w-[46ch]">
+              <p className="lead opening-lead max-w-[46ch]">
                 A requirement does not always arrive as a construction. Often it arrives as a figure
                 — and a figure is a constraint, not a product. Each of these is one, already
                 applied.
               </p>
 
               <div className="opening-act">
-                <Link href="/products" className="btn btn-primary btn-lg">
+                <Link href="/products" className="btn btn-primary btn-lg opening-search">
                   Search all {products} products
                   <ArrowRight size={17} weight="bold" aria-hidden="true" />
                 </Link>
-                <p className="caption max-w-[42ch]">
-                  Or combine them: the catalogue filters on conductivity, fire class, depth, density
-                  and application at once, and compares any three side by side.
-                </p>
               </div>
+
+              <p className="caption opening-aside">
+                Or combine them: the catalogue filters on conductivity, fire class, depth, density
+                and application at once, and compares any three side by side.
+              </p>
             </div>
 
             {/* Three constraints, three doors. The rule over each one is the
