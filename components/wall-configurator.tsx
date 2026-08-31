@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowClockwise, ArrowRight, Basket, Heart } from "@phosphor-icons/react/dist/ssr";
+import { ArrowClockwise, ArrowRight } from "@phosphor-icons/react/dist/ssr";
 import type { BuildUp } from "@/lib/catalogue";
 import { lambda, productNameLines } from "@/lib/format";
 import { compose, SUBSTRATES } from "@/lib/build-up";
@@ -10,6 +10,7 @@ import HatchDefs, { hatchFor } from "./hatch-defs";
 import WallSection from "./wall-section";
 import AnimatedNumber from "./animated-number";
 import { Enter } from "./motion";
+import ProductActs from "./product-acts";
 
 /**
  * The wall configurator.
@@ -432,14 +433,14 @@ export default function WallConfigurator({ buildUp }: { buildUp: BuildUp }) {
               </dl>
 
               <div className="acts">
-                <Link href="/in-development?feature=favourites" className="btn btn-primary">
-                  <Heart size={16} weight="bold" aria-hidden="true" />
-                  Save
-                </Link>
-                <Link href="/in-development?feature=basket" className="btn btn-quiet">
-                  <Basket size={16} weight="bold" aria-hidden="true" />
-                  Add to cart
-                </Link>
+                {/* The board at the depth on the stage, which is the one thing
+                    on this sheet that is a product you can order. The rest of
+                    the build-up is chosen here and specified on its own page. */}
+                <ProductActs
+                  slug={variant.slug}
+                  name={`${board.familyName} ${variant.thicknessMm} mm`}
+                  variant="page"
+                />
                 <Link href={`/products/${variant.slug}`} className="btn btn-quiet btn-sm acts-wide">
                   Open {variant.code}
                   <ArrowRight size={14} weight="bold" aria-hidden="true" />

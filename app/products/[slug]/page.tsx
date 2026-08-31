@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowRight, Basket, CaretRight, Heart } from "@phosphor-icons/react/dist/ssr";
+import { ArrowRight, CaretRight } from "@phosphor-icons/react/dist/ssr";
 import {
   getAlternatives,
   getFamilyVariants,
@@ -18,6 +18,7 @@ import ProductCard from "@/components/product-card";
 import { Container } from "@/components/section";
 import { Reveal } from "@/components/motion";
 import CompareButton from "@/components/compare-button";
+import ProductActs from "@/components/product-acts";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -187,14 +188,7 @@ export default async function ProductPage({ params }: Props) {
                 declaration is what the whole page below is, so it is a way down
                 the page rather than the loudest button on it. */}
             <div className="acts mt-9">
-              <Link href="/in-development?feature=favourites" className="btn btn-primary">
-                <Heart size={16} weight="bold" aria-hidden="true" />
-                Save
-              </Link>
-              <Link href="/in-development?feature=basket" className="btn btn-quiet">
-                <Basket size={16} weight="bold" aria-hidden="true" />
-                Add to cart
-              </Link>
+              <ProductActs slug={product.slug} name={product.name} variant="page" />
               <CompareButton slug={product.slug} name={product.name} compact />
               <a href="#technical" className="act-line">
                 Declared performance

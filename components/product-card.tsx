@@ -1,9 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Basket, Heart } from "@phosphor-icons/react/dist/ssr";
 import type { Product } from "@/lib/catalogue";
 import { texture, textureCrop } from "@/lib/media";
 import { lambda } from "@/lib/format";
+import ProductActs from "./product-acts";
 import ThicknessBar from "./thickness-bar";
 
 type Props = {
@@ -113,24 +113,7 @@ export default function ProductCard({ product, compareHref, onCompare, isCompare
             z-10`), which otherwise covers the whole card, and comparing — which
             is a thing you may do next rather than a decision about this product
             — is a line under them. */}
-        <div className="card-acts">
-          <Link
-            href="/in-development?feature=favourites"
-            aria-label={`Save ${product.name}`}
-            className="card-act"
-          >
-            <Heart size={15} weight="bold" aria-hidden="true" />
-            Save
-          </Link>
-          <Link
-            href="/in-development?feature=basket"
-            aria-label={`Add ${product.name} to the cart`}
-            className="card-act"
-          >
-            <Basket size={15} weight="bold" aria-hidden="true" />
-            Cart
-          </Link>
-        </div>
+        <ProductActs slug={product.slug} name={product.name} />
 
         {onCompare ? (
           <button

@@ -606,7 +606,6 @@
     position: relative;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    border-block-start: 1px solid var(--color-ink);
   }
 
   /* The paper is ruled over the whole sheet and stops at the title block: on a
@@ -614,11 +613,18 @@
      ground runs past the page margins to both edges of the screen — the hero
      clips it — so the ruling ends on one line across the full width rather than
      on the width of the text. */
+  /* The rule rides the ground rather than the block.
+     Drawn as the block's own top border it stopped at the page gutter, which
+     left the band's ground running to both edges under a line that did not —
+     and a rule a drawing sheet puts above a row of figures is the width of the
+     sheet. This pseudo-element already bleeds the ground edge to edge, so the
+     line goes on it and reaches the same two edges. */
   .hero-block::before {
     content: "";
     position: absolute;
     z-index: -1;
     inset: 0 -100vw;
+    border-block-start: 1px solid var(--color-ink);
     background: var(--color-surface);
   }
 
@@ -5551,6 +5557,1033 @@
     .stack-callout-name {
       font-size: 0.75rem;
     }
+  }
+
+  /* --- The basket and the shortlist ---------------------------------------
+
+     Two lists of the same products, so one set of rows and one panel between
+     them. The list keeps the page's own left margin and the panel takes the
+     column the compare table's suggestions take — nothing here is a new
+     arrangement, it is the schedule the configurator already draws, with a
+     quantity in it.
+
+     The rows are ruled rather than boxed. A basket drawn as a stack of cards
+     is a grid of separate objects, and a schedule is the opposite of that: one
+     document, divided. The only fill on the page is the panel, because that is
+     the one thing on it that really is a raised surface. */
+  .schedule-head {
+    max-inline-size: 46rem;
+    margin-block-end: 2.75rem;
+  }
+
+  @media (width >= 40rem) {
+    .schedule-head {
+      margin-block-end: 3.25rem;
+    }
+  }
+
+  .schedule-grid {
+    display: grid;
+    gap: 3rem;
+  }
+
+  /* The panel takes a column of its own from 1280px, not from 1024.
+     The list spends about 27rem on its own columns before the product is even
+     reached, and at 1024 a 21rem panel plus the gap left the product roughly a
+     hundred pixels — a name set one word to a line beside three columns of
+     air. Below this the page is the same single column it is on a phone, which
+     has the whole width to spend on the row. */
+  @media (width >= 80rem) {
+    .schedule-grid {
+      grid-template-columns: minmax(0, 1fr) 21rem;
+      gap: 4rem;
+      align-items: start;
+    }
+
+    /* Nothing in the second column, so the first one does not have to leave
+       room for it. */
+    .schedule-grid[data-alone="true"] {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  @media (width >= 90rem) {
+    .schedule-grid {
+      grid-template-columns: minmax(0, 1fr) 23rem;
+    }
+  }
+
+  .plate-list {
+    border-block-start: 1px solid var(--color-edge);
+  }
+
+  /* Product, quantity, coverage, and the way off the list. The first column
+     takes what the other three do not, so a long product name wraps inside its
+     own cell rather than pushing the figures out of alignment down the page. */
+  /* The head and every row are separate grids, so `auto` tracks resolved
+     independently in each of them and the column heads sat wherever their own
+     two words happened to end — never over the figures they name. Stated
+     widths are what makes a column a column: every grid on the list resolves
+     to the same set.
+
+     One control to a column, and one head to a control. The last column used
+     to hold two of them under a head that named only the second, so the heart
+     beside it was an unlabelled control in the middle of a schedule. */
+  .line {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 9rem 7.5rem 4.5rem;
+    align-items: center;
+    gap: 1rem 1.5rem;
+    padding-block: 1.375rem;
+    border-block-end: 1px solid var(--color-rule);
+  }
+
+  .plate-list[data-cells="5"] .line {
+    grid-template-columns: minmax(0, 1fr) 9rem 7.5rem 3rem 3rem;
+  }
+
+  /* Everything after the product is ranged to the same edge, head and cell
+     alike: a column you read down is a column with one vertical in it, and the
+     figures keep their decimal points under one another the way a schedule's
+     figures have to. */
+  .line-cell {
+    justify-self: end;
+    text-align: end;
+  }
+
+  .line-head {
+    padding-block: 0.75rem;
+    border-block-end: 1px solid var(--color-rule);
+  }
+
+  .line-head .label {
+    display: block;
+  }
+
+  .line-product {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    min-inline-size: 0;
+  }
+
+  .line-shot {
+    position: relative;
+    flex: none;
+    inline-size: 4.5rem;
+    block-size: 4.5rem;
+    border-radius: var(--radius-control);
+  }
+
+  .line-name {
+    font-size: 0.9375rem;
+    font-weight: 500;
+    line-height: 1.3;
+  }
+
+  .line-meta {
+    margin-block-start: 0.25rem;
+    font-size: 0.6875rem;
+    color: var(--color-muted);
+  }
+
+  /* The two figures the card carried, kept on the row: a schedule you cannot
+     read the argument off is a list of names. */
+  .line-declared {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.375rem 0.875rem;
+    margin-block-start: 0.5rem;
+    font-size: 0.8125rem;
+  }
+
+  .line-declared .label {
+    margin-inline-end: -0.375rem;
+  }
+
+  .line-covers,
+  .line-supply {
+    text-align: end;
+  }
+
+  .line-figure {
+    font-size: 1.0625rem;
+    line-height: 1.1;
+  }
+
+  .line-unit {
+    margin-block-start: 0.3125rem;
+  }
+
+  /* The heart carries its own state — filled or open — so the word beside it
+     was saying twice what the mark already said, in a column two characters
+     wide. It is now the same size and shape as the bin it sits next to. */
+  .line-move {
+    display: grid;
+    place-items: center;
+    inline-size: 2.25rem;
+    block-size: 2.25rem;
+    border-radius: var(--radius-control);
+    color: var(--color-muted);
+    transition:
+      color 0.15s ease,
+      background 0.15s ease;
+  }
+
+  .line-move[aria-pressed="true"] {
+    color: var(--color-ink);
+  }
+
+  .line-move:hover,
+  .line-move:focus-visible {
+    background: var(--color-sunken);
+    color: var(--color-ink);
+  }
+
+  .line-add {
+    flex: none;
+    inline-size: auto;
+  }
+
+  .line-drop {
+    display: grid;
+    place-items: center;
+    inline-size: 2.25rem;
+    block-size: 2.25rem;
+    border-radius: var(--radius-control);
+    color: var(--color-muted);
+    transition:
+      color 0.15s ease,
+      background 0.15s ease;
+  }
+
+  .line-drop:hover,
+  .line-drop:focus-visible {
+    background: var(--color-sunken);
+    color: var(--color-ink);
+  }
+
+  .plate-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-block-start: 1.25rem;
+  }
+
+  /* A receipt, not a state: it says what just happened and goes. */
+  .summary-said {
+    margin-block-start: 1rem;
+    font-size: 0.875rem;
+    color: var(--color-muted);
+    animation: said-in 0.24s var(--ease-out) both;
+  }
+
+  @keyframes said-in {
+    from {
+      opacity: 0;
+      translate: 0 -0.25rem;
+    }
+    to {
+      opacity: 1;
+      translate: 0 0;
+    }
+  }
+
+  /* Two rows below `lg`: the product with its photograph across the top, and
+     the quantity, the coverage and the drop sharing the line under it. Four
+     columns at 380px put a stepper and a figure into 60px each. */
+  @media (width < 48rem) {
+    .line,
+    .plate-list[data-cells="5"] .line {
+      grid-template-columns: minmax(0, 1fr) auto auto auto;
+      column-gap: 0.75rem;
+    }
+
+    .line-head {
+      display: none;
+    }
+
+    .line-product {
+      grid-column: 1 / -1;
+    }
+
+    /* The first control of the row starts at the margin the product above it
+       starts at; the rest run to the trailing edge. */
+    .line-cell:nth-of-type(2) {
+      justify-self: start;
+      text-align: start;
+    }
+
+    .line-figure {
+      font-size: 0.9375rem;
+    }
+  }
+
+  /* --- The stepper ---------------------------------------------------------
+
+     One control, ruled into three, so the figure reads as part of the same
+     object as the two buttons rather than as a field parked between them. The
+     figure is an input because forty boards is a number you type. */
+  .stepper {
+    display: inline-flex;
+    align-items: stretch;
+    border: 1px solid var(--color-edge);
+    border-radius: var(--radius-pill);
+    overflow: hidden;
+    background: var(--color-raised);
+  }
+
+  .stepper-step {
+    display: grid;
+    place-items: center;
+    inline-size: 2.125rem;
+    color: var(--color-muted);
+    transition:
+      background 0.15s ease,
+      color 0.15s ease;
+  }
+
+  .stepper-step:hover:not(:disabled),
+  .stepper-step:focus-visible:not(:disabled) {
+    background: var(--color-sunken);
+    color: var(--color-ink);
+  }
+
+  .stepper-step:disabled {
+    opacity: 0.4;
+  }
+
+  .stepper-figure {
+    inline-size: 2.75rem;
+    padding-block: 0.4375rem;
+    border-inline: 1px solid var(--color-rule);
+    background: transparent;
+    color: var(--color-ink);
+    text-align: center;
+    font-size: 0.9375rem;
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+
+  .stepper-figure::-webkit-outer-spin-button,
+  .stepper-figure::-webkit-inner-spin-button {
+    appearance: none;
+    margin: 0;
+  }
+
+  .stepper-figure:focus {
+    outline: none;
+  }
+
+  .stepper:has(.stepper-figure:focus) {
+    border-color: var(--color-signal);
+    outline: 2px solid var(--color-signal);
+    outline-offset: 2px;
+  }
+
+  /* --- The panel beside the list ------------------------------------------ */
+  /* Set to the foot of the column, not the head of it.
+     Totals belong at the bottom of a schedule — that is where a schedule puts
+     them — and pinned to the top the panel sat level with the page title with
+     the whole list still to come underneath, which read as a summary of nothing
+     yet. Dropped to the bottom it closes the two columns on the same line. */
+  .summary {
+    align-self: end;
+    padding: 1.75rem;
+    background: var(--color-raised);
+    border-radius: var(--radius-media);
+    box-shadow: var(--shadow-lift);
+  }
+
+  .summary-title {
+    padding-block-end: 0.875rem;
+    border-block-end: 1px solid var(--color-rule);
+  }
+
+  .summary-rows {
+    display: grid;
+    gap: 0.75rem;
+    margin-block-start: 1rem;
+  }
+
+  .summary-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1.25rem;
+  }
+
+  .summary-row dt {
+    font-size: 0.875rem;
+    min-inline-size: 0;
+  }
+
+  .summary-row dd {
+    flex: none;
+    font-size: 0.9375rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* A value too long for the column takes the line under its label. */
+  .summary-row[data-stacked="true"] {
+    display: block;
+  }
+
+  .summary-row[data-stacked="true"] dd {
+    margin-block-start: 0.375rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+  }
+
+  .summary-note-inline {
+    display: block;
+    margin-block-start: 0.1875rem;
+    max-inline-size: 22ch;
+  }
+
+  .summary-block {
+    margin-block-start: 1.25rem;
+    padding-block-start: 1.125rem;
+    border-block-start: 1px solid var(--color-rule);
+  }
+
+  .summary-acts {
+    display: grid;
+    gap: 0.375rem;
+    margin-block-start: 1.25rem;
+    padding-block-start: 1.125rem;
+    border-block-start: 1px solid var(--color-rule);
+  }
+
+  .summary-note {
+    margin-block-start: 0.875rem;
+  }
+
+  /* An empty list is still a page about something, so it is set as one: the
+     label, a heading, the sentence that explains what would collect here, and
+     the way to go and fill it. */
+  .empty-plate {
+    padding-block: 2rem 1rem;
+    border-block-start: 1px solid var(--color-edge);
+  }
+
+  /* --- The sign-in sheet ---------------------------------------------------
+
+     Fixed over everything, because the bar and the footer belong to browsing
+     and this is the one page that is not browsing. Under the veil at 100 so a
+     navigation still covers it, and over the header at 50 so nothing shows
+     through the band.
+
+     Two arrangements of the same three things, and 1024px is the line between
+     them. Above it the plate takes half the screen: a poster, ranged left, with
+     the section drawn on the half of it the type does not use. Below it there
+     is no half to give away — a plate that fills a phone is a screen the reader
+     has to scroll past to reach the form it introduces — so the same element
+     flattens to a band across the top and the form runs underneath.
+
+     What the plate says does not change between them. It names the page in type
+     three times the size of anything on the form, so the form carries no
+     heading of its own at either width and starts at its first field. */
+  .auth {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: grid;
+    grid-template-rows: auto auto;
+    overflow-y: auto;
+    background: var(--color-surface);
+  }
+
+  /* Black, flat, and — where there is room for it — the section drawn on it in
+     white line. No gradient and no brand colour: the band carries the mark, the
+     sentence and nothing that competes with either.
+
+     Deliberately not `overflow: hidden`. A grid item that clips itself has an
+     automatic minimum size of zero, and above a form taller than the screen
+     this one's row collapsed to the height of its own padding — the band
+     rendered on top of the form instead of above it. */
+  .auth-plate {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1.25rem 1.5rem 2rem;
+    background: #000000;
+    color: #fff;
+  }
+
+  @media (width >= 40rem) {
+    .auth-plate {
+      padding: 1.5rem 2rem 2.5rem;
+    }
+  }
+
+  @media (width >= 64rem) {
+    .auth {
+      grid-template-rows: minmax(0, 1fr);
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+
+    .auth-plate {
+      gap: 0;
+      padding: 2.5rem 3rem;
+    }
+  }
+
+  @media (width >= 100rem) {
+    .auth {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 0.85fr);
+    }
+  }
+
+  .auth-plate-head {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+  }
+
+  .auth-back {
+    display: grid;
+    place-items: center;
+    inline-size: 2.75rem;
+    block-size: 2.75rem;
+    margin-inline-start: -0.6875rem;
+    border-radius: var(--radius-control);
+    color: #fff;
+    transition:
+      background 0.18s ease,
+      transform 0.18s var(--ease-out);
+  }
+
+  .auth-back:hover,
+  .auth-back:focus-visible {
+    background: #ffffff1f;
+    transform: translateX(-2px);
+  }
+
+  .auth-mark {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    font-size: 1.25rem;
+    letter-spacing: -0.028em;
+    color: #fff;
+  }
+
+  .auth-mark .logomark {
+    border-radius: 5px;
+  }
+
+  /* The band's type is measured against the band, not against the form under
+     it, so it stops well short of a wide screen's right edge — a sentence set
+     across 1900px is a sentence nobody reads to the end of. */
+  .auth-plate-body {
+    max-inline-size: min(38rem, 100%);
+  }
+
+  /* Ranged left on the plate's own margin, the same edge the back arrow starts
+     at, and centred on what is left of the column's height. */
+  @media (width >= 64rem) {
+    .auth-plate-body {
+      margin-block: auto;
+      padding-block: 3rem;
+      max-inline-size: min(26rem, 100%);
+    }
+  }
+
+  /* With no colour on the band the emphasis is carried the way print carries
+     it: the half of the sentence that names the action at full white, the rest
+     of it held back off that. */
+  .auth-title {
+    font-size: clamp(1.625rem, 5.4vw, 2.375rem);
+    line-height: 1.04;
+    color: #ffffffb8;
+  }
+
+  @media (width >= 64rem) {
+    .auth-title {
+      font-size: clamp(2.375rem, 3.7vw, 3.5rem);
+      line-height: 0.98;
+    }
+  }
+
+  /* Its own line, so the break falls on the turn in the sentence rather than
+     wherever the measure runs out. */
+  .auth-title-lit {
+    display: block;
+    color: #fff;
+  }
+
+  /* --- A schedule of notes -------------------------------------------------
+
+     What a column puts at its foot once it has said its piece: a mono head, a
+     column of figures, and the prose ranged off them — the margin notes on a
+     drawing sheet, at the size the rest of this site sets them. It is the same
+     object on the sign-in plate and at the bottom of the basket; only the
+     ground under it changes, so only the colours are stated twice. */
+  .sheet-notes {
+    max-inline-size: 34rem;
+    padding-block-start: 2rem;
+    border-block-start: 1px solid var(--color-rule);
+  }
+
+  /* Only the sign-in plate carries one now; the catalogue's two pages say what
+     they are in the lead under their own heading instead. */
+
+  .sheet-notes[data-tone="dark"] {
+    border-block-start-color: #ffffff26;
+  }
+
+  .sheet-notes-title {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+  }
+
+  .sheet-notes[data-tone="dark"] .sheet-notes-title {
+    color: #ffffff8f;
+  }
+
+  .sheet-notes-list {
+    display: grid;
+    gap: 1rem;
+    margin-block-start: 1.375rem;
+  }
+
+  .sheet-note {
+    display: grid;
+    grid-template-columns: 2.25rem minmax(0, 1fr);
+    align-items: baseline;
+    gap: 0.5rem;
+  }
+
+  .sheet-note-no {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-muted);
+  }
+
+  .sheet-notes[data-tone="dark"] .sheet-note-no {
+    color: #ffffff73;
+  }
+
+  .sheet-note-text {
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    color: var(--color-muted);
+  }
+
+  .sheet-notes[data-tone="dark"] .sheet-note-text {
+    color: #ffffffcc;
+  }
+
+  @media (width >= 90rem) {
+    .sheet-note-text {
+      font-size: 1rem;
+    }
+  }
+
+  /* On the plate it is the bottom half of the composition, and there is no
+     bottom half on a phone — the plate is a banner there. */
+  .auth-plate .sheet-notes {
+    display: none;
+  }
+
+  @media (width >= 64rem) {
+    .auth-plate .sheet-notes {
+      display: block;
+    }
+  }
+
+  /* Centred under the band, and ranged to the top of what is left rather than
+     floating in the middle of it: centred vertically it opened a hand's width
+     of nothing between the band and the first field. */
+  .auth-form-side {
+    display: grid;
+    justify-items: center;
+    align-items: start;
+    padding: 2.25rem 1.5rem 4rem;
+  }
+
+  @media (width >= 64rem) {
+    .auth-form-side {
+      align-items: center;
+      padding: 2.5rem 3rem;
+    }
+  }
+
+  .auth-form {
+    inline-size: 100%;
+    max-inline-size: 25rem;
+  }
+
+  /* A greeting rather than a second title — the plate has already named the
+     page — and under it the line that says what to do with the first field.
+     Without them the column opened on a bare input. */
+  .auth-form-head {
+    margin-block-end: 2rem;
+  }
+
+  .auth-form-title {
+    font-size: clamp(1.375rem, 2.2vw, 1.75rem);
+    line-height: 1.1;
+  }
+
+  .auth-form-lead {
+    margin-block-start: 0.75rem;
+    font-size: 0.9375rem;
+    line-height: 1.55;
+    color: var(--color-muted);
+  }
+
+  @media (width >= 64rem) {
+    .auth-form-lead {
+      font-size: 1rem;
+    }
+  }
+
+  .auth-fields {
+    display: grid;
+    gap: 1.125rem;
+  }
+
+  .auth-submit {
+    margin-block-start: 0.375rem;
+  }
+
+  .auth-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+  }
+
+  .auth-roles {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .auth-roles .field-label {
+    margin-block-end: 0.125rem;
+  }
+
+  .auth-role {
+    display: block;
+    padding: 0.875rem 1rem;
+    border: 1px solid var(--color-rule);
+    border-radius: var(--radius-control);
+    cursor: pointer;
+    transition:
+      border-color 0.15s ease,
+      background 0.15s ease;
+  }
+
+  .auth-role:hover {
+    border-color: var(--color-edge);
+  }
+
+  .auth-role[data-active="true"] {
+    border-color: var(--color-signal);
+    background: var(--color-signal-soft);
+  }
+
+  .auth-role:has(:focus-visible) {
+    outline: 2px solid var(--color-signal);
+    outline-offset: 2px;
+  }
+
+  .auth-role-label {
+    display: block;
+    font-size: 0.9375rem;
+    font-weight: 500;
+  }
+
+  .auth-role[data-active="true"] .auth-role-label {
+    color: var(--color-signal);
+  }
+
+  .auth-role-note {
+    display: block;
+    margin-block-start: 0.25rem;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--color-muted);
+  }
+
+  /* The answer to pressing the button, in the same voice the stamp uses. */
+  .auth-note {
+    margin-block-start: 1.5rem;
+    padding: 1rem 1.125rem;
+    border-inline-start: 2px solid var(--color-signal);
+    background: var(--color-signal-soft);
+    font-size: 0.875rem;
+    line-height: 1.6;
+  }
+
+  .auth-note .label {
+    display: block;
+    margin-block-end: 0.375rem;
+    color: var(--color-signal);
+  }
+
+  .auth-divider {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 1rem;
+    margin-block: 2rem 1.75rem;
+  }
+
+  .auth-divider::before,
+  .auth-divider::after {
+    content: "";
+    block-size: 1px;
+    background: var(--color-rule);
+  }
+
+  .auth-divider span {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+  }
+
+  .auth-switch-lead {
+    margin-block-end: 0.75rem;
+    font-size: 0.875rem;
+    color: var(--color-muted);
+  }
+
+  .auth-foot {
+    margin-block-start: 2rem;
+    padding-block-start: 1.25rem;
+    border-block-start: 1px solid var(--color-rule);
+  }
+
+  .auth-legal {
+    margin-block-start: 1.25rem;
+  }
+
+  .auth-legal-copy {
+    display: block;
+  }
+
+  /* --- Drawn, not built ----------------------------------------------------
+
+     The stamp the rest of the site puts on an unissued sheet, at the size of a
+     tag and hung off the control it belongs to. Out of flow entirely: it is
+     `absolute` inside a wrapper that occupies exactly the space the control
+     already did, so a tag appearing moves nothing.
+
+     It answers to hover, to focus anywhere inside the wrapper, and to the
+     control being pressed — `:active` is what makes it reachable on a touch
+     screen, which has no hover to give. */
+  .indev {
+    position: relative;
+    display: inline-block;
+  }
+
+  .indev[data-block="true"] {
+    display: block;
+  }
+
+  .indev-tag {
+    position: absolute;
+    z-index: 30;
+    display: grid;
+    justify-items: center;
+    gap: 0.375rem;
+    inline-size: max-content;
+    max-inline-size: 20rem;
+    padding: 0.875rem 1.375rem 1rem;
+    border: 2px solid var(--color-signal);
+    border-radius: var(--radius-control);
+    background: var(--color-surface);
+    color: var(--color-signal);
+    text-align: center;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    rotate: -1.4deg;
+    transition:
+      opacity 0.16s ease,
+      translate 0.16s var(--ease-out),
+      visibility 0s linear 0.16s;
+  }
+
+  .indev[data-side="top"] .indev-tag {
+    inset-block-end: calc(100% + 0.625rem);
+    inset-inline-start: 50%;
+    translate: -50% 0.25rem;
+  }
+
+  .indev[data-side="right"] .indev-tag {
+    inset-block-start: 50%;
+    inset-inline-start: calc(100% + 0.625rem);
+    translate: -0.25rem -50%;
+  }
+
+  .indev:hover .indev-tag,
+  .indev:focus-within .indev-tag,
+  .indev[data-open="true"] .indev-tag {
+    opacity: 1;
+    visibility: visible;
+    translate: -50% 0;
+    transition-delay: 0s;
+  }
+
+  .indev[data-side="right"]:hover .indev-tag,
+  .indev[data-side="right"]:focus-within .indev-tag,
+  .indev[data-side="right"][data-open="true"] .indev-tag {
+    translate: 0 -50%;
+  }
+
+  .indev-tag-line {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    line-height: 1;
+  }
+
+  .indev-tag-rule {
+    inline-size: 100%;
+    block-size: 1px;
+    background: color-mix(in srgb, var(--color-signal) 45%, transparent);
+  }
+
+  .indev-tag-note {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    line-height: 1.55;
+    letter-spacing: 0.01em;
+    color: color-mix(in srgb, var(--color-signal) 88%, var(--color-ink));
+    text-wrap: balance;
+  }
+
+  /* A control that does nothing should not answer like one. It keeps its shape,
+     its place in the tab order and its focus ring — a keyboard user has to be
+     able to reach it to find out why it is dead — and loses everything that
+     reads as "this will do something": the pointer, the fill that sweeps in
+     under the label on hover, and the press. */
+  .indev > .btn {
+    inline-size: 100%;
+  }
+
+  .indev > .btn,
+  .indev > button {
+    cursor: default;
+  }
+
+  .indev > .btn::before {
+    content: none;
+  }
+
+  .indev > .btn:hover,
+  .indev > .btn:focus-visible {
+    color: inherit;
+  }
+
+  .indev > .btn-primary:hover,
+  .indev > .btn-primary:focus-visible {
+    color: var(--color-surface);
+  }
+
+  .indev > .btn:active,
+  .indev > button:active {
+    transform: none;
+  }
+
+  .indev > .link:hover {
+    text-decoration-thickness: 1px;
+  }
+
+  /* --- Form fields ---------------------------------------------------------
+
+     The first real inputs on the site, so they are built on the control the
+     rest of it already uses: the same border token, the same radius, the same
+     signal on focus as a selected chip. */
+  .field {
+    display: grid;
+    gap: 0.4375rem;
+  }
+
+  .field-label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-muted);
+  }
+
+  .field-input {
+    inline-size: 100%;
+    padding: 0.75rem 0.875rem;
+    border: 1px solid var(--color-edge);
+    border-radius: var(--radius-control);
+    background: var(--color-raised);
+    color: var(--color-ink);
+    font-size: 0.9375rem;
+    transition:
+      border-color 0.15s ease,
+      box-shadow 0.15s ease;
+  }
+
+  .field-input::placeholder {
+    color: var(--color-muted);
+  }
+
+  .field-input:hover {
+    border-color: var(--color-ink);
+  }
+
+  .field-input:focus {
+    outline: none;
+    border-color: var(--color-signal);
+    box-shadow: 0 0 0 3px var(--color-signal-soft);
+  }
+
+  .field-hint {
+    margin-block-start: 0.0625rem;
+  }
+
+  /* --- The counts in the bar ----------------------------------------------- */
+  .account-glyph {
+    position: relative;
+    display: grid;
+    place-items: center;
+  }
+
+  /* Set on the corner of the icon rather than beside it: the bar has no room
+     for a fourth thing, and a figure on the mark is how a basket has said "how
+     many" since long before this was a website. */
+  .account-count {
+    position: absolute;
+    inset-block-start: -0.375rem;
+    inset-inline-start: 0.6875rem;
+    display: grid;
+    place-items: center;
+    min-inline-size: 1.0625rem;
+    block-size: 1.0625rem;
+    padding-inline: 0.1875rem;
+    border-radius: var(--radius-pill);
+    background: var(--color-signal);
+    color: var(--color-raised);
+    font-size: 0.625rem;
+    line-height: 1;
+  }
+
+  [data-theme="dark"] .account-count {
+    color: #0d1526;
   }
 }
 

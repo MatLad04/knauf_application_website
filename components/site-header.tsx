@@ -4,7 +4,7 @@ import Link from "next/link";
 import { getApplications, getCategories, getFamilies, getShowcase } from "@/lib/catalogue";
 import { lambda } from "@/lib/format";
 
-import { Basket, Heart, User } from "@phosphor-icons/react/dist/ssr";
+import AccountBar from "./account-bar";
 import SiteNav from "./site-nav";
 import ThemeToggle from "./theme-toggle";
 import SiteSearch, { type SearchLane } from "./site-search";
@@ -39,17 +39,6 @@ const NAV = [
   { href: "/configurator", label: "Configurator" },
   { href: "/services", label: "Services" },
   { href: "/about", label: "About" },
-];
-
-/**
- * The account side of the bar. None of it is built — a prototype about choosing
- * a product has no reason to hold a basket — so each one says so on its own
- * page rather than being a control that does nothing.
- */
-const ACCOUNT = [
-  { href: "/in-development?feature=account", icon: User, label: "Sign in", text: true },
-  { href: "/in-development?feature=favourites", icon: Heart, label: "Favourites" },
-  { href: "/in-development?feature=basket", icon: Basket, label: "Basket" },
 ];
 
 /** Four starts for someone who knows a requirement but not a product name. */
@@ -151,18 +140,7 @@ export default async function SiteHeader() {
         </div>
 
         <div className="order-2 ml-auto flex shrink-0 items-center gap-1 lg:order-4 lg:ml-0 lg:gap-2">
-          {ACCOUNT.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex items-center gap-2 rounded-[var(--radius-control)] px-2 py-2 text-sm hover:bg-raised hover:text-signal sm:px-2.5"
-            >
-              <item.icon size={20} aria-hidden="true" />
-              <span className={item.text ? "hidden whitespace-nowrap xl:inline" : "sr-only"}>
-                {item.label}
-              </span>
-            </Link>
-          ))}
+          <AccountBar />
 
           <ThemeToggle className="ml-1" />
         </div>

@@ -114,13 +114,7 @@ export default function AboutPage() {
               blocks rather than as one head. */}
           <div className="mt-5 grid items-start gap-x-12 gap-y-9 lg:grid-cols-2">
             <div>
-              {/* Broken by hand: the claim is a pair, and a width that holds
-                  "invented products," on one line is wide enough to pull "real
-                  standards" up beside it. */}
-              <h1 className="display t-hero">
-                <span className="block">Invented products,</span>
-                <span className="block">real standards</span>
-              </h1>
+              <h1 className="display t-hero max-w-[14ch]">Invented products, real standards</h1>
 
               <p className="lead mt-6 max-w-[62ch]">
                 Everything in this catalogue is made up and none of it is a lie about what a real

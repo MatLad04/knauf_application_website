@@ -674,6 +674,23 @@ export async function getProductsBySlugs(slugs: readonly string[]): Promise<Prod
   return slugs.map((slug) => bySlug.get(slug)).filter((p): p is Product => p !== undefined);
 }
 
+/**
+ * The whole catalogue, in catalogue order.
+ *
+ * The basket and the shortlist live in the browser, so the server rendering
+ * those two pages cannot know which slugs it is about to be asked for — there
+ * is no URL to read them off and no session to look them up in. Seventy-four
+ * products is small enough to hand over whole and let the page pick from it,
+ * which is cheaper than a round trip per line and leaves the two pages
+ * renderable with no client fetch at all.
+ */
+export async function getAllProducts(): Promise<Product[]> {
+  const rows = await query<ProductRow>(
+    `SELECT ${PRODUCT_COLUMNS} ${PRODUCT_FROM} ORDER BY p.sort_order, p.code`,
+  );
+  return rows.map(toProduct);
+}
+
 // ---------------------------------------------------------------------------
 // Reference data
 // ---------------------------------------------------------------------------
