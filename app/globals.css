@@ -5288,6 +5288,27 @@
     align-self: start;
   }
 
+  /* The band gives the screen back when the screen is short.
+
+     Stuck, the banner takes its own depth out of every screenful of the run —
+     and that depth is set in rems, so it is the same 480-odd pixels whether the
+     window is 1000 pixels deep or 640. Under about 900 the run was left with a
+     strip: the words pinned two thirds of the way down the screen and the
+     drawing beside them squeezed into what was under that. A zoomed window is
+     the same window as far as CSS is concerned, which is how a reader at 125%
+     found the section in that state on a screen that had plenty of room at
+     100%.
+
+     So on a short window the band is ordinary content again — it scrolls away
+     with the page, the way it does below `lg` — and the stage pins under the
+     bar instead of under the band. `ConstructionStage` reads the banner's own
+     `position` to decide where the line goes, so the two cannot disagree. */
+  @media (width >= 64rem) and (height < 56.25rem) {
+    .constructions-banner {
+      position: static;
+    }
+  }
+
   @media (width >= 64rem) {
     .constructions-run {
       grid-template-columns: minmax(0, 33fr) minmax(0, 67fr);
@@ -5306,7 +5327,16 @@
        in the whole. */
     .constructions-stage-col {
       block-size: calc(100svh - var(--pin-top, 18rem) - 1rem);
-      min-block-size: 24rem;
+      /* Bounded by the room there actually is, not by a figure taken on a tall
+         window. The pin line is the underside of the banner, and the banner is
+         set in rems: it is the same 480-odd pixels deep whatever the window
+         is, while the window itself shrinks — a short screen, or a zoomed one,
+         which is the same thing counted in CSS pixels. A flat 24rem floor then
+         made the drawing taller than the space under the line, and the stage
+         hung off the bottom of the screen with its foot and half its labels
+         below the fold. The floor still holds wherever it fits, and gives way
+         to the space when it does not. */
+      min-block-size: min(24rem, calc(100svh - var(--pin-top, 18rem) - 1rem));
       position: sticky;
       inset-block-start: var(--pin-top, 18rem);
       display: flex;
@@ -6694,298 +6724,150 @@ html[data-search-open] .search-bar {
   background: var(--color-raised);
 }
 
-/* --- The loading mat and the veil ----------------------------------------
+/* --- The title page and the veil -----------------------------------------
 
-   Two surfaces, because they are two different moments. The mat is the first
-   visit: a full screen of the one colour on the site that means "act here",
-   ruled like the cutting mat on a drawing-office bench, held just long enough
-   to be read. The veil is every navigation after it: the page's own ground,
-   fading up over the swap and straight back down, carrying nothing.
+   Two surfaces, because they are two different moments. The title page is the
+   first visit: the site's own ground with the mark in the middle of it and the
+   figure it is waiting on in the corner, held just long enough to be read. The
+   veil is every navigation after it: the same ground, fading up over the swap
+   and straight back down, carrying nothing.
 
    Everything here is opacity and transform, and the phase is an attribute
    rather than a class so the two states cannot fight each other in the
    cascade. */
 
-/* The mat's own navy, not the theme's: this is up before the page is, and a
-   bench mat is a darker blue than the signal colour the interface uses for a
-   link. It is the brand blue laid over black, so the two are related. */
+/* The page's own ground, not a colour of its own: the screen the site opens on
+   is the screen it is printed on, so the dissolve at the end has nothing to
+   cross — white on paper, near-black in the dark. */
 .loader {
   position: fixed;
   inset: 0;
   z-index: 100;
   display: grid;
-  background: radial-gradient(120% 90% at 22% 88%, #17357a 0%, transparent 60%), #0e2350;
-  color: #fff;
+  place-items: center;
+  background: var(--color-surface);
+  color: var(--color-ink);
   pointer-events: none;
-  will-change: opacity, transform;
+  will-change: opacity;
 }
 
 .loader[data-phase="boot"],
-.loader[data-phase="done"] {
-  animation: mat-in 0.28s var(--ease-out) both;
+.loader[data-phase="hold"] {
+  animation: title-in 0.28s var(--ease-out) both;
 }
 
-/* Dissolved rather than lifted. The print goes first — the ink softening and
-   opening a little, the way a drawing disappears off a light table — and the
-   blue field follows it down over almost twice as long, so the navy does not
-   cut to the page's off-white on one frame. Two moves, overlapping, and the
-   second one is slow enough that the eye never catches an edge. */
+/* Dissolved rather than lifted, and only after the freeze: the ground goes on
+   its own over half a second, slow enough that the eye never catches an edge
+   between it and the page it was covering. */
 .loader[data-phase="leaving"] {
-  animation: mat-out 0.92s cubic-bezier(0.4, 0, 0.15, 1) both;
+  animation: title-out 0.62s cubic-bezier(0.4, 0, 0.15, 1) both;
 }
 
-.loader[data-phase="leaving"] .loader-mat {
-  animation: mat-dissolve 0.62s cubic-bezier(0.32, 0, 0.2, 1) both;
+/* The mark and the name, at the size a title page prints them — and breathing
+   while the site arrives, because a lockup that does nothing at all reads as a
+   page that has stopped loading rather than as one still working.
+
+   Sized once, on the lockup: the mark is measured in `em` off the type beside
+   it and squared to its capitals (see `.logomark`), so setting the font size
+   sets both, and the two cannot drift apart at any width. */
+.loader-mark {
+  display: flex;
+  align-items: center;
+  gap: 0.3em;
+  font-size: clamp(1.875rem, 5.4vw, 3.5rem);
+  letter-spacing: -0.03em;
+  animation: mark-breathe 1.9s ease-in-out infinite;
 }
 
-.loader[data-phase="leaving"] .loader-figure {
-  animation: mat-dissolve 0.42s cubic-bezier(0.32, 0, 0.2, 1) both;
+/* The bar's own radius is a fixed 5px, which is a corner at the size of a line
+   of type and a bevel at the size of this one. */
+.loader-logomark {
+  border-radius: 0.13em;
 }
 
-.loader-mat {
+/* The freeze. At the hundred the breathing stops at full ink rather than
+   wherever in the cycle it happened to be: the screen is finished, and it says
+   so by standing still for a beat before it goes. */
+.loader[data-phase="hold"] .loader-mark,
+.loader[data-phase="leaving"] .loader-mark {
+  animation: none;
+  opacity: 1;
+}
+
+/* The foot of the screen, and the whole of it: the figure ranged right on the
+   page's own margin, and the bar under it running edge to edge. A rule the
+   width of the sheet is how much is left to do; a short one in a corner is a
+   detail about it. */
+.loader-meter {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: 0;
+  display: grid;
+  justify-items: end;
+  gap: clamp(0.75rem, 2.4svh, 1.375rem);
+}
+
+.loader-figure {
+  padding-inline-end: var(--page-gutter, 1.25rem);
+}
+
+/* Drawn to the figure rather than animated on a clock of its own: it is the
+   same number the reader is watching, said as a length. Scaled from its left
+   edge, so the fill is one transform and no layout. */
+.loader-bar {
+  position: relative;
+  display: block;
+  inline-size: 100%;
+  block-size: 3px;
+  background: color-mix(in srgb, var(--color-ink) 18%, transparent);
+  overflow: hidden;
+}
+
+.loader-bar-fill {
   position: absolute;
   inset: 0;
-  inline-size: 100%;
-  block-size: 100%;
-  /* The ink carries its own alpha rather than the whole drawing carrying an
-     opacity, so the one cell on the mat that is a control can be struck at full
-     white while every printed line stays a print. */
-  color: rgba(255, 255, 255, 0.72);
-}
-
-/* The way in, printed into the label block. Nothing to press while the sheet is
-   still printing, so the cell is empty until the hundred, and it never fills:
-   pressing is a decision, and highlighting the rule and the words is how a
-   drawing says "this line". */
-.mat-enter {
-  opacity: 0;
-  pointer-events: none;
-  color: rgba(255, 255, 255, 0.82);
-  /* An SVG group scales about the origin of the user space it is drawn in, not
-     about itself, so without this the press throws the cell off the corner of
-     the sheet instead of pushing it in. */
-  transform-box: fill-box;
-  transform-origin: center;
-  transition:
-    color 0.2s ease,
-    opacity 0.2s ease;
-}
-
-.mat-enter[data-ready="true"] {
-  animation:
-    enter-in 0.5s var(--ease-out) 0.25s both,
-    mat-enter-breathe 3.4s ease-in-out 0.9s infinite;
-  pointer-events: auto;
-  cursor: pointer;
-}
-
-/* A breath rather than a flash. The cell is the only thing on the mat that can
-   be pressed, so it has to say so — but a single hard blink reads as an error
-   and a fast blink reads as an alarm. This is slow enough to be a heartbeat and
-   shallow enough that you notice it only once you have stopped reading. */
-@keyframes mat-enter-breathe {
-  0%,
-  100% {
-    color: rgba(255, 255, 255, 0.74);
-  }
-  50% {
-    color: rgba(255, 255, 255, 1);
-  }
-}
-
-/* Pressed. Nothing lights up and nothing thickens: the cell is pushed in and
-   comes back, which is what a button under a finger does and the only thing a
-   button under a finger does. It used to strike the rule white and hold it
-   there, and a rule struck at more than twice its weight in pure white is not a
-   press, it is a highlight — the one mark on the sheet that is not drawn.
-
-   Everything running stops with it, the breath included: a control that keeps
-   breathing after you have used it has not registered that you used it.
-
-   `scale` and not a scaling `transform`, so it composes with the translate the
-   cell arrives on rather than replacing it. */
-.loader[data-phase="leaving"] .mat-enter {
-  animation: mat-enter-press 0.3s cubic-bezier(0.34, 0, 0.2, 1) both;
-}
-
-@keyframes mat-enter-press {
-  0% {
-    scale: 1;
-  }
-  38% {
-    scale: 0.955;
-  }
-  100% {
-    scale: 1;
-  }
-}
-
-.mat-enter[data-ready="true"]:hover rect,
-.mat-enter[data-ready="true"]:focus-visible rect {
-  stroke-width: 2;
-}
-
-/* Chrome's own focus ring, refused — and refused on `:focus` rather than on
-   `:focus-visible`, which is the whole of why it was still being drawn.
-   `:focus-visible` is the right hook for an HTML control, because the UA paints
-   HTML focus rings through it; an SVG element with a `tabindex` is not covered
-   by that rule and gets `outline: auto` on plain `:focus`, so a mouse click
-   raised a five-pixel two-tone ring — white outside, blue inside — around a
-   drawing that has no other colour in it.
-   
-   Nothing is lost by refusing it. A keyboard arrival still says so, in the
-   drawing's own terms: the rule under `:focus-visible` below thickens and the
-   words go white, which is how a drawing marks a line. */
-.mat-enter:focus {
-  outline: none;
-}
-
-.mat-enter[data-ready="true"]:hover,
-.mat-enter[data-ready="true"]:focus-visible {
-  color: #fff;
+  transform-origin: left center;
+  background: var(--color-ink);
+  transition: scale 0.18s linear;
 }
 
 /* Tabular, because it is a number being watched change. */
-.mat-figure {
-  font-variant-numeric: tabular-nums;
-}
-
-/* The figure settles rather than snapping when the run to 100 finishes, so the
-   completed state reads as an arrival. */
-.loader[data-phase="done"] .loader-figure {
-  animation: figure-settle 0.4s var(--ease-out) both;
-}
-
-@keyframes figure-settle {
-  from {
-    transform: scale(1.04);
-  }
-  to {
-    transform: none;
-  }
-}
-
-/* The way in. Nothing to click while the sheet is still printing, so it is
-   only there at the hundred — and it is the only thing that lifts the mat, so
-   it is set at the size of a decision: struck on the mat's own blue, so the
-   ruling behind it does not run through the words, and outlined in white. */
-.loader-enter {
-  display: inline-flex;
-  align-items: center;
-  border: 1.5px solid rgba(255, 255, 255, 0.82);
-  border-radius: 0;
-  background: #0e2350;
-  padding: 0.75rem 1.5rem;
-  font-family: var(--font-mono);
-  font-size: clamp(0.8125rem, 1.3vw, 1rem);
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.92);
-  opacity: 0;
-  pointer-events: none;
-  transition:
-    background 0.2s ease,
-    border-color 0.2s ease,
-    color 0.2s ease,
-    transform 0.2s var(--ease-out);
-}
-
-.loader[data-phase="done"] .loader-enter {
-  animation:
-    enter-in 0.5s var(--ease-out) 0.15s both,
-    loader-enter-pulse 1.1s var(--ease-out) 0.9s 1;
-  pointer-events: auto;
-}
-
-/* The same single pulse the cell on the mat gets, for the screens the mat's
-   label block is cropped off. */
-@keyframes loader-enter-pulse {
-  35% {
-    border-color: #fff;
-    color: #fff;
-  }
-}
-
-.loader[data-phase="done"] {
-  pointer-events: auto;
-}
-
-.loader-enter:hover,
-.loader-enter:focus-visible {
-  border-color: #fff;
-  color: #fff;
-}
-
-@keyframes enter-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-/* Ranged right on the block under the sheet, against the edge the mat's own
-   label block ends its lines at. */
 .loader-figure {
   display: flex;
   align-items: baseline;
   gap: 0.15em;
-  font-family: var(--font-mono);
-  font-size: clamp(2.5rem, 9vw, 5rem);
-  line-height: 0.9;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
+  font-size: clamp(2.25rem, 5vw, 3.5rem);
+  line-height: 1;
+  letter-spacing: -0.03em;
 }
 
 .loader-unit {
-  font-size: 0.4em;
-  opacity: 0.7;
+  font-size: 0.5em;
+  color: var(--color-muted);
 }
 
-/* The state of the printing, for the sheets with no room to print their own
-   label block. It is rendered only on those, so it needs no breakpoint of its
-   own: it rides the foot of the screen, on the mat rather than beside it, the
-   way the block it stands in for rides the foot of the sheet. */
-.loader-block {
-  position: absolute;
-  z-index: 2;
-  inset-inline: clamp(1.5rem, 7vw, 3rem);
-  inset-block-end: clamp(1.75rem, 7svh, 3.5rem);
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 1rem;
-  border-block-start: 1px solid rgba(255, 255, 255, 0.42);
-  padding-block-start: clamp(0.75rem, 2svh, 1.25rem);
-}
-
-.loader-enter {
-  position: static;
-  inline-size: auto;
-  justify-self: auto;
-  padding: 0.6875rem 1.125rem;
-}
-
-@keyframes mat-in {
+@keyframes title-in {
   from {
     opacity: 0;
   }
 }
 
-@keyframes mat-out {
+@keyframes title-out {
   to {
     opacity: 0;
   }
 }
 
-@keyframes mat-dissolve {
-  to {
-    opacity: 0;
-    filter: blur(7px);
-    transform: scale(1.03);
+/* A breath rather than a blink: the mark is never off, it only comes back off
+   full ink and returns to it. */
+@keyframes mark-breathe {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.42;
   }
 }
 

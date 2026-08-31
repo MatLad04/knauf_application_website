@@ -86,6 +86,14 @@ const GUTTER = 162;
 const PIN_GAP = 24;
 
 /**
+ * The least depth the drawing is worth drawing at, in rems — the same floor the
+ * stylesheet puts on the stage column. The pin line is bounded by it: a line
+ * taken from the banner alone can be most of a short window, and what is left
+ * under it is then not a drawing but a strip.
+ */
+const MIN_STAGE = 24;
+
+/**
  * Where a point on the page falls in the run, in blocks.
  *
  * Integer at the top of a block, so stop `i` is reached exactly when block `i`
@@ -387,7 +395,20 @@ export default function ConstructionStage({
       const headerH = parseFloat(root.getPropertyValue("--header-h") || "0");
       const rem = parseFloat(root.fontSize) || 16;
       headerPx = headerH * rem;
-      pinned = (banner ? banner.offsetHeight : 0) + headerPx + PIN_GAP;
+
+      // The banner is only part of the line while it is stuck. On a short
+      // window the stylesheet hands it back to the flow — it scrolls away, so
+      // there is nothing above the run to hang from but the bar — and asking it
+      // for its `position` is how this reads that decision rather than
+      // repeating the breakpoint that made it.
+      const stuck = banner ? getComputedStyle(banner).position === "sticky" : false;
+      const under = (stuck && banner ? banner.offsetHeight : 0) + headerPx + PIN_GAP;
+
+      // And the line never drops so low that the drawing under it has no room:
+      // whatever is above it, the stage keeps the depth the stylesheet floors it
+      // at, or the line comes up until it does.
+      const floor = headerPx + PIN_GAP;
+      pinned = Math.max(floor, Math.min(under, window.innerHeight - MIN_STAGE * rem - PIN_GAP));
       run.style.setProperty("--pin-top", `${Math.round(pinned)}px`);
 
       // Measured after the line is published, because that is what sized it.

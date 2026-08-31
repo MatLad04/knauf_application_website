@@ -2,18 +2,21 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import CuttingMat, { useSheet } from "./cutting-mat";
+import Logomark from "./logomark";
 
 /**
  * Two different jobs, deliberately not the same surface.
  *
- * The first arrival at the front door gets the cutting mat — the bare root and
- * nothing after it; see `atTheFrontDoor`. The mat is drawn by the load: the
- * figure climbs towards — never to — ninety-odd per cent while things are still
- * arriving and runs to 100 the moment they have. Then it stops and waits. A
- * loading screen that vanishes at 87% has told you nothing, and one that takes
- * itself away the instant it finishes was never meant to be read; this one is
- * lifted by the reader, with the button that appears at the hundred.
+ * The first arrival at the front door gets the title page — the bare root and
+ * nothing after it; see `atTheFrontDoor`. It is the page's own ground, the mark
+ * in the middle of it breathing while the site arrives, and the figure it is
+ * waiting on printed in the corner where a sheet prints its number. The figure
+ * climbs towards — never to — ninety-odd per cent while things are still
+ * arriving and runs to 100 the moment they have. At the hundred everything
+ * stops: the mark holds still for a beat, and then the whole screen dissolves.
+ * Nothing has to be pressed, and nothing is taken away mid-count — the freeze
+ * is what makes an instant load still read as a finished one rather than as a
+ * flash.
  *
  * A navigation gets a veil, and the veil goes up on the *click*. Driven off the
  * arrival instead — which is what a `usePathname` effect gives you — the new
@@ -23,17 +26,19 @@ import CuttingMat, { useSheet } from "./cutting-mat";
  *
  * Both are one CSS timeline driven by a `data-phase` attribute, so nothing here
  * animates a layout property and no animation library is carried for it.
- * Neither runs under `prefers-reduced-motion`, and the mat never runs twice in
- * a session.
+ * Neither runs under `prefers-reduced-motion`, and the title page never runs
+ * twice in a session.
  */
-type Phase = "boot" | "done" | "leaving" | "cover" | "reveal" | "off";
+type Phase = "boot" | "hold" | "leaving" | "cover" | "reveal" | "off";
 
 const KEY = "kernbau-booted";
 
-/** The mat is never up for less than this, however fast the page arrives. */
-const MIN_VISIBLE = 1050;
-/** Matches `mat-out` in the stylesheet — the slow half of the dissolve. */
-const LIFT = 940;
+/** The screen is never up for less than this, however fast the page arrives. */
+const MIN_VISIBLE = 900;
+/** The freeze at the hundred: finished, held, and only then taken away. */
+const HOLD = 520;
+/** Matches `title-out` in the stylesheet — the dissolve. */
+const LIFT = 620;
 /** Matches `veil-out`, which includes its own hold at full cover. */
 const REVEAL = 520;
 /**
@@ -48,12 +53,12 @@ const stillness = () => window.matchMedia("(prefers-reduced-motion: reduce)").ma
  * Whether this load is somebody arriving at the site, or somebody arriving at a
  * page of it.
  *
- * The mat is a front door, and a front door only makes sense at the front. A
- * pasted product link, a filtered catalogue, a link into a section — each one
- * is a request for a particular thing, made by somebody who has already been
- * sent there, and answering it with a title block that has to be dismissed puts
- * a door in the middle of a corridor. Worse, the thing they were sent to read
- * is already printed underneath it.
+ * The title page is a front door, and a front door only makes sense at the
+ * front. A pasted product link, a filtered catalogue, a link into a section —
+ * each one is a request for a particular thing, made by somebody who has
+ * already been sent there, and answering it with a screen that has to be waited
+ * out puts a door in the middle of a corridor. Worse, the thing they were sent
+ * to read is already printed underneath it.
  *
  * So: the bare root, and nothing after it. A query is a question about a page
  * and a hash is a place inside one; either of them means the address is doing
@@ -69,10 +74,6 @@ const atTheFrontDoor = () =>
 
 export default function SiteLoader() {
   const pathname = usePathname();
-  // The mat is cut to the screen, and the sheet it comes back with also says
-  // whether it has room to print its own label block — which is what decides
-  // whether the two things that block carries are set as type under it here.
-  const sheet = useSheet();
   const [phase, setPhase] = useState<Phase>("off");
   const [percent, setPercent] = useState(0);
 
@@ -84,7 +85,7 @@ export default function SiteLoader() {
     setPhase(next);
   }, []);
 
-  /* --- The mat ----------------------------------------------------------- */
+  /* --- The title page ----------------------------------------------------- */
 
   useEffect(() => {
     let booted = true;
@@ -96,8 +97,9 @@ export default function SiteLoader() {
     if (stillness() || booted || !atTheFrontDoor()) return;
 
     set("boot");
-    // Anything on the page that wants to arrive *after* the mat — the counters
-    // in the title block — waits on this rather than on a guessed delay.
+    // Anything on the page that wants to arrive *after* the screen — the
+    // counters in the title block — waits on this rather than on a guessed
+    // delay.
     document.documentElement.dataset.booting = "1";
 
     const started = performance.now();
@@ -107,7 +109,7 @@ export default function SiteLoader() {
     let from = 0;
 
     // Waiting on the fonts as well as the document is what stops the page
-    // reflowing a beat after the mat has gone, which is the one flicker a
+    // reflowing a beat after the screen has gone, which is the one flicker a
     // loading screen is supposed to prevent.
     document.fonts?.ready.then(() => {
       fonts = true;
@@ -138,15 +140,15 @@ export default function SiteLoader() {
           // starts. Claiming it up front means an effect that mounts, tears
           // down and mounts again — which is what React does in development,
           // and what any future double mount would do — finds the flag already
-          // set on the second pass and never starts the run, leaving the mat
+          // set on the second pass and never starts the run, leaving the screen
           // printed at nought. Marking it at the hundred also says the true
-          // thing: the mat has been seen.
+          // thing: the screen has been seen.
           try {
             sessionStorage.setItem(KEY, "1");
           } catch {
-            /* Private browsing. The mat runs again; nothing else depends on it. */
+            /* Private browsing. It runs again; nothing else depends on it. */
           }
-          set("done");
+          set("hold");
           return;
         }
       }
@@ -158,10 +160,15 @@ export default function SiteLoader() {
     return () => cancelAnimationFrame(frame);
   }, [set]);
 
-  // At a hundred the mat stops and waits: it is a sheet somebody may want to
-  // read, and a screen that takes itself away after half a second is a screen
-  // nobody was ever meant to look at. The only thing that lifts it is Enter.
+  // The freeze, and then the dissolve. Two timers rather than one animation,
+  // because the hold is a beat of stillness at the hundred — the mark stops
+  // breathing, the figure stops counting — and a fade that began there would be
+  // a fade with nothing held in front of it.
   useEffect(() => {
+    if (phase === "hold") {
+      const t = window.setTimeout(() => set("leaving"), HOLD);
+      return () => window.clearTimeout(t);
+    }
     if (phase === "leaving") {
       const t = window.setTimeout(() => {
         set("off");
@@ -240,37 +247,33 @@ export default function SiteLoader() {
     return <div className="veil" data-phase={phase} role="presentation" />;
   }
 
+  // Held at the hundred once the count is over, so the figure and the bar say
+  // the same finished thing while the screen is standing still.
+  const shown = phase === "boot" ? percent : 100;
+
   return (
     <div className="loader" data-phase={phase} role="presentation">
-      {/* The mat is printed by the figure rather than moved under it: the same
-          number the reader is watching draws the rules, strikes the guides and
-          sets the label, so 100% is the moment the drawing is finished. Both
-          the figure and the way in are printed into the label block by the mat
-          itself, so nothing on this screen is floated over the drawing. */}
-      <CuttingMat
-        progress={(phase === "boot" ? percent : 100) / 100}
-        sheet={sheet}
-        enter={phase === "done"}
-        onEnter={() => set("leaving")}
-        className="loader-mat"
-      />
+      {/* The lockup the bar carries, at the size a title page prints one: the
+          mark and the name, set as one thing and breathing as one thing. */}
+      <p className="loader-mark display" aria-hidden="true">
+        <Logomark className="logomark loader-logomark" />
+        KERNBAU
+      </p>
 
-      {/* Where the sheet has no room to print its label block, the two things
-          that block carries are set over the mat instead, on their own rule and
-          in the order the block has them: the way in on the left, the figure it
-          is waiting on ranged right. */}
-      {sheet.note === null && (
-        <div className="loader-block">
-          <button type="button" className="loader-enter" onClick={() => set("leaving")}>
-            Enter the catalogue
-          </button>
-
-          <p className="loader-figure" aria-hidden="true">
-            <span>{phase === "boot" ? percent : 100}</span>
-            <span className="loader-unit">%</span>
-          </p>
-        </div>
-      )}
+      {/* Along the foot of the screen: the figure ranged right on the page's own
+          margin, and under it the bar, run the whole width of the screen so
+          that what is left to load is read as a length rather than as a
+          detail. The figure is written first because it stands above the bar —
+          the bar is the last thing on the sheet. */}
+      <div className="loader-meter" aria-hidden="true">
+        <p className="loader-figure mono">
+          <span>{shown}</span>
+          <span className="loader-unit">%</span>
+        </p>
+        <span className="loader-bar">
+          <span className="loader-bar-fill" style={{ scale: `${shown / 100} 1` }} />
+        </span>
+      </div>
 
       <p className="sr-only" role="status">
         {phase === "boot" ? "Loading the catalogue" : "Loaded"}
