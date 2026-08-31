@@ -211,8 +211,11 @@ export default function SiteSearch({
                   </div>
 
                   {/* Right: products as objects, then the three dimensions the
-                      catalogue is organised by, as three columns under them. */}
-                  <div className="grid gap-9">
+                      catalogue is organised by, as three columns under them.
+                      It is the half of the panel a phone has no room for — see
+                      `.search-more`, which drops it there and leaves the list
+                      of things to type. */}
+                  <div className="search-more grid gap-9">
                     {shown.length > 0 && (
                       <div>
                         <p className="lane-title">

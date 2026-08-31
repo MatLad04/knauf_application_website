@@ -65,7 +65,7 @@ const DOORS: Door[] = [
   },
 ];
 
-export default async function CatalogueOpening({ products }: { products: number }) {
+export default async function CatalogueOpening() {
   // Parsed rather than hand-written, so the link and the count are the same
   // filter: a door that says eighteen and opens onto twelve is worse than no
   // door at all.
@@ -87,14 +87,14 @@ export default async function CatalogueOpening({ products }: { products: number 
 
           <Reveal className="opening-body">
             {/* The argument, on the same three columns the doors below it are
-                on: the claim in the first, what it means in the second, and the
-                third left open — the sheet is not obliged to fill every cell,
-                and an empty one at the top of a schedule is what tells you the
-                schedule has columns at all.
+                on: the claim across the first two, the caveat under it on the
+                same measure, and the reading in the third — the column the
+                third door stands in.
 
-                The button and the note are their own row rather than a tail on
-                the end of the brief, so each sits under the thing it belongs
-                to: the way in under the claim, the caveat under the reading. */}
+                There is no button. Every door under it is a way into the
+                catalogue and each says how many products it opens onto; a
+                fourth way in that says "all of them" is the one thing this
+                section is arguing against. */}
             <div className="opening-brief">
               <h2 id="catalogue-heading" className="display opening-title">
                 Start from the number
@@ -104,13 +104,6 @@ export default async function CatalogueOpening({ products }: { products: number 
                 building height demands, a depth the reveal will take. A figure is a constraint, not
                 a product. Each of these is one, already applied.
               </p>
-
-              <div className="opening-act">
-                <Link href="/products" className="btn btn-primary btn-lg opening-search">
-                  Search all {products} products
-                  <ArrowRight size={17} weight="bold" aria-hidden="true" />
-                </Link>
-              </div>
 
               <p className="caption opening-aside">
                 Or combine them: the catalogue filters on conductivity, fire class, depth, density

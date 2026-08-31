@@ -220,8 +220,12 @@ export default async function ProductPage({ params }: Props) {
           <div className="grid gap-x-14 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
             <div>
               <p className="label">Declaration</p>
-              <h2 id="technical-heading" className="display t-section mt-3">
-                Technical data
+              {/* Broken by hand: the heading opens a column of the same grid
+                  the schedule below it is set on, and two short lines sit
+                  square with that column where one long one runs past it. */}
+              <h2 id="technical-heading" className="display t-page mt-3">
+                <span className="block">Technical</span>
+                <span className="block">data</span>
               </h2>
             </div>
 

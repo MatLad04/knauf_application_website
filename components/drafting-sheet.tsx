@@ -242,33 +242,12 @@ export default function DraftingSheet({ className = "" }: { className?: string }
           })}
         </g>
 
-        {/* The dimension string: every layer ticked off down the left, and the
-            overall depth outboard of it. This is the figure a specifier is
+        {/* The overall depth, down the left. This is the figure a specifier is
             actually asked for, and it belongs to the wall rather than to any
-            product in it. */}
+            product in it — every layer's own depth is already called out
+            beside its name, so ticking them off a second string here was the
+            same schedule read twice. */}
         <g className="ds-dim" opacity="1">
-          <path
-            d={`M${LEFT - 44} ${TOP}V${bottom}`}
-            stroke="currentColor"
-            strokeWidth="0.9"
-            fill="none"
-          />
-          {bands.map((band) => (
-            <path
-              key={`tick-${band.name}`}
-              d={`M${LEFT - 51} ${band.y + 5}l14 -10`}
-              stroke="currentColor"
-              strokeWidth="0.9"
-              fill="none"
-            />
-          ))}
-          <path
-            d={`M${LEFT - 51} ${bottom + 5}l14 -10`}
-            stroke="currentColor"
-            strokeWidth="0.9"
-            fill="none"
-          />
-
           <path
             d={`M${LEFT - 84} ${TOP}V${bottom}M${LEFT - 92} ${TOP}h16M${LEFT - 92} ${bottom}h16`}
             stroke="currentColor"

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import CuttingMat from "./cutting-mat";
+import CuttingMat, { useSheet } from "./cutting-mat";
 
 /**
  * Two different jobs, deliberately not the same surface.
@@ -65,12 +65,14 @@ const stillness = () => window.matchMedia("(prefers-reduced-motion: reduce)").ma
  * disagree.
  */
 const atTheFrontDoor = () =>
-  window.location.pathname === "/" &&
-  window.location.search === "" &&
-  window.location.hash === "";
+  window.location.pathname === "/" && window.location.search === "" && window.location.hash === "";
 
 export default function SiteLoader() {
   const pathname = usePathname();
+  // The mat is cut to the screen, and the sheet it comes back with also says
+  // whether it has room to print its own label block — which is what decides
+  // whether the two things that block carries are set as type under it here.
+  const sheet = useSheet();
   const [phase, setPhase] = useState<Phase>("off");
   const [percent, setPercent] = useState(0);
 
@@ -247,21 +249,28 @@ export default function SiteLoader() {
           itself, so nothing on this screen is floated over the drawing. */}
       <CuttingMat
         progress={(phase === "boot" ? percent : 100) / 100}
+        sheet={sheet}
         enter={phase === "done"}
         onEnter={() => set("leaving")}
         className="loader-mat"
       />
 
-      {/* Below `lg` the label block is off the edge of the cropped mat, so the
-          same two things are set as type on the blue instead. */}
-      <p className="loader-figure" aria-hidden="true">
-        <span>{phase === "boot" ? percent : 100}</span>
-        <span className="loader-unit">%</span>
-      </p>
+      {/* Where the sheet has no room to print its label block, the two things
+          that block carries are set over the mat instead, on their own rule and
+          in the order the block has them: the way in on the left, the figure it
+          is waiting on ranged right. */}
+      {sheet.note === null && (
+        <div className="loader-block">
+          <button type="button" className="loader-enter" onClick={() => set("leaving")}>
+            Enter the catalogue
+          </button>
 
-      <button type="button" className="loader-enter" onClick={() => set("leaving")}>
-        Enter the catalogue
-      </button>
+          <p className="loader-figure" aria-hidden="true">
+            <span>{phase === "boot" ? percent : 100}</span>
+            <span className="loader-unit">%</span>
+          </p>
+        </div>
+      )}
 
       <p className="sr-only" role="status">
         {phase === "boot" ? "Loading the catalogue" : "Loaded"}

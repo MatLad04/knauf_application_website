@@ -103,9 +103,13 @@ export default async function HomePage() {
           </Reveal>
 
           <Reveal className="mt-12 sm:mt-14">
+            {/* `min-w-0` on the columns: the names under each way are set on one
+                line and truncated, and a truncated line still asks the grid for
+                its whole width — which on a 320-pixel phone pushed the column
+                past the screen and put a sideways scroll on the page. */}
             <ul className="grid gap-10 sm:grid-cols-3 sm:gap-5 lg:gap-8">
               {ways.map((way) => (
-                <li key={way.title} className="flex flex-col">
+                <li key={way.title} className="flex min-w-0 flex-col">
                   {/* The photograph and the argument are not a link. Only the
                       names under them are, because only they go anywhere
                       specific — a heading that quietly means "all of these" is
@@ -164,7 +168,7 @@ export default async function HomePage() {
           constructions above start from what is being built, the configurator
           below starts from a wall, and this starts from the figure somebody was
           handed. */}
-      <CatalogueOpening products={stats.products} />
+      <CatalogueOpening />
 
       <ConfiguratorTrial buildUp={buildUp} />
     </>
@@ -208,7 +212,7 @@ function Hero({ stats }: { stats: Stats }) {
               </h1>
             </Enter>
             <Enter delay={0.14}>
-              <p className="hero-lead mt-7 max-w-[46ch]">
+              <p className="hero-lead mt-6 max-w-[46ch] lg:mt-7">
                 {stats.products} products across {stats.categories} material categories and{" "}
                 {stats.applications} constructions, each with its declared performance. Search by
                 value, compare any three, or configure a whole build-up and read its U-value.
@@ -217,7 +221,7 @@ function Hero({ stats }: { stats: Stats }) {
             <Enter delay={0.22}>
               <a
                 href="#ways-heading"
-                className="scroll-cue group mt-10 inline-flex items-center gap-3 text-sm"
+                className="scroll-cue group mt-7 inline-flex items-center gap-3 text-sm lg:mt-10"
               >
                 <span className="flex size-9 shrink-0 items-center justify-center rounded-full border rule transition-colors group-hover:border-[color:var(--color-edge)]">
                   <CaretDown size={14} weight="bold" aria-hidden="true" />
@@ -230,32 +234,34 @@ function Hero({ stats }: { stats: Stats }) {
           <Enter delay={0.1} className="hero-figure">
             <DraftingSheet className="hero-drawing" />
           </Enter>
-        </div>
-      </Container>
 
-      {/* The title block, along the foot of the sheet where one belongs. */}
-      <Container>
-        <dl className="hero-block">
-          <Cell
-            term="Products declared"
-            value={String(stats.products)}
-            note="Every value declared"
-            delay={120}
-          />
-          <Cell
-            term="Categories"
-            value={String(stats.categories)}
-            note="Material by material"
-            delay={260}
-          />
-          <Cell
-            term="Constructions"
-            value={String(stats.applications)}
-            note="Each drawn as a build-up"
-            delay={400}
-          />
-          <Cell term="Sheet" value="01/22" note="External wall · section 1:5" delay={540} />
-        </dl>
+          {/* The title block, along the foot of the sheet where one belongs —
+              and it is written after the drawing because that is where it sits
+              on a sheet. It only moves above the drawing on a phone, where the
+              sheet is a column and the drawing is the tall part of it: CSS
+              orders it there, so the reading order stays the drawn one. */}
+          <dl className="hero-block">
+            <Cell
+              term="Products declared"
+              value={String(stats.products)}
+              note="Every value declared"
+              delay={120}
+            />
+            <Cell
+              term="Categories"
+              value={String(stats.categories)}
+              note="Material by material"
+              delay={260}
+            />
+            <Cell
+              term="Constructions"
+              value={String(stats.applications)}
+              note="Each drawn as a build-up"
+              delay={400}
+            />
+            <Cell term="Sheet" value="01/22" note="External wall · section 1:5" delay={540} />
+          </dl>
+        </div>
       </Container>
     </section>
   );
@@ -349,47 +355,51 @@ function ConfiguratorTrial({ buildUp }: { buildUp: BuildUp }) {
 
         {/* The section's own heading, and the "or" in it is load-bearing: this
             is the alternative to the five drawn applications above. Set at the
-            same size as theirs, because it is the same kind of claim. */}
+            same size as theirs, because it is the same kind of claim, and left
+            to run to its own length: it is one line of type and it is broken
+            only by a screen too narrow to hold it. */}
         <h2
           id="configurator-heading"
-          className="display mt-5 max-w-[18ch] text-[clamp(2.25rem,5vw,4rem)] leading-[0.98]"
+          className="display mt-5 text-[clamp(2.25rem,5vw,4rem)] leading-[0.98]"
         >
           Configure the wall, not the board
         </h2>
 
-        <div className="plate mt-8 sm:mt-10">
-          {/* The left half of the sheet: what the tool asks, and why. The
-              schedule is the argument — four rows, and both figures under it
-              move when any of them does. */}
-          <div className="plate-brief">
+        <div className="plate mt-6 sm:mt-7">
+          {/* The sheet's own head: what the tool asks, and why. It runs the
+              width of the sheet below `lg`, where the schedule and the drawing
+              share the two flanks under it, and takes the left flank above it,
+              where the drawing has a column of its own. */}
+          <div className="plate-head">
             <h3 className="display t-page max-w-[20ch]">Substrate, board, depth, finish</h3>
             <p className="lead mt-4 max-w-[48ch]">
               The figure a specifier is asked for is the wall’s, and it is printed on no board in
               this catalogue: depth and U-value belong to the build-up.
             </p>
-
-            <dl className="plate-schedule mt-8">
-              {decisions.map((decision, i) => (
-                <div key={decision.term} className="plate-row">
-                  <span className="mono text-xs text-muted">{String(i + 1).padStart(2, "0")}</span>
-                  <dt className="label">{decision.term}</dt>
-                  <dd className="text-sm">
-                    {decision.value}
-                    <span className="mono ml-2 text-xs text-muted">{decision.note}</span>
-                  </dd>
-                </div>
-              ))}
-            </dl>
           </div>
 
-          {/* The right half: the same four decisions, drawn. */}
+          {/* The schedule is the argument — four rows, and both figures under
+              it move when any of them does. */}
+          <dl className="plate-schedule">
+            {decisions.map((decision, i) => (
+              <div key={decision.term} className="plate-row">
+                <span className="mono text-xs text-muted">{String(i + 1).padStart(2, "0")}</span>
+                <dt className="label">{decision.term}</dt>
+                <dd className="text-sm">
+                  {decision.value}
+                  <span className="mono ml-2 text-xs text-muted">{decision.note}</span>
+                </dd>
+              </div>
+            ))}
+          </dl>
+
+          {/* The same four decisions, drawn. */}
           <div className="plate-figure">
             <BuildLoop thermalConductivity={board.thermalConductivity} />
           </div>
 
           {/* The title block. Three figures and the way in, each in a cell of
-              its own, divided by the grid’s own gaps rather than by borders —
-              so no corner ever carries a doubled hairline. */}
+              its own, ruled off from the cell before it. */}
           <dl className="plate-block">
             <Figure term={`Wall depth at ${settled} mm`} value={String(depthMm)} unit="mm" />
             <Figure term="U-value" value={u.toFixed(3)} unit={"W/(m²K)"} />

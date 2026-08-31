@@ -258,6 +258,9 @@ export default function WallConfigurator({ buildUp }: { buildUp: BuildUp }) {
             // depths is three columns and six is three as well, and neither is
             // something `auto-fit` can be told.
             style={{ "--depth-cols": Math.ceil(board.variants.length / 2) } as React.CSSProperties}
+            // And how many there are, for the one width where it decides the
+            // shape rather than the size — see `.depths[data-depths="6"]`.
+            data-depths={board.variants.length}
             onKeyDown={arrows(
               board.variants.map((v) => String(v.thicknessMm)),
               String(variant.thicknessMm),
@@ -353,93 +356,102 @@ export default function WallConfigurator({ buildUp }: { buildUp: BuildUp }) {
             here: those four figures are the title block along the foot, which
             is where a drawing states what it comes to. */}
         <div className="stage-panel">
-          <figure className="specimen-sheet">
-            {/* Named and nothing more: the product it is a section of is the
-                title of the page now, so repeating it here was the same sentence
-                twice with a drawing between them. */}
-            <figcaption className="build-up">
-              <p className="label">This build-up</p>
-            </figcaption>
+          {/* A box for the sheet to be pinned in. Sticky is confined to the
+              nearest box that has a height of its own, and the panel's grid
+              area is not one: in the band where the sheet is pinned the
+              browser let it travel to the foot of the whole stage and park on
+              top of the note. So the panel takes its rows and this takes the
+              travel. Everywhere else it is `display: contents` and nothing
+              here has an element more than it had. */}
+          <div className="stage-pin">
+            <figure className="specimen-sheet">
+              {/* Named and nothing more: the product it is a section of is the
+                  title of the page now, so repeating it here was the same sentence
+                  twice with a drawing between them. */}
+              <figcaption className="build-up">
+                <p className="label">This build-up</p>
+              </figcaption>
 
-            <div className="specimen-frame">
-              {/* The drawing is taken out of flow inside its own cell. An
-                  `svg` with a `viewBox` and no height of its own claims the
-                  height its width implies, which would make the drawing decide
-                  how tall the sheet is; here the sheet decides, and the drawing
-                  takes what the figures and the actions under it leave. */}
-              <div className="specimen-stage">
-                <WallSection
-                  layers={built.layers}
-                  totalMm={built.depthMm}
-                  hot={hot}
-                  onHover={setHot}
-                />
+              <div className="specimen-frame">
+                {/* The drawing is taken out of flow inside its own cell. An
+                    `svg` with a `viewBox` and no height of its own claims the
+                    height its width implies, which would make the drawing decide
+                    how tall the sheet is; here the sheet decides, and the drawing
+                    takes what the figures and the actions under it leave. */}
+                <div className="specimen-stage">
+                  <WallSection
+                    layers={built.layers}
+                    totalMm={built.depthMm}
+                    hot={hot}
+                    onHover={setHot}
+                  />
+                </div>
+
+                {/* The legend, in installation order, keyed by the same hatch the
+                    bands are filled with. Static rows, so it can follow a drawing
+                    that moves — which a leader line joining two moving points
+                    cannot. Pointing at a row holds its band in the drawing, and
+                    pointing at a band holds its row: the two are the same layers
+                    said twice, and neither should have to be counted against the
+                    other. */}
+                <ol className="legend" onMouseLeave={() => setHot(null)}>
+                  {[...built.layers]
+                    .reverse()
+                    .filter((layer) => layer.hatch !== null && layer.mm > 0)
+                    .map((layer) => (
+                      <li
+                        key={layer.id}
+                        data-hot={hot === layer.id ? "true" : undefined}
+                        onMouseEnter={() => setHot(layer.id)}
+                        className="legend-row"
+                      >
+                        <Swatch hatch={layer.hatch!} size="row" />
+                        <span className="legend-name">{layer.name}</span>
+                        <span className="legend-mm">{layer.mm} mm</span>
+                      </li>
+                    ))}
+                </ol>
+              </div>
+            </figure>
+
+            {/* The title block, under the drawing it belongs to. Four figures
+                two to a line, then the things you would do with the build-up
+                beneath them: read the section, read what it comes to, act. */}
+            <div className="stage-foot">
+              <dl className="specs">
+                <Spec term="Depth" unit="mm">
+                  <AnimatedNumber value={built.depthMm} />
+                </Spec>
+                <Spec term="U-value" unit="W/(m²K)">
+                  <AnimatedNumber value={built.u} decimals={3} />
+                </Spec>
+                <Spec term="R total" unit="m²K/W">
+                  <AnimatedNumber value={built.rTotal} decimals={2} />
+                </Spec>
+                <Spec term="Reaction to fire">{built.fire}</Spec>
+              </dl>
+
+              <div className="acts">
+                <Link href="/in-development?feature=favourites" className="btn btn-primary">
+                  <Heart size={16} weight="bold" aria-hidden="true" />
+                  Save
+                </Link>
+                <Link href="/in-development?feature=basket" className="btn btn-quiet">
+                  <Basket size={16} weight="bold" aria-hidden="true" />
+                  Add to cart
+                </Link>
+                <Link href={`/products/${variant.slug}`} className="btn btn-quiet btn-sm acts-wide">
+                  Open {variant.code}
+                  <ArrowRight size={14} weight="bold" aria-hidden="true" />
+                </Link>
               </div>
 
-              {/* The legend, in installation order, keyed by the same hatch the
-                  bands are filled with. Static rows, so it can follow a drawing
-                  that moves — which a leader line joining two moving points
-                  cannot. Pointing at a row holds its band in the drawing, and
-                  pointing at a band holds its row: the two are the same layers
-                  said twice, and neither should have to be counted against the
-                  other. */}
-              <ol className="legend" onMouseLeave={() => setHot(null)}>
-                {[...built.layers]
-                  .reverse()
-                  .filter((layer) => layer.hatch !== null && layer.mm > 0)
-                  .map((layer) => (
-                    <li
-                      key={layer.id}
-                      data-hot={hot === layer.id ? "true" : undefined}
-                      onMouseEnter={() => setHot(layer.id)}
-                      className="legend-row"
-                    >
-                      <Swatch hatch={layer.hatch!} size="row" />
-                      <span className="legend-name">{layer.name}</span>
-                      <span className="legend-mm">{layer.mm} mm</span>
-                    </li>
-                  ))}
-              </ol>
+              <p className="sr-only" aria-live="polite">
+                {Math.round(built.depthMm)} millimetres deep. U-value {built.u.toFixed(3)} watts per
+                square metre kelvin. Total thermal resistance {built.rTotal.toFixed(2)}. Reaction to
+                fire {built.fire}.
+              </p>
             </div>
-          </figure>
-
-          {/* The title block, under the drawing it belongs to. Four figures
-              two to a line, then the things you would do with the build-up
-              beneath them: read the section, read what it comes to, act. */}
-          <div className="stage-foot">
-            <dl className="specs">
-              <Spec term="Depth" unit="mm">
-                <AnimatedNumber value={built.depthMm} />
-              </Spec>
-              <Spec term="U-value" unit="W/(m²K)">
-                <AnimatedNumber value={built.u} decimals={3} />
-              </Spec>
-              <Spec term="R total" unit="m²K/W">
-                <AnimatedNumber value={built.rTotal} decimals={2} />
-              </Spec>
-              <Spec term="Reaction to fire">{built.fire}</Spec>
-            </dl>
-
-            <div className="acts">
-              <Link href="/in-development?feature=favourites" className="btn btn-primary">
-                <Heart size={16} weight="bold" aria-hidden="true" />
-                Save
-              </Link>
-              <Link href="/in-development?feature=basket" className="btn btn-quiet">
-                <Basket size={16} weight="bold" aria-hidden="true" />
-                Add to cart
-              </Link>
-              <Link href={`/products/${variant.slug}`} className="btn btn-quiet btn-sm acts-wide">
-                Open {variant.code}
-                <ArrowRight size={14} weight="bold" aria-hidden="true" />
-              </Link>
-            </div>
-
-            <p className="sr-only" aria-live="polite">
-              {Math.round(built.depthMm)} millimetres deep. U-value {built.u.toFixed(3)} watts per
-              square metre kelvin. Total thermal resistance {built.rTotal.toFixed(2)}. Reaction to
-              fire {built.fire}.
-            </p>
           </div>
         </div>
 

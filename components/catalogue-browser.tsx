@@ -3,10 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import Link from "next/link";
-import { X } from "@phosphor-icons/react/dist/ssr";
+import { Funnel, X } from "@phosphor-icons/react/dist/ssr";
 import { browse, type BrowseResult } from "@/app/products/actions";
 import {
   activeFilterCount,
+  LIMITS,
   parseProductQuery,
   rawFromSearchParams,
   SORT_OPTIONS,
@@ -50,18 +51,112 @@ export default function CatalogueBrowser({
   // grid it is about to rearrange, while appending the next page must leave the
   // products already on the screen exactly as they are.
   const [pending, setPending] = useState<"filter" | "append" | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   // Every request is numbered, so an answer that arrives after a newer one was
   // asked for is dropped rather than painted. Ticking three filters quickly
   // used to leave whichever query the server happened to finish last.
   const request = useRef(0);
   const rail = useRef<HTMLUListElement>(null);
   const toolbar = useRef<HTMLDivElement>(null);
+  const results = useRef<HTMLElement>(null);
   // Bumped when the query changes from outside the form, so the inputs pick the
   // new state up; a change made *in* the form is already what the form says.
   const [formKey, setFormKey] = useState(0);
+  // Below `lg` the filter panel is a sheet worked from the toolbar, and it is
+  // served closed: served open it flashed over the catalogue on every load and
+  // then animated itself away. A browser with no script gets the panel back as
+  // a column above the results instead, from the sheet of rules under
+  // `<noscript>` below — nothing there can open a sheet, so nothing there is
+  // given one.
+  const holdLimit = useHoldLimit();
+
+  /**
+   * A navigation to this same route, which nothing else here would notice.
+   *
+   * The catalogue is mounted once and keeps the query in its own state, so a
+   * link that lands on `/products` with a different address — a suggestion from
+   * the search panel, a door on the home page, a lane in the footer — re-renders
+   * the page around it with a new set and leaves this component showing the old
+   * one. The address changed, the results did not.
+   *
+   * So the served address is watched, and when it changes the component is put
+   * back to what the server just sent. During render rather than in an effect:
+   * the alternative is one paint of the wrong catalogue.
+   */
+  const [servedSearch, setServedSearch] = useState(initialSearch);
+  if (initialSearch !== servedSearch) {
+    setServedSearch(initialSearch);
+    setSearch(initialSearch);
+    setResult(initial);
+    setPending(null);
+    setFormKey((n) => n + 1);
+    // Anything still in flight was asked for by the address we have just left.
+    request.current += 1;
+  }
 
   const raw = rawFromSearchParams(new URLSearchParams(search));
   const { query } = parseProductQuery(raw);
+
+  /**
+   * Back to the head of the list.
+   *
+   * Cards and the schedule are two readings of the same set, and the row you
+   * were on in one is not the row you are on in the other — a switch made
+   * halfway down the catalogue used to leave you somewhere arbitrary in a
+   * layout you had not seen yet. So the switch returns to the first product,
+   * stopped under the two bars that are pinned over it rather than at the top
+   * of the document, which would scroll past the toolbar that was just used.
+   *
+   * Only ever upwards: if the head of the list is already on the screen there
+   * is nothing to return to, and scrolling down to it would be a jump the
+   * click did not ask for. Answers whether it moved, because a caller that
+   * sends the page travelling must not also animate what is on it.
+   *
+   * `smooth` is off for a caller with something of its own over the screen —
+   * the filter sheet on its way out — where travel nobody can see is only a
+   * scroll still running when the sheet has gone.
+   */
+  const toResults = useCallback((smooth = true) => {
+    const node = results.current;
+    if (!node) return false;
+
+    // The two bars are measured rather than read off their custom properties:
+    // the properties are declared in rem and the header is as tall as its rows
+    // happen to be, and being a couple of pixels out here means landing with
+    // the first row half under the toolbar.
+    const overhang =
+      (document.querySelector("header")?.offsetHeight ?? 0) + (toolbar.current?.offsetHeight ?? 0);
+    const top = Math.max(0, node.getBoundingClientRect().top + window.scrollY - overhang);
+
+    // A couple of pixels of slack: the bars are measured to fractions, and a
+    // scroll of two pixels is not a journey — it would only cost the switch
+    // its animation for nothing.
+    if (window.scrollY <= top + 2) return false;
+    window.scrollTo({ top, behavior: smooth ? "smooth" : "auto" });
+    return true;
+  }, []);
+
+  /**
+   * The panel, opened and closed, and the page left exactly where it was.
+   *
+   * Below `lg` the panel used to be inserted into the flow above the results,
+   * which pushed a screenful of products down and made the tap read as a
+   * control that scrolled you back to the first row. It is a drawer over the
+   * page there instead — fixed under the two pinned bars, scrolling in itself,
+   * taking no room in the column — so opening and closing it moves nothing
+   * underneath and there is no place to be restored to afterwards.
+   *
+   * Above `lg` it was never a disclosure: the panel is a column that is always
+   * there, and this only records the state nothing reads.
+   */
+  const showPanel = (next: boolean) => setFiltersOpen(next);
+
+  /**
+   * Whether the panel is currently a sheet over the catalogue rather than a
+   * column beside it — which is the same question as "is the grid being
+   * rearranged where nobody can see it".
+   */
+  const sheeted = () => filtersOpen && !window.matchMedia("(width >= 64rem)").matches;
 
   /**
    * One request, one paint.
@@ -126,13 +221,142 @@ export default function CatalogueBrowser({
     return () => observer.disconnect();
   }, []);
 
-  // The comparison tray is shared with the product pages, which have no URL to
-  // read it from. The URL stays the source of truth here; this only mirrors it.
+  /**
+   * The address bar, on the way in, when it disagrees with what was rendered.
+   *
+   * Every change on this page is written with `history.pushState`, which the
+   * router does not see. Coming back from the comparison page it restores its
+   * own idea of `/products` — whatever it had cached before the first thing was
+   * ticked — so the address is right and the page under it is a page from
+   * before. Reading the address here is what makes the back button return to
+   * the catalogue that was left rather than to the one first arrived at.
+   *
+   * A selection is not a query, so if the only difference is what is held for
+   * comparison the results are already the right results and are left alone:
+   * on the commonest way in — back from the comparison page — nothing is
+   * fetched and nothing dims.
+   */
   useEffect(() => {
-    writeCompare(query.compare);
-  }, [query.compare]);
+    const qs = window.location.search.replace(/^\s*\?/, "");
+    if (qs === initialSearch) return;
 
-  // A selection made on a product page is picked up on the way in.
+    setSearch(qs);
+
+    if (askedFor(qs) === askedFor(initialSearch)) return;
+
+    setFormKey((n) => n + 1);
+    const id = (request.current += 1);
+    setPending("filter");
+    void browse(rawFromSearchParams(new URLSearchParams(qs))).then((data) => {
+      if (id !== request.current) return;
+      setPending(null);
+      setResult(data);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /**
+   * Where you were in the list, kept for the way back.
+   *
+   * A browser restores a scroll position by measuring the document it has at
+   * that moment, and on the way back that document is the first page of
+   * results: everything "Load more" added is fetched after, so the restore is
+   * clamped to a list shorter than the one that was left — 2,668 pixels down a
+   * catalogue left at 3,000. Neither the browser nor the router can do better,
+   * because the pages after the first were never navigations.
+   *
+   * So the place is remembered here and applied again once the results that
+   * make the page that long have arrived, and abandoned the moment the reader
+   * takes the scroll into their own hands.
+   *
+   * Remembered against the set rather than the address, because what is held
+   * for comparison changes the address without changing a single row: ticking
+   * a product and leaving straight away would otherwise be an address nothing
+   * had ever been remembered for.
+   */
+  useEffect(() => {
+    let timer = 0;
+
+    const remember = () => {
+      try {
+        sessionStorage.setItem(
+          SCROLL_KEY,
+          JSON.stringify({ set: askedFor(window.location.search), y: window.scrollY }),
+        );
+      } catch {
+        // A browser with storage switched off simply does not remember.
+      }
+    };
+
+    // Settled rather than continuous: the position worth keeping is the one
+    // scrolling stopped at. The click is caught on the way down, before it can
+    // navigate, for the reader who clicks without ever coming to rest.
+    const onScroll = () => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(remember, 150);
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    document.addEventListener("click", remember, true);
+    window.addEventListener("pagehide", remember);
+
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("scroll", onScroll);
+      document.removeEventListener("click", remember, true);
+      window.removeEventListener("pagehide", remember);
+    };
+  }, []);
+
+  useEffect(() => {
+    let saved: { set?: unknown; y?: unknown } | null = null;
+    try {
+      saved = JSON.parse(sessionStorage.getItem(SCROLL_KEY) ?? "null");
+    } catch {
+      saved = null;
+    }
+
+    const y = saved?.y;
+    if (typeof y !== "number" || y <= 0) return;
+    if (saved?.set !== askedFor(window.location.search)) return;
+
+    let done = false;
+    const surrender = () => {
+      done = true;
+    };
+
+    // A reader who has already started moving is where they want to be.
+    window.addEventListener("wheel", surrender, { passive: true, once: true });
+    window.addEventListener("touchmove", surrender, { passive: true, once: true });
+    window.addEventListener("keydown", surrender, { once: true });
+
+    const until = Date.now() + 3000;
+    const tick = () => {
+      if (done) return;
+
+      const reachable = document.documentElement.scrollHeight - window.innerHeight;
+      if (reachable < y && Date.now() < until) {
+        requestAnimationFrame(tick);
+        return;
+      }
+
+      done = true;
+      window.scrollTo(0, Math.min(y, Math.max(0, reachable)));
+    };
+
+    requestAnimationFrame(tick);
+
+    return () => {
+      done = true;
+      window.removeEventListener("wheel", surrender);
+      window.removeEventListener("touchmove", surrender);
+      window.removeEventListener("keydown", surrender);
+    };
+  }, []);
+
+  // A selection made on a product page is picked up on the way in. Before the
+  // mirror below, which would otherwise write this page's empty selection over
+  // it on the first pass and leave nothing to pick up.
   useEffect(() => {
     const stored = readCompare();
     if (stored.length === 0 || query.compare.length > 0) return;
@@ -142,6 +366,12 @@ export default function CatalogueBrowser({
     setSearch(next.toString());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // The comparison tray is shared with the product pages, which have no URL to
+  // read it from. The URL stays the source of truth here; this only mirrors it.
+  useEffect(() => {
+    writeCompare(query.compare);
+  }, [query.compare]);
 
   // The back button is a state change like any other.
   useEffect(() => {
@@ -162,7 +392,14 @@ export default function CatalogueBrowser({
   }, []);
 
   /** Change one parameter and keep the rest of the URL. */
-  const set = (changes: Record<string, string | null>, keepPage = false) => {
+  const set = (
+    changes: Record<string, string | null>,
+    keepPage = false,
+    // Off for a change that also sends the page travelling: a view transition
+    // holds a still of the old screen over the real one while it tweens, and
+    // a page that scrolls under that still is the tween dragging behind.
+    animate = true,
+  ) => {
     const next = new URLSearchParams(search);
     for (const [key, value] of Object.entries(changes)) {
       if (value === null || value === "") next.delete(key);
@@ -170,7 +407,27 @@ export default function CatalogueBrowser({
     }
     // A different filter is a different set, so it starts at the beginning.
     if (!keepPage) next.delete("page");
-    run(next, false);
+    run(next, false, { animate });
+  };
+
+  /**
+   * Holding a product for comparison, which is not a query.
+   *
+   * The set of results is exactly the same before and after: what changes is
+   * which cards say they are held and what the notice above them counts. So it
+   * writes the URL and re-renders off it, and never goes back to the server —
+   * a round trip here dimmed the grid and ran a view transition over every card
+   * on the screen to move none of them, which read as the whole page blinking
+   * for the sake of one word on one card.
+   */
+  const hold = (compare: string | null) => {
+    const next = new URLSearchParams(search);
+    if (compare) next.set("compare", compare);
+    else next.delete("compare");
+
+    const qs = next.toString();
+    window.history.pushState(null, "", qs ? `/products?${qs}` : "/products");
+    setSearch(qs);
   };
 
   const applyForm = (form: HTMLFormElement) => {
@@ -185,23 +442,44 @@ export default function CatalogueBrowser({
       if (!text || ["q", "view", "sort", "compare"].includes(key)) continue;
       next.append(key, text);
     }
-    run(next, true);
+    // Ticking a box while the sheet is up rearranges a grid the sheet is
+    // covering. A view transition there animates nothing anyone can see and
+    // cross-fades the sheet on its way past, which is what made every tick
+    // blink. The grid is simply swapped, and the transition the visitor does
+    // see is the sheet leaving.
+    run(next, true, { animate: !sheeted() });
   };
 
-  const { products, total, facets, issues, relaxations } = result;
+  const { products, total, facets, relaxations } = result;
   const chips = activeFilters(query, facets);
   const shown = products.length;
   const fade = useRailFade(rail, chips.length);
 
   return (
     <>
+      {/* No script, no sheet. Nothing here can open one, so below `lg` the
+          panel goes back to what it is above `lg`: a column of filters standing
+          above the results, with the Apply button the form keeps for exactly
+          this reader. */}
+      <noscript>
+        <style>{`@media (width < 64rem) {
+          .filter-rail {
+            position: static;
+            visibility: visible;
+            opacity: 1;
+            transform: none;
+            padding-inline: 0;
+          }
+        }`}</style>
+      </noscript>
+
       {/* What you are looking at, and how it is presented. Sticky under the bar
           so the count stays visible while the grid scrolls. */}
       <div
         ref={toolbar}
-        className="catalogue-bar sticky top-[var(--header-h)] z-30 border-b rule bg-[color-mix(in_srgb,var(--color-surface)_92%,transparent)] backdrop-blur"
+        className="catalogue-bar sticky top-[calc(var(--header-h)_-_2px)] z-30 border-b rule bg-[color-mix(in_srgb,var(--color-surface)_92%,transparent)] backdrop-blur"
       >
-        <Container className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:gap-5">
+        <Container className="toolbar-lines py-3">
           {/* The count and the active filters share one row. On their own line
               the chips changed the height of the bar, which pushed the whole
               grid up and down every time a filter went on or off.
@@ -209,7 +487,7 @@ export default function CatalogueBrowser({
               The rail scrolls sideways rather than wrapping, for the same
               reason: six filters would otherwise take three lines and move the
               catalogue down the screen while you were reading it. */}
-          <div className="toolbar-row flex min-w-0 flex-1 items-center gap-4">
+          <div className="toolbar-row min-w-0 flex-1">
             <h1 className="sr-only">Products — insulation, reinforcement and render</h1>
             <p aria-live="polite" className="shrink-0 text-sm">
               <span className="mono">{total}</span> {plural(total, "result")}
@@ -217,7 +495,7 @@ export default function CatalogueBrowser({
             </p>
 
             {chips.length > 0 && (
-              <>
+              <div className="toolbar-chips flex min-w-0 items-center gap-4">
                 <ul
                   ref={rail}
                   data-fade-start={fade.start ? "true" : undefined}
@@ -229,7 +507,15 @@ export default function CatalogueBrowser({
                     <li key={chip.key} className="chip-slot">
                       <button
                         type="button"
-                        onClick={() => set(chip.remove)}
+                        onClick={() => {
+                          // Taking a filter off widens the set, and what it
+                          // lets back in comes in at the top — so the answer to
+                          // the click is up there rather than wherever in the
+                          // narrower list the reader happened to be. Either the
+                          // page travels or the cards do, never both.
+                          const travelling = toResults();
+                          set(chip.remove, false, !travelling);
+                        }}
                         className="chip"
                         data-active="true"
                       >
@@ -251,12 +537,16 @@ export default function CatalogueBrowser({
                 >
                   Clear all
                 </button>
-              </>
+              </div>
             )}
           </div>
 
-          <div className="flex min-w-0 shrink-0 items-center gap-2">
-            <span className="label hidden shrink-0 sm:inline">Sort</span>
+          <div className="toolbar-controls flex min-w-0 shrink-0 items-center gap-2">
+            {/* Named only where the controls share a line with the count. On
+                their own line the word is the first thing on the bar and the
+                control it names is set in from the edge behind it — and what
+                the listbox is for is already the first thing it says. */}
+            <span className="label hidden shrink-0 lg:inline">Sort</span>
             <Select
               label="Sort the results"
               align="end"
@@ -273,7 +563,12 @@ export default function CatalogueBrowser({
                 <button
                   key={mode}
                   type="button"
-                  onClick={() => set({ view: mode === "grid" ? null : mode }, true)}
+                  onClick={() => {
+                    // Either the page travels or the cards do, never both at
+                    // once: that is what made the switch drag.
+                    const travelling = toResults();
+                    set({ view: mode === "grid" ? null : mode }, true, !travelling);
+                  }}
                   data-active={query.view === mode ? "true" : undefined}
                   aria-pressed={query.view === mode}
                   className={`control px-3 py-1.5 text-sm ${i === 0 ? "rounded-r-none" : "-ml-px rounded-l-none"}`}
@@ -282,6 +577,34 @@ export default function CatalogueBrowser({
                 </button>
               ))}
             </div>
+
+            {/* The way into the filter panel, below `lg` where the panel is
+                collapsed. It sits with the other controls on the results
+                rather than as a bar of its own over them: sort, view and what
+                is being shown at all are the same kind of decision — and it
+                sits at the end of them, past the view switch, because it is
+                the one that changes the set rather than the look of it.
+
+                An icon and no word: the funnel is the whole label, and the
+                three controls together already run to the edge of a phone.
+
+                It opens the sheet and nothing else. The sheet covers this bar
+                while it is up, so the way out is at the foot of the sheet: the
+                count of what the filters come to, or clearing them. Both leave
+                a moment where the results the filters just produced are
+                seen — which the button you came in by never could. */}
+            <button
+              type="button"
+              aria-expanded={filtersOpen}
+              aria-controls="filter-panel"
+              aria-label="Show filters"
+              title="Show filters"
+              data-active={filtersOpen ? "true" : undefined}
+              onClick={() => showPanel(true)}
+              className="control shrink-0 px-3 py-1.5 text-sm lg:hidden"
+            >
+              <Funnel size={16} weight="bold" aria-hidden="true" />
+            </button>
           </div>
         </Container>
       </div>
@@ -289,53 +612,91 @@ export default function CatalogueBrowser({
       {/* No padding above the columns: the rail pins to the underside of the
           toolbar, and anything above it in normal flow is a distance the rail
           has to travel before it catches. The results column carries its own
-          top padding instead. */}
+          top padding instead.
+
+          Below `lg` the rail is not a column at all: closed it is not there,
+          open it is a drawer over the page. Either way the grid is one column
+          of results, so a phone never spends the rail's top padding and the
+          row gap under it on nothing. */}
       <Container className="grid gap-10 pb-10 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-14">
-        {/* The rail scrolls on its own. Nine categories and six Euroclasses are
-            taller than most screens, and pinning them to the page meant
-            scrolling past the whole catalogue to reach the last filter — or
-            scrolling the catalogue back up to change your mind. */}
-        <aside aria-labelledby="filters-heading" className="filter-rail min-w-0 pt-10 lg:pt-7">
-          <h2 id="filters-heading" className="label mb-4 hidden lg:block">
+        {/* The rail scrolls on its own, pinned from `lg` up and a drawer below
+            it. Nine categories and six Euroclasses are taller than most
+            screens, and leaving them in the page meant scrolling past the whole
+            catalogue to reach the last filter — or scrolling the catalogue back
+            up to change your mind. */}
+        <aside
+          aria-labelledby="filters-heading"
+          data-open={filtersOpen ? "true" : undefined}
+          className="filter-rail min-w-0 pt-6 lg:pt-7"
+        >
+          {/* Named on the sheet as well as on the rail: the sheet covers the
+              bar that says what you are looking at, so without it the phone
+              opens on a list of checkboxes with nothing over them. */}
+          <h2 id="filters-heading" className="label mb-4">
             Filters
           </h2>
-          <Filters key={formKey} facets={facets} query={query} onApply={applyForm} />
+          <Filters
+            key={formKey}
+            facets={facets}
+            query={query}
+            onApply={applyForm}
+            total={total}
+            onDone={(reason) => {
+              showPanel(false);
+              // Only the count. That button asks for these products, and the
+              // answer to it is the first of them — wherever in the old set
+              // the sheet happened to be opened from. Clearing asks for
+              // nothing, and puts back a catalogue the row you were reading is
+              // still somewhere in, so it leaves the page where it stands.
+              //
+              // The jump goes under the sheet rather than after it: the sheet
+              // is opaque for as long as it takes, so what is uncovered is the
+              // head of the new list rather than a page still travelling
+              // towards it.
+              if (reason === "shown") toResults(false);
+            }}
+          />
         </aside>
 
-        <section aria-labelledby="results-heading" className="min-w-0 lg:pt-10">
+        <section ref={results} aria-labelledby="results-heading" className="min-w-0 pt-4 lg:pt-10">
           <h2 id="results-heading" className="sr-only">
             Results
           </h2>
 
-          {issues.length > 0 && (
-            <div className="panel mb-8 p-5 text-sm">
-              <p className="label">Adjusted input</p>
-              <ul className="mt-2 grid gap-1">
-                {issues.map((issue, i) => (
-                  <li key={i}>
-                    <span className="mono">{issue.param}</span>
-                    <span className="text-muted">
-                      {" "}
-                      = “{issue.value}”, {issue.reason}.
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
+          {/* One product is enough to ask the question: the comparison page
+              fills the other columns with the closest products approved for
+              the same job, which is what the answer would have been anyway. So
+              the notice says what will happen rather than asking for two more
+              clicks first. */}
           {query.compare.length > 0 && (
-            <p className="panel mb-8 flex flex-wrap items-center gap-x-4 gap-y-2 p-4 text-sm">
-              <span>
-                <span className="mono">{query.compare.length}</span> selected to compare
-              </span>
-              <Link href={`/compare?compare=${query.compare.join(",")}`} className="link">
-                Compare side by side
-              </Link>
-              <button type="button" onClick={() => set({ compare: null })} className="link">
-                Clear selection
-              </button>
-            </p>
+            <div className="compare-alert">
+              <div className="panel flex items-center gap-4 p-4 text-sm">
+                {/* What is held reads from the left and the way on from the
+                  right, with the way out past it in the corner. The two wrap
+                  between themselves when the bar is too narrow to hold them
+                  apart. */}
+                <div className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-x-5 gap-y-1">
+                  <p>
+                    <span className="mono">{query.compare.length}</span>{" "}
+                    {plural(query.compare.length, "product")} held for comparison
+                  </p>
+                  <Link href={`/compare?compare=${query.compare.join(",")}`} className="link">
+                    {query.compare.length === 1
+                      ? "Compare with the closest matches"
+                      : "Compare side by side"}
+                  </Link>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => hold(null)}
+                  aria-label="Clear the comparison"
+                  title="Clear the comparison"
+                  className="-m-1 shrink-0 rounded-[var(--radius-control)] p-1.5 text-muted hover:text-ink"
+                >
+                  <X size={14} weight="bold" aria-hidden="true" />
+                </button>
+              </div>
+            </div>
           )}
 
           {/* The grid is never emptied while the next set is on its way: the
@@ -358,10 +719,10 @@ export default function CatalogueBrowser({
                       product={product}
                       isCompared={query.compare.includes(product.slug)}
                       onCompare={() =>
-                        set({
-                          compare:
-                            toggleValue(query.compare, product.slug).slice(0, 3).join(",") || null,
-                        })
+                        hold(
+                          toggleValue(query.compare, product.slug).slice(0, holdLimit).join(",") ||
+                            null,
+                        )
                       }
                     />
                   </div>
@@ -419,6 +780,47 @@ export default function CatalogueBrowser({
  * Everywhere else — and for anyone who asked for less motion — the update is
  * simply applied, which is the same result without the tweening.
  */
+/**
+ * What a query string actually asks the catalogue for.
+ *
+ * `compare` is the one parameter that selects nothing: it says which of the
+ * results are being held side by side, which the server never sees. Two
+ * addresses that differ only in it are the same list, scrolled to the same
+ * place, showing the same rows.
+ */
+function askedFor(qs: string) {
+  const params = new URLSearchParams(qs);
+  params.delete("compare");
+  params.sort();
+  return params.toString();
+}
+
+const SCROLL_KEY = "kernbau-catalogue-scroll";
+
+/**
+ * How many products can be held at once, which is a question about the screen.
+ *
+ * Three columns of declared values is a comparison on a laptop and a squeeze on
+ * a phone, where the table sets the products side by side under each
+ * characteristic: two fit that pairing, three do not. So the phone holds two —
+ * and it is the holding that is capped rather than the reading, because a
+ * selection of three made on a laptop still has to open on a phone.
+ */
+function useHoldLimit() {
+  const [limit, setLimit] = useState<number>(LIMITS.compare);
+
+  useEffect(() => {
+    const narrow = window.matchMedia("(width < 48rem)");
+    const read = () => setLimit(narrow.matches ? 2 : LIMITS.compare);
+
+    read();
+    narrow.addEventListener("change", read);
+    return () => narrow.removeEventListener("change", read);
+  }, []);
+
+  return limit;
+}
+
 function swap(apply: () => void, animate: boolean) {
   const start = (document as Document & { startViewTransition?: (cb: () => void) => unknown })
     .startViewTransition;

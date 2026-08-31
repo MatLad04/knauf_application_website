@@ -291,12 +291,6 @@
     color: var(--color-signal);
   }
 
-  @media (width < 64rem) {
-    .sheet-section {
-      display: none;
-    }
-  }
-
   /* The stamp a drawing office puts on a sheet that is not to be built from.
      Rotated, outlined, and slightly worn at the edges, because that is what a
      rubber stamp looks like and the joke only works if it is convincing. */
@@ -310,6 +304,16 @@
     padding: 1.25rem 2rem 1rem;
     color: var(--color-signal);
     opacity: 0.85;
+  }
+
+  /* Rotated, its corners stand outside its own box: on a phone that put the
+     blue rule hard against the edge of the screen. The room it leans into is
+     its own. */
+  @media (width < 48rem) {
+    .stamp {
+      margin: 0.75rem 1rem;
+      padding: 1rem 1.5rem 0.875rem;
+    }
   }
 
   .stamp-line {
@@ -497,20 +501,29 @@
   /* One screen, and the drawing is the part that gives. The sheet is exactly
      the height of the viewport under the header, the title block along its foot
      keeps the room it needs, and the section is fitted into what is left rather
-     than being allowed to push the block below the fold. */
-  @media (width >= 64rem) {
+     than being allowed to push the block below the fold.
+
+     Two columns hold down to 840px: below that the flank left for the drawing
+     is narrower than the drawing is worth, and the sheet goes to one column
+     with no drawing on it at all. */
+  @media (width >= 52.5rem) {
     .hero {
       block-size: calc(100svh - var(--header-h));
       min-block-size: 0;
     }
 
+    /* The block is the last row of the sheet rather than a strip under it, so
+       the body's bottom padding becomes the grid's own row gap — the block
+       still finishes on the foot of the section, at the same distance from the
+       drawing as before. */
     .hero-body {
       min-block-size: 0;
-      padding-block: 3rem 2rem;
+      padding-block: 3rem 0;
     }
 
     .hero-grid {
       grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.35fr);
+      grid-template-rows: minmax(0, 1fr) auto;
       align-items: stretch;
       gap: 2rem;
       min-block-size: 0;
@@ -521,11 +534,20 @@
       align-self: center;
     }
 
+    .hero-block {
+      grid-column: 1 / -1;
+      align-self: end;
+    }
+
+    /* The section is drawn left of centre in its own box — the names hang off
+       its right — so the box is pushed right to hang the drawing itself in the
+       middle of the flank. */
     .hero-figure {
       display: flex;
       align-items: center;
       justify-content: center;
       min-block-size: 0;
+      padding-inline-start: 4rem;
     }
 
     .hero-drawing {
@@ -581,12 +603,105 @@
   /* The title block. A ruled strip of cells along the foot of the sheet, which
      is where a drawing states what it is and how much of it there is. */
   .hero-block {
+    position: relative;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     border-block-start: 1px solid var(--color-ink);
   }
 
-  @media (width >= 48rem) {
+  /* The paper is ruled over the whole sheet and stops at the title block: on a
+     drawing the block is a pasted-on panel, not part of the paper under it. The
+     ground runs past the page margins to both edges of the screen — the hero
+     clips it — so the ruling ends on one line across the full width rather than
+     on the width of the text. */
+  .hero-block::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    inset: 0 -100vw;
+    background: var(--color-surface);
+  }
+
+  /* Below `lg` a sheet's worth of annotation does not survive the fold: the
+     leaders out to the names, the overall dimension and the enlarged detail are
+     all lettering, and lettering at this width is a texture rather than
+     something to read. What is left is the cut itself, enlarged about its own
+     middle to fill the flank it is given — it is drawn left of centre in its
+     own box and takes about a third of it, so the box is squared to the
+     drawing's proportion and cropped to the cut. `scale` and `translate` rather
+     than `transform`, which the figure's arrival animates. */
+  @media (width >= 52.5rem) and (width < 64rem) {
+    .hero-figure {
+      overflow: hidden;
+      padding-inline-start: 0;
+    }
+
+    .hero-drawing {
+      inline-size: 100%;
+      block-size: auto;
+      max-block-size: none;
+      aspect-ratio: 10 / 9;
+      transform-origin: 34% 37%;
+      translate: 16% 8%;
+      scale: 1.55;
+    }
+
+    .ds-leader,
+    .ds-dim,
+    .ds-detail {
+      display: none;
+    }
+  }
+
+  /* One column, and no drawing on it: the flank a section needs is not there,
+     and a section printed the width of a phone is a picture of a drawing. The
+     sheet is then the claim and the title block under it — the words in the
+     middle of the paper, the block on the foot of it. */
+  @media (width < 52.5rem) {
+    .hero-figure {
+      display: none;
+    }
+
+    .hero-body {
+      padding-block: 1.75rem 0;
+    }
+
+    .hero-grid {
+      align-items: stretch;
+      grid-template-rows: minmax(0, 1fr) auto;
+      gap: 1.25rem;
+      block-size: 100%;
+    }
+
+    /* The block is back on the phone sheet, so the sheet gives it the room:
+       less air above the claim and less between the claim and the block, which
+       is the difference between the first cells of the block being on the
+       first screen and being under it. */
+    @media (width < 40rem) {
+      .hero-body {
+        padding-block: 1.25rem 0;
+      }
+
+      .hero-grid {
+        gap: 1rem;
+      }
+    }
+
+    .hero-grid > :first-child {
+      align-self: center;
+    }
+
+    .hero-block {
+      align-self: end;
+    }
+  }
+
+  /* Four cells on one line wherever four fit, which is every screen down to a
+     phone: the block states the catalogue's extent in one read, and a figure
+     read against the three beside it is the whole point of a title block. On a
+     phone it folds to two by two rather than being dropped — the same four
+     cells, one turn of the block. */
+  @media (width >= 40rem) {
     .hero-block {
       grid-template-columns: repeat(4, minmax(0, 1fr));
     }
@@ -599,6 +714,24 @@
 
   .hero-cell:last-child {
     border-inline-end: 0;
+  }
+
+  @media (width >= 40rem) {
+    .hero-cell + .hero-cell {
+      padding-inline-start: 1rem;
+    }
+  }
+
+  /* Four across a small tablet leaves a cell about 140px wide, and the longest
+     of the four terms does not hold one line at that width. It is set a shade
+     smaller and tighter there rather than being allowed to turn: a term over
+     two lines drops its own figure below the three beside it, and figures that
+     do not line up are the one thing a title block cannot have. */
+  @media (width >= 40rem) and (width < 48rem) {
+    .hero-cell .label {
+      font-size: 0.625rem;
+      letter-spacing: 0.06em;
+    }
   }
 
   @media (width >= 48rem) {
@@ -690,6 +823,69 @@
     margin-block-start: 0.375rem;
     font-size: 0.75rem;
     color: var(--color-muted);
+  }
+
+  /* Read under the lead rather than against it: on a phone the block is a
+     footnote to the claim above it, not a second headline, so the figures are
+     set at a size that states the extent without competing for the screen.
+
+     Smaller type, not less air: the block keeps the proportions it has on a
+     wide screen — the label off the rule, the figure off the label, the note
+     off the figure — because a title block with the air taken out of it is not
+     a smaller title block, it is a worse one. */
+  @media (width < 48rem) {
+    .hero-block {
+      row-gap: 0.875rem;
+    }
+
+    .hero-cell {
+      padding: 1rem 1rem 1.125rem 0;
+    }
+
+    .hero-figure-value {
+      margin-block-start: 0.4375rem;
+      font-size: 1.3125rem;
+    }
+
+    .hero-cell-note {
+      margin-block-start: 0.3125rem;
+      font-size: 0.6875rem;
+    }
+  }
+
+  /* On a phone the block turns rather than shrinks: two cells by two, which is
+     half the width for each of them and so a note that reads on one or two
+     lines instead of four.
+
+     It is ruled like the block it is — the cells are divided by their own
+     edges, so the rule falls between the two columns and between the two rows
+     and never around the outside — and the gutter is the cells' padding rather
+     than a gap, which keeps the vertical rule exactly halfway between the two
+     figures. The figure comes back up a step: at half the count there is the
+     width for it, and the block should still read as the sheet's extent. */
+  @media (width < 40rem) {
+    .hero-block {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      row-gap: 0;
+    }
+
+    .hero-cell {
+      border-inline-end: 1px solid var(--color-rule);
+      padding: 0.9375rem 1.125rem 1.0625rem 0;
+    }
+
+    .hero-cell:nth-child(even) {
+      border-inline-end: 0;
+      padding-inline: 1.125rem 0;
+    }
+
+    .hero-cell:nth-child(n + 3) {
+      border-block-start: 1px solid var(--color-rule);
+    }
+
+    .hero-figure-value {
+      font-size: 1.5rem;
+    }
   }
 
   /* The drawing arrives the way it is made: the section first, then what is
@@ -866,15 +1062,37 @@
     }
   }
 
-  @media (width >= 90rem) {
+  /* Wherever the run is two columns, so is the banner: the register belongs
+     beside the claim it indexes, not under it. Stacked under a heading of this
+     size it was a screen of its own, and the five constructions it lists — the
+     thing the section is — were below the fold of a band that is pinned. */
+  @media (width >= 64rem) {
     .constructions-banner {
-      grid-template-columns: minmax(0, 1fr) minmax(0, 16rem);
-      column-gap: 5rem;
-      align-items: start;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 15rem);
+      column-gap: 2.5rem;
+      align-items: stretch;
+    }
+
+    /* Both flanks finish on one line. The register is as deep as its five
+       constructions make it, so where it runs deeper than the words the room
+       goes above the two paragraphs rather than under the last line of them —
+       the head is hung from its own two ends instead of stacking from the
+       top. */
+    .constructions-head,
+    .constructions-head-grid {
+      block-size: 100%;
     }
 
     .constructions-head-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
+      align-content: space-between;
+    }
+  }
+
+  @media (width >= 90rem) {
+    .constructions-banner {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 16rem);
+      column-gap: 5rem;
     }
   }
 
@@ -1114,6 +1332,18 @@
     }
   }
 
+  /* The narrowest phones still in use hold 320 pixels, and four ways into the
+     site did not fit in them: the row ran past the edge and every page on the
+     site scrolled sideways by the difference. The items are set tighter rather
+     than any of them being dropped — a way in that is only there on a wider
+     screen is a different site, not a smaller one. */
+  @media (width < 23.5rem) {
+    .nav-link {
+      padding-inline: 0.3125rem;
+      font-size: 0.8125rem;
+    }
+  }
+
   .nav-link::after {
     content: "";
     position: absolute;
@@ -1149,6 +1379,15 @@
     .nav-link::after {
       transition: none;
       transform: none;
+    }
+  }
+
+  /* A phone opens the panel to type in it, not to browse it: the products and
+     the three lanes under them are a second screenful under the keyboard, and
+     nobody scrolls a dropdown. What is left is the list of things to type. */
+  @media (width < 48rem) {
+    .search-more {
+      display: none;
     }
   }
 
@@ -1206,6 +1445,60 @@
     border-color: var(--color-signal);
     background: var(--color-signal-soft);
     color: var(--color-signal);
+  }
+
+  /* --- The footer's register line -----------------------------------------
+
+     What the data is declared against, set as one line of references. One line
+     is the point of it: five documents read as a register when they are on a
+     rule together and as a paragraph of chips when they are not.
+
+     When the line runs out of room it does not wrap ragged — it is set as a
+     block. The label and the first two references take the top line, the last
+     three take the one under it, and both lines are justified to the same
+     measure, which is the width of the footer. The first column is the label's
+     own width, so the reference under it widens to match rather than the label
+     being squeezed into a third of the line it cannot hold.
+
+     The switch is a container query rather than a viewport one: what decides
+     it is whether the references still fit the footer's measure, which is not
+     something the width of the screen tells you. 39rem is that measure — the
+     natural width of the label and all five references on one rule.
+
+     Below 21.5rem even the label and two references do not fit a line, so the
+     block gives way and the references simply wrap. */
+  .sign-off-line {
+    container-type: inline-size;
+  }
+
+  .standards-rail {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  @container (width >= 21.5rem) and (width < 39rem) {
+    .standards-rail {
+      display: grid;
+      grid-template-columns: max-content minmax(0, 1fr) minmax(0, 1fr);
+      align-items: center;
+      gap: 0.5rem;
+      /* The block is set to the footer's measure, not to its own content —
+         that is the whole of what makes the two lines the same length. */
+      inline-size: 100%;
+    }
+
+    /* In the block the label is a column rather than a word with a space after
+       it, so the space it carried on the rule comes off. */
+    .standards-rail > .label {
+      margin-inline-end: 0;
+    }
+
+    .standards-rail > .chip {
+      justify-content: center;
+      padding-inline: 0.5rem;
+    }
   }
 
   /* Buttons are drawing-office furniture: a ruled box with a label in it. The
@@ -1431,18 +1724,24 @@
     gap: 1.5rem;
   }
 
-  /* On one column the answer leads: there is no room to keep it beside the
-     question, so it goes above it rather than at the end of a scroll — and the
-     head of the sheet above that, because it names what is being answered. */
+  /* The head of the sheet names what is being answered, so it leads whatever
+     the width. */
   .config-head {
     order: -2;
   }
 
   .stage-panel {
-    order: -1;
     display: flex;
     flex-direction: column;
     min-inline-size: 0;
+  }
+
+  /* The box the sheet is pinned in, and only in the band that pins it — see
+     the `lg` rule. Everywhere else it is not a box at all: the panel is laid
+     out as a grid of its own below `lg` and as a flex column above `82rem`,
+     and both reach past this to the figure and the foot. */
+  .stage-pin {
+    display: contents;
   }
 
   .step {
@@ -1455,6 +1754,15 @@
     border-block-start: 2px solid var(--color-ink);
     padding-block-start: 0.625rem;
   }
+
+  /* --- Narrower than two columns -------------------------------------------
+
+     There is no room to hold the answer beside the question, so the sheet is
+     read down instead of across: the four decisions in the order they are
+     asked, and what they come to set under them. The panel keeps the shape it
+     has everywhere else, folded — the section with its layer names on the
+     left, the figures and the two actions on the right — so what changes with
+     the width is the arrangement and never the order. */
 
   @media (width >= 64rem) {
     .stage {
@@ -1488,8 +1796,6 @@
       order: 0;
       grid-column: 2;
       grid-row: 1 / span 5;
-      position: sticky;
-      inset-block-start: calc(var(--header-h) + 1.25rem);
       padding-block-start: var(--head-lead);
     }
 
@@ -1603,7 +1909,6 @@
        label and the verb across the sheet start on the same line. */
     .stage-panel {
       grid-area: 2 / 3 / 5 / 4;
-      position: static;
       min-block-size: 0;
       border-inline-start: 1px solid var(--color-rule);
       padding-block-start: var(--head-lead);
@@ -1717,7 +2022,12 @@
     gap: 0.25rem;
   }
 
-  @media (width >= 30rem) {
+  /* Two across only once a row can hold the schedule it is set on. The three
+     fact tracks are fixed so that every group reads down as a column of like
+     figures, which means a row has a width it cannot go under: below it the
+     last figure ran off the end of the tile rather than the type getting
+     smaller. One column until then. */
+  @media (width >= 48rem) {
     .tiles {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
@@ -1741,12 +2051,16 @@
     touch-action: manipulation;
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
-    align-items: start;
+    align-items: center;
     gap: 0.625rem;
     border: 1px solid var(--color-rule);
     border-radius: 4px;
     background: transparent;
-    padding: 0.3125rem 0.75rem 0.375rem;
+    /* Wider on the flanks than on the ends: the swatch and the name are set in
+       from the edge of the tile by more than the line above and below them, so
+       the row reads as a mounted sample rather than as text pushed against a
+       box. */
+    padding: 0.3125rem 1rem 0.375rem;
     text-align: start;
     /* The mark is struck down the leading edge as an inset shadow rather than a
        wider border, so nothing reflows when the selection moves. */
@@ -1768,16 +2082,22 @@
     box-shadow: inset 3px 0 0 0 var(--color-signal);
   }
 
-  /* The chip sits on the name's own line, not on the row's centre: it belongs
-     to the thing being named. */
+  /* The chip is centred on the row rather than hung off the name's line: the
+     option is one thing and the hatch keys the whole of it, so it sits on the
+     middle of the box at every width. */
   .tile > .swatch {
-    margin-block-start: 0.0625rem;
+    margin-block-start: 0;
   }
 
   .tile-body {
     display: grid;
     min-inline-size: 0;
     gap: 0.0625rem;
+    /* The line of figures under the name is set to fixed tracks, and whether
+       they fit is a question about this box rather than about the window: the
+       same tile is a column of a two-up grid on a tablet and the whole width of
+       a phone. So the tile asks itself. */
+    container: tile / inline-size;
   }
 
   .tile-name {
@@ -1850,12 +2170,73 @@
     letter-spacing: 0.04em;
   }
 
+  /* Under the width the three tracks need, the schedule stops being a schedule.
+
+     The tracks are fixed so that a group reads down as a column of like
+     figures, and on a small phone they came to more than the tile had: the last
+     figure kept its own width, ran out through the side of the tile and sat on
+     the page. There is no column to read down at that width anyway — the tiles
+     are one per row — so the figures are set as a line that wraps instead, and
+     nothing is dropped or shrunk to make them fit. */
+  @container tile (width < 17.5rem) {
+    .tile-facts {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      column-gap: 0.75rem;
+      row-gap: 0.125rem;
+    }
+  }
+
+  /* Below the width that fits the whole tool on one screen there is no reason
+     for the rows to be as tight as they are up there: the sheet scrolls, so the
+     options get the room a list of things to choose between should have. */
+  @media (width < 82rem) {
+    .tiles {
+      gap: 0.5rem;
+    }
+
+    .tile {
+      gap: 0.8125rem;
+      padding: 0.6875rem 1.125rem 0.75rem;
+    }
+
+    .tile-body {
+      gap: 0.1875rem;
+    }
+
+    .step {
+      padding-block: 1.5rem 1.75rem;
+    }
+
+    .step-a {
+      padding-block-start: 1rem;
+    }
+  }
+
   /* --- The depths ---------------------------------------------------------- */
 
   .depths {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(3.75rem, 1fr));
     gap: 0.375rem;
+  }
+
+  /* Six depths, on a screen too narrow to hold six: three and three.
+
+     `auto-fit` takes as many as fit and puts the rest on the next row, which
+     for six on a phone is five and a lone sixth hanging under them — a scale
+     that has been cut rather than folded. Folded in half it still reads as one:
+     the low half over the high half, both rows the same length.
+
+     The width below is the width six of them need — six tracks at their floor,
+     five gaps and the page's own margins — so the fold happens exactly when the
+     row can no longer be held and never a pixel before it. Five is left alone:
+     five across is a scale, and three and two is not. */
+  @media (width < 26.875rem) {
+    .depths[data-depths="6"] {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
   }
 
   /* Every depth the board is made in, on one row: they are stops on a scale,
@@ -2018,18 +2399,20 @@
       padding-block: 0;
     }
 
+    /* `--row` is what the window can afford a row, not what a row can be read
+       at. Asked for less than the two lines of type on it, a row used to keep
+       the figure and let the code and the declared values cross the rule at the
+       foot of the tile — which is what a short window did to every option on
+       the sheet, and why the same page on the same machine came out broken in a
+       window an inch shorter. The floor is the content's, so the sheet gives up
+       being one screen before an option gives up being legible. */
     .step > .tiles {
-      grid-auto-rows: var(--row);
+      grid-auto-rows: minmax(min-content, var(--row));
       gap: 0.375rem;
     }
 
     .tile {
-      align-items: center;
       padding-block: 0.375rem;
-    }
-
-    .tile > .swatch {
-      margin-block-start: 0;
     }
 
     .tile-name {
@@ -2061,7 +2444,7 @@
        are what this row of the sheet comes to, so they are read off the same
        line. */
     .depths {
-      grid-auto-rows: var(--row);
+      grid-auto-rows: minmax(min-content, var(--row));
     }
 
     .depth {
@@ -2132,22 +2515,120 @@
     block-size: clamp(15rem, 46svh, 26rem);
   }
 
-  /* On a phone the section takes the width and the legend runs under it in two
-     columns: held beside a 24rem-wide drawing, the legend left the drawing too
-     narrow to read the thin layers in. */
-  @media (width < 48rem) {
+  @media (width < 64rem) {
+    /* The drawing takes a flank of its own and everything said about it takes
+       the other: the key at the top of it, what the build-up comes to under
+       that, and the actions at the foot. The figure and its frame are unwrapped
+       with `display: contents` so all four are cells of one grid — which is
+       what lets the drawing span the whole of the right-hand column and finish
+       on exactly the line the last action finishes on. */
+    .stage-panel {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      grid-template-rows: auto auto minmax(0, 1fr);
+      gap: 1rem 2rem;
+      border-block-start: 1px solid var(--color-rule);
+      padding-block-start: 1.25rem;
+    }
+
+    .specimen-sheet,
     .specimen-frame {
-      grid-template-columns: minmax(0, 1fr);
-      gap: 1.25rem;
+      display: contents;
+    }
+
+    /* The label heads the whole panel, not the drawing alone. */
+    .build-up {
+      grid-area: 1 / 1 / 2 / -1;
+      padding-block-end: 0;
     }
 
     .specimen-stage {
-      block-size: clamp(17rem, 44svh, 24rem);
+      grid-area: 2 / 1 / 4 / 2;
+      block-size: auto;
+      min-block-size: clamp(17rem, 44svh, 28rem);
     }
 
-    .legend {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 0.5rem 1.25rem;
+    /* Held to the foot of the column, so the two flanks end on one line. */
+    .stage-foot {
+      grid-area: 3 / 2 / 4 / 3;
+      align-self: end;
+    }
+  }
+
+  /* Narrower still the drawing goes entirely — see `.specimen-sheet` — and the
+     figures and the actions take the panel on their own, on one column. */
+  @media (width < 40rem) {
+    .stage-panel {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: auto;
+      padding-block-start: 1rem;
+    }
+
+    .stage-foot {
+      grid-area: auto;
+    }
+  }
+
+  /* Narrower than this the section is a thumbnail with a key of unreadable
+     names under it, and a drawing you cannot read the layers off is not a
+     drawing — it is a picture of one. So it goes rather than shrinks, and what
+     a phone is left with is what the build-up comes to and the two things to
+     do with it. */
+  @media (width < 40rem) {
+    .specimen-sheet {
+      display: none;
+    }
+  }
+
+  /* Two columns, and the sheet is pinned beside the choices: it is given the
+     screen's own depth, so the actions sit on the foot of it and the drawing
+     hangs in the middle of what is left. Anything else leaves the two buttons
+     floating at whatever height the drawing happens to end at.
+
+     Two boxes do it rather than one. The panel is the ground the sheet travels
+     over and takes the rows it was given; the sheet is the screen-deep box
+     inside it that does the travelling. Pinned directly, the panel travelled
+     past the last of its own rows and came to rest on top of the note along the
+     foot of the stage — a sticky box is held inside the nearest ancestor with a
+     height of its own, and a grid item's area is not that ancestor, so the
+     browser measured the whole stage instead. Given an ancestor that ends where
+     the choices end, it stops where it should. */
+  @media (width >= 64rem) and (width < 82rem) {
+    .stage-panel {
+      align-self: stretch;
+      /* The lead belongs to the sheet, which is what carries it up the screen. */
+      padding-block-start: 0;
+    }
+
+    .stage-pin {
+      display: flex;
+      flex-direction: column;
+      min-inline-size: 0;
+      position: sticky;
+      inset-block-start: calc(var(--header-h) + 1.25rem);
+      block-size: calc(100svh - var(--header-h) - 2.5rem);
+      padding-block-start: var(--head-lead);
+    }
+
+    .specimen-sheet {
+      flex: 1;
+      min-block-size: 0;
+    }
+
+    .specimen-frame {
+      flex: 1;
+      align-items: center;
+      min-block-size: 0;
+    }
+
+    .specimen-stage {
+      block-size: 100%;
+      min-block-size: 0;
+    }
+
+    .stage-foot {
+      margin-block-start: auto;
+      padding-block-start: 1.5rem;
     }
   }
 
@@ -2271,6 +2752,18 @@
     display: grid;
     gap: 0.4375rem;
     align-self: center;
+  }
+
+  /* Stacked, the key heads the column of everything said about the drawing:
+     two columns of names, held to the top of it, so it reads as a block of
+     annotation rather than as a list running the depth of the flank. */
+  @media (width < 64rem) {
+    .legend {
+      grid-area: 2 / 2 / 3 / 3;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.5rem 1.25rem;
+      align-self: start;
+    }
   }
 
   .legend-row {
@@ -2701,13 +3194,25 @@
     transition: opacity 0.28s var(--ease-out);
   }
 
-  .tint-parent:hover .tint::after,
   .tint-parent:focus-visible .tint::after,
-  .product-card:hover .tint::after,
-  .product-card:focus-within .tint::after,
-  .way:hover .tint::after,
+  .product-card:has(:focus-visible) .tint::after,
   .way:focus-visible .tint::after {
     opacity: 0.3;
+  }
+
+  /* Hover is a pointer's question — "what is this?" — and a touch screen has no
+     way to ask it. A tap on a card's Compare button answered it anyway, and the
+     answer stayed: the card kept the wash and the blue type until something
+     else was tapped, which reads as the product having been put into a state
+     rather than as a button having been pressed. So the hover is served only
+     where there is a pointer to hover with, and the keyboard is answered by
+     `:focus-visible` rather than by `:focus-within`, which a tap also sets. */
+  @media (hover: hover) {
+    .tint-parent:hover .tint::after,
+    .product-card:hover .tint::after,
+    .way:hover .tint::after {
+      opacity: 0.3;
+    }
   }
 
   /* --- The family, under the photograph ------------------------------------
@@ -2867,11 +3372,18 @@
      the two things that are the product — the photograph and its name — so the
      grid never turns into a field of blue rectangles, and the declared values
      under each name keep the ground they were designed to be read on. */
-  .product-card:hover,
-  .product-card:focus-within {
+  .product-card:has(:focus-visible) {
     background: var(--color-card-lift);
     box-shadow: var(--shadow-lift);
     transform: translateY(-2px);
+  }
+
+  @media (hover: hover) {
+    .product-card:hover {
+      background: var(--color-card-lift);
+      box-shadow: var(--shadow-lift);
+      transform: translateY(-2px);
+    }
   }
 
   .product-card .media {
@@ -3016,8 +3528,69 @@
      stepped up — a toolbar that moves when you clear a filter reads as the page
      jumping rather than as the filter clearing. */
   .toolbar-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
     /* The height a chip row occupies, held whether or not one is there. */
     min-block-size: 2.5625rem;
+  }
+
+  /* The bar is one line for as long as one line holds it: the count, the sort,
+     the view and the way into the filters are one instrument, and reading them
+     off two rows is reading them twice. The count and the three controls come
+     to about 450px, so the line survives to 34rem and breaks under it.
+
+     Broken, it is three lines rather than one — what is being shown, the
+     controls on it, and the filters that are on — in that order, because the
+     chips are the thing that changes as you work and the row that changes
+     height belongs at the bottom of the bar rather than in the middle of it. */
+  .toolbar-lines {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  @media (width >= 34rem) {
+    .toolbar-lines {
+      flex-direction: row;
+      align-items: center;
+      gap: 1.25rem;
+    }
+  }
+
+  @media (width < 34rem) {
+    .toolbar-row {
+      display: contents;
+    }
+  }
+
+  /* A bar with filters on it breaks a good deal earlier. The rail and the
+     Clear all beside it want about 250px more, and held on the line without
+     them the rail is squeezed to nothing — at 700px it was nine pixels wide,
+     so the chip a search had just applied was a sliver. Even at 900 it was one
+     chip and the start of a second, which is a rail you have to scroll to read
+     three filters you set yourself. It only goes back on the line at `lg`,
+     where the whole set fits beside the count. */
+  @media (width >= 34rem) and (width < 64rem) {
+    .toolbar-lines:has(.toolbar-chips) {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.5rem;
+    }
+
+    .toolbar-lines:has(.toolbar-chips) .toolbar-row {
+      display: contents;
+    }
+  }
+
+  @media (width < 64rem) {
+    .toolbar-controls {
+      order: 1;
+    }
+
+    .toolbar-chips {
+      order: 2;
+    }
   }
 
   .chip-rail {
@@ -3105,6 +3678,332 @@
     contain: layout;
   }
 
+  /* Below `lg` the panel is a sheet over the catalogue rather than a block
+     inserted above it.
+
+     In the flow it pushed a screenful of products down as it opened, and the
+     browser — keeping the reader's place, which had just moved — held the
+     products still by scrolling the same distance, so the tap read as a
+     control that returned you to the first row. Out of the flow there is
+     nothing to push and nothing to hold, and closing puts the reader back
+     exactly where they were because they never left.
+
+     It covers the toolbar rather than hanging under it. The toolbar is the one
+     bar on the page that changes height — a filter going on adds the chip rail
+     to it — so a sheet measured from its underside moved every time a box was
+     ticked. Measured from the header, which is a fixed height, nothing in the
+     sheet moves while it is being used. The funnel goes under it, which is why
+     the way out is at the foot of the sheet instead. */
+  @media (width < 64rem) {
+    .filter-rail {
+      position: fixed;
+      inset-block: var(--header-h) 0;
+      inset-inline: 0;
+      /* Over the toolbar, under the header. */
+      z-index: 40;
+      overflow-y: auto;
+      /* The catalogue behind must not take over once the filters reach an end. */
+      overscroll-behavior: contain;
+      background: var(--color-surface);
+      /* Out of the container, so it carries the container's own measure. */
+      padding-inline: 1.25rem;
+
+      /* Closed. `visibility` rather than `display`, so there is something for
+         the sheet to arrive from and leave towards — and so the filters are
+         out of the tab order and off the accessibility tree while it is down. */
+      visibility: hidden;
+      opacity: 0;
+      transform: translateY(-0.5rem);
+      transition:
+        opacity 0.26s var(--ease-swap),
+        transform 0.26s var(--ease-swap),
+        visibility 0s linear 0.26s;
+    }
+
+    .filter-rail[data-open="true"] {
+      visibility: visible;
+      opacity: 1;
+      transform: none;
+      transition:
+        opacity 0.26s var(--ease-swap),
+        transform 0.26s var(--ease-swap),
+        visibility 0s;
+    }
+
+    .filter-foot {
+      position: sticky;
+      inset-block-end: 0;
+      z-index: 1;
+      margin-block-start: 1.25rem;
+      background: var(--color-surface);
+      padding-block: 0.875rem 1rem;
+    }
+
+    .filter-foot::before {
+      content: "";
+      position: absolute;
+      inset-inline: 0;
+      inset-block-end: 100%;
+      block-size: 1.25rem;
+      background: linear-gradient(to top, var(--color-surface), transparent);
+    }
+  }
+
+  @media (width >= 40rem) and (width < 64rem) {
+    .filter-rail {
+      padding-inline: 2rem;
+    }
+  }
+
+  /* A sheet that appears and disappears is still a sheet; one that slides for
+     someone who asked for no motion is not. */
+  @media (prefers-reduced-motion: reduce) and (width < 64rem) {
+    .filter-rail,
+    .filter-rail[data-open="true"] {
+      transform: none;
+      transition:
+        opacity 0.01s,
+        visibility 0s;
+    }
+  }
+
+  /* --- The comparison table ------------------------------------------------
+
+     One table at every width: the characteristic in the left-hand column and a
+     column per product, read across. A comparison is a row you read along, and
+     a phone that stacks the products loses exactly the thing the page is for —
+     so the phone gets the same table, set smaller and holding two products
+     rather than three, which is what the catalogue lets it select.
+
+     Three products still fit on a wide screen, and a link carrying three still
+     opens on a phone: the plate scrolls sideways when the columns cannot be
+     made to fit, rather than the table being rebuilt into something else. */
+  .compare-plate {
+    overflow-x: auto;
+  }
+
+  .compare-table {
+    /* Room for the characteristic and each product, and no more: with two
+       products this comes inside a phone's measure and the table simply fits. */
+    min-inline-size: calc(6rem + var(--columns, 2) * 7.5rem);
+  }
+
+  .compare-table {
+    /* Fixed, so the products get equal columns. Left to size themselves they
+       took the width of their own names, and the specimen at the head of a
+       column with a short name came out visibly smaller than the one beside
+       it — three samples of the same thing have to be shown at the same size
+       to be compared at all. */
+    table-layout: fixed;
+    font-size: 0.875rem;
+  }
+
+  .compare-head {
+    inline-size: 14rem;
+  }
+
+  /* The head of a product column: the specimen and the name of what it is.
+     The column decides how they are set, so the column is the query container —
+     on a `th` size containment does not apply, which is why this is a box of its
+     own inside the cell. */
+  .compare-ident {
+    container-type: inline-size;
+  }
+
+  /* The photograph takes the column it is at the head of, up to the point where
+     a square of it stops being a sample and becomes a picture. Under that cap
+     it fills the column and the name goes beneath it. */
+  .compare-shot {
+    inline-size: 100%;
+    max-inline-size: 12rem;
+    margin-inline: auto;
+  }
+
+  .compare-name {
+    display: block;
+    margin-block-start: 0.5rem;
+    /* Under the specimen, the name is set to the specimen's own measure: a line
+       running out past the edge of the photograph it belongs to reads as
+       belonging to the column instead. */
+    max-inline-size: 12rem;
+  }
+
+  /* The column is named at the size of the values in it. Set smaller it read as
+     a caption on the table rather than as the head of the column, which is what
+     a reader looking for what a figure means needs it to be. */
+  .compare-head .label {
+    font-size: inherit;
+  }
+
+  /* At the cap the photograph stops growing, and a specimen floating in the
+     middle of its column with slack on both sides reads as a picture that has
+     been placed rather than a sample that has been mounted. It goes to the
+     leading edge instead. */
+  @container (width >= 12rem) {
+    .compare-shot {
+      margin-inline: 0;
+    }
+  }
+
+  /* Every cell keeps the same measure, set here rather than as a utility so the
+     small screen can take it in. */
+  .compare-cell,
+  .compare-table .compare-term {
+    padding: 0.75rem;
+  }
+
+  /* A phone holds two products rather than three, and the table is set to fit
+     them: a step down in size, tighter cells, a narrower column of names and a
+     stamp where the photograph was. Nothing is dropped and nothing moves — it
+     is the same table, read closer. */
+  @media (width < 48rem) {
+    .compare-table {
+      font-size: 0.75rem;
+      /* Two products and the names, whatever the address asked for. */
+      min-inline-size: calc(6rem + 2 * 7.5rem);
+    }
+
+    /* Three columns on a small screen and no more: the names and two products.
+       The catalogue only lets a phone hold two, but a link made on a laptop
+       carries three, and a fourth column here is either a scroll or a squeeze.
+       The kept two are the first two — what was picked comes before what was
+       suggested — and the column that goes is taken out of the table rather
+       than hidden in it, so nothing reads it out either. */
+    .compare-table tr > *:nth-child(n + 4) {
+      display: none;
+    }
+
+    .compare-head {
+      inline-size: 6rem;
+    }
+
+    .compare-cell,
+    .compare-table .compare-term {
+      padding: 0.625rem 0.5rem;
+    }
+
+    .compare-flag {
+      inset-block-start: 0.1875rem;
+      inset-inline-start: 0.1875rem;
+      padding: 0.125rem 0.3125rem;
+      font-size: 0.5rem;
+      letter-spacing: 0.04em;
+    }
+  }
+
+  .compare-unit {
+    display: block;
+  }
+
+  /* Every cell is ruled off from the one before it, which on the wide table is
+     also what separates the first product from the column of characteristics.
+     The rule is set here rather than as a utility on the cell so that the
+     narrow reading can take it off the leading column. */
+  .compare-cell {
+    border-inline-start: 1px solid var(--color-rule);
+  }
+
+  .compare-row {
+    border-block-start: 1px solid var(--color-rule);
+  }
+
+  /* The mark on a column the reader did not choose. A frosted plate on the
+     photograph, which is the same thing the fire class does on a product card:
+     it belongs to the image rather than to the column's setting, so the names
+     under the three photographs still line up. */
+  .compare-flag {
+    position: absolute;
+    inset-block-start: 0.375rem;
+    inset-inline-start: 0.375rem;
+    z-index: 1;
+    border: 1px solid color-mix(in srgb, var(--color-surface) 55%, transparent);
+    border-radius: var(--radius-pill);
+    background: color-mix(in srgb, var(--color-surface) 78%, transparent);
+    backdrop-filter: blur(4px);
+    padding: 0.1875rem 0.4375rem;
+    font-family: var(--font-mono);
+    font-size: 0.5625rem;
+    letter-spacing: 0.06em;
+    line-height: 1;
+    text-transform: uppercase;
+    color: var(--color-muted);
+  }
+
+  /* The row header is a name, not a heading: it is set at the weight of the
+     values it names. */
+  .compare-table tbody .compare-term {
+    font-weight: 400;
+  }
+
+  /* --- The comparison notice ----------------------------------------------
+
+     What is held for comparison is not an item in the results, it is a state
+     the catalogue is in — so it stays where it can be answered. Pinned under
+     the toolbar with the cards running beneath it, and settling back into its
+     own place above the first row as the list reaches the top.
+
+     Sticky does both without a scroll handler, and it is the reason the notice
+     is written above the grid rather than fixed over it: the place it settles
+     into is the place it already has. Selecting a product halfway down the
+     catalogue puts that place above the screen, so the notice appears pinned —
+     which is exactly the announcement it should be. */
+  .compare-alert {
+    position: sticky;
+    /* The toolbar is tucked two pixels under the header, so its underside is
+       two pixels higher than the two heights added together, and the notice
+       hangs 1rem off that. */
+    inset-block-start: calc(var(--header-h) + var(--toolbar-h, 3.5rem) - 2px + 1rem);
+    z-index: 20;
+    /* No height of its own, and its own place is above the place it is pinned
+       to. Between them those two say the whole behaviour: the notice never
+       starts the list and never moves — it is over the catalogue at the same
+       point of the screen from the moment it appears, and the cards run under
+       it at every scroll position rather than only once the list has moved.
+       The grid also does not jump when a product is held or let go, because
+       nothing above it changes height. */
+    block-size: 0;
+    /* Pulled up over the padding that sets the first row, and the same amount
+       given back underneath: the notice sits at the very top of the column and
+       still adds nothing to it, so the grid does not move when it appears. */
+    margin-block: -1rem 1rem;
+    animation: alert-in 0.26s var(--ease-out) both;
+  }
+
+  /* The results column starts 2.5rem down from `lg`, level with the rail
+     beside it. The notice is not part of that column's setting, so it is
+     pulled back to the top of it. */
+  @media (width >= 64rem) {
+    .compare-alert {
+      margin-block: -2.5rem 2.5rem;
+    }
+  }
+
+  /* That 1rem is paper, not a window: without this the cards sliding under the
+     notice were in plain sight in the gap above it. The strip is the page's own
+     ground, so it is invisible where the notice is at rest and is a mask only
+     where it is caught. */
+  .compare-alert::before {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: 100%;
+    block-size: 1rem;
+    background: var(--color-surface);
+  }
+
+  @keyframes alert-in {
+    from {
+      opacity: 0;
+      transform: translateY(-0.5rem);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .compare-alert {
+      animation: none;
+    }
+  }
+
   /* --- The dropdown -------------------------------------------------------
 
      A listbox drawn on the page rather than by the operating system, so the
@@ -3167,6 +4066,18 @@
   .dropdown-list[data-align="end"] {
     inset-inline-start: auto;
     inset-inline-end: 0;
+  }
+
+  /* Except on a phone, where the control is not near that edge: the toolbar is
+     stacked and the sort sits at the head of its row, so a list as wide as its
+     longest option hung from the control's trailing edge ran off the left of
+     the screen. It hangs from the leading edge there, which is the edge with
+     the screen behind it. */
+  @media (width < 40rem) {
+    .dropdown-list[data-align="end"] {
+      inset-inline-start: 0;
+      inset-inline-end: auto;
+    }
   }
 
   .dropdown-option {
@@ -3364,59 +4275,31 @@
   /* --- The landing-page sheet ---------------------------------------------
 
      The configurator section is drawn as what it produces. A construction
-     drawing is not a picture with a caption: it is a frame holding a figure and
-     a title block that certifies it, and the block is where the scale, the
-     revision and the numbers live. One grid does both halves and the block
-     underneath, so the figure and its figures cannot drift apart. */
+     drawing is not a picture with a caption: it is a figure and a title block
+     that certifies it, and the block is where the scale, the revision and the
+     numbers live. One grid does the head, the schedule, the drawing and the
+     block, so the figure and its figures cannot drift apart.
+
+     The divisions are hairlines on the cells rather than the grid's own gaps
+     showing a ground through: the cells move between one, two and three
+     arrangements as the sheet narrows, and a gap cannot be told which of two
+     neighbours it belongs to. */
   .plate {
     display: grid;
-    grid-template-columns: 1fr;
-    gap: 1px;
-    overflow: hidden;
-    border: 1px solid var(--color-edge);
-    border-radius: var(--radius-media);
-    /* The divisions are the grid's own gaps showing the ground through, so
-       there is never a doubled hairline where two cells meet. */
-    background: var(--color-rule);
+    grid-template-columns: minmax(0, 1fr);
   }
 
-  .plate-brief,
-  .plate-figure,
-  .plate-cell {
-    background: var(--color-raised);
-  }
-
-  .plate-brief {
-    padding: 1.75rem 1.5rem 2rem;
-  }
-
-  /* The paper. Ruled on the panel rather than inside the drawing, so the sheet
-     runs to all four edges of the space the drawing is given instead of
-     stopping at the drawing's own bounding box. */
-  .plate-figure {
-    display: flex;
-    align-items: center;
-    padding: 1.25rem 1rem;
-    background-image:
-      repeating-linear-gradient(to right, var(--color-rule) 0 1px, transparent 1px 3.125rem),
-      repeating-linear-gradient(to bottom, var(--color-rule) 0 1px, transparent 1px 3.125rem);
-  }
-
-  /* The drawing is capped rather than stretched. Given the whole of a
-     full-bleed column it grew to 1300px, at which point a 1:5 section is
-     printed at roughly 1:1 and the dimension text is larger than the heading
-     above it. */
-  .plate-figure svg {
-    inline-size: 100%;
-    max-inline-size: 40rem;
-    block-size: auto;
-    margin-inline: auto;
+  .plate-head {
+    padding: 0.75rem 1.5rem 0 0;
   }
 
   /* The schedule. Four rows, and every figure in the block below moves when any
      one of them does — which is the whole argument for the tool. */
   .plate-schedule {
+    margin-block-start: 2rem;
     border-block-start: 1px solid var(--color-rule);
+    padding-block-end: 2rem;
+    padding-inline-end: 1.5rem;
   }
 
   .plate-row {
@@ -3428,15 +4311,71 @@
     padding-block: 0.6875rem;
   }
 
+  .plate-figure {
+    position: relative;
+    display: flex;
+    align-items: center;
+    border-block-start: 1px solid var(--color-rule);
+    padding: 1.25rem 1rem;
+  }
+
+  /* The paper. Ruled on the panel rather than inside the drawing, so it is not
+     bound by the drawing's own bounding box — but with the frame gone there is
+     nothing left to stop the ruling, so it stops itself: faded out on all four
+     sides, which leaves the grid where the drawing is and nowhere else. Its own
+     layer, because a mask would take the drawing with it. */
+  .plate-figure::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      repeating-linear-gradient(to right, var(--color-rule) 0 1px, transparent 1px 3.125rem),
+      repeating-linear-gradient(to bottom, var(--color-rule) 0 1px, transparent 1px 3.125rem);
+    -webkit-mask-image: radial-gradient(
+      ellipse 40% 62% at 50% 50%,
+      #000 0%,
+      #000 38%,
+      transparent 100%
+    );
+    mask-image: radial-gradient(ellipse 40% 62% at 50% 50%, #000 0%, #000 38%, transparent 100%);
+  }
+
+  /* The drawing is capped rather than stretched. Given the whole of a
+     full-bleed column it grew to 1300px, at which point a 1:5 section is
+     printed at roughly 1:1 and the dimension text is larger than the heading
+     above it. */
+  .plate-figure svg {
+    position: relative;
+    inline-size: 100%;
+    max-inline-size: 40rem;
+    block-size: auto;
+    margin-inline: auto;
+  }
+
   .plate-block {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1px;
-    background: var(--color-rule);
+    border-block-start: 1px solid var(--color-rule);
   }
 
   .plate-cell {
     padding: 1rem 1.25rem 1.125rem;
+  }
+
+  /* Two columns of cells: the left one starts on the page's own margin, the
+     right one is ruled off from it, and every row after the first is ruled off
+     from the row above. */
+  .plate-cell:nth-child(odd) {
+    padding-inline-start: 0;
+  }
+
+  .plate-cell:nth-child(even) {
+    border-inline-start: 1px solid var(--color-rule);
+  }
+
+  .plate-cell:nth-child(n + 3) {
+    border-block-start: 1px solid var(--color-rule);
   }
 
   .plate-value {
@@ -3452,25 +4391,99 @@
     align-items: flex-start;
   }
 
+  /* Half a phone screen is not a width a button with a sentence on it fits in
+     — it ran out past the cell — so the way in takes the row it is on, and the
+     figure above it takes the row it leaves. */
+  @media (width < 48rem) {
+    .plate-cell:nth-last-child(2),
+    .plate-act {
+      grid-column: 1 / -1;
+      border-inline-start: 0;
+      padding-inline-start: 0;
+    }
+
+    .plate-act {
+      padding-block-start: 1.25rem;
+    }
+  }
+
+  /* Above a phone the sheet has two flanks. The head runs across both of them
+     and the schedule and the drawing take one each, so the four rows and the
+     figure they produce are read side by side rather than a screen apart. */
+  @media (width >= 40rem) {
+    .plate {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+
+    .plate-head {
+      grid-area: 1 / 1 / 2 / -1;
+    }
+
+    .plate-schedule {
+      grid-area: 2 / 1 / 3 / 2;
+    }
+
+    /* No rule down the middle: the schedule and the drawing are the same four
+       decisions said twice, and a line between them reads as a border between
+       two things rather than as the join it is. The gutter is enough. */
+    .plate-figure {
+      grid-area: 2 / 2 / 3 / 3;
+      border-block-start: 0;
+      padding: 1.25rem 0 1.25rem 1.5rem;
+    }
+
+    .plate-block {
+      grid-area: 3 / 1 / 4 / -1;
+    }
+  }
+
   @media (width >= 64rem) {
-    /* Brief and figure side by side, the block spanning both — the proportions
-       of a real sheet, where the drawing takes the room and the block is a
-       strip along the bottom of it. */
+    /* Wide enough for the drawing to have a column of its own, the head goes
+       back into the left flank above the schedule it heads, and the drawing
+       takes the whole depth of the sheet beside them — the proportions of a
+       real sheet, where the figure takes the room and the block is a strip
+       along the bottom of it. */
     .plate {
       grid-template-columns: minmax(0, 31rem) minmax(0, 1fr);
     }
 
-    .plate-brief {
-      padding: 2.25rem 2rem 2.5rem;
+    .plate-head {
+      grid-area: 1 / 1 / 2 / 2;
+      padding: 1rem 2rem 0 0;
+    }
+
+    .plate-schedule {
+      grid-area: 2 / 1 / 3 / 2;
+      padding-block-end: 2.5rem;
+      padding-inline-end: 2rem;
     }
 
     .plate-figure {
-      padding: 2rem 2.5rem;
+      grid-area: 1 / 2 / 3 / 3;
+      padding: 2rem 0 2rem 2.5rem;
     }
 
     .plate-block {
-      grid-column: 1 / -1;
+      grid-area: 3 / 1 / 4 / -1;
       grid-template-columns: repeat(3, minmax(0, 0.8fr)) minmax(0, 1.4fr);
+    }
+
+    /* Four across: only the first cell sits on the margin, and every one after
+       it is ruled off from the one before. */
+    .plate-cell:nth-child(odd) {
+      padding-inline-start: 1.25rem;
+    }
+
+    .plate-cell:first-child {
+      padding-inline-start: 0;
+    }
+
+    .plate-cell + .plate-cell {
+      border-inline-start: 1px solid var(--color-rule);
+    }
+
+    .plate-cell:nth-child(n + 3) {
+      border-block-start: 0;
     }
 
     .plate-value {
@@ -3813,12 +4826,12 @@
     gap: 2rem 2.5rem;
   }
 
-  /* Three across only where a constraint fits on one line. Narrower, they are
-     three rows of a schedule instead, which is the same document. */
-  @media (width >= 56rem) {
-    .opening-doors {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
+  /* Three across at every width: the three constraints are one comparison, and
+     stacked they stop being one — a phone showed a single door and nothing to
+     read it against. Narrower than the width a constraint fits on, the type
+     steps down instead of the row breaking. */
+  .opening-doors {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   /* The argument on one side and the constraints on the other, which is the
@@ -3846,44 +4859,33 @@
       row-gap: 4rem;
     }
 
+    /* The brief takes all three columns of the sheet, and is set on them: the
+       claim in the first — on the measure of the first door, so the heading and
+       the constraint under it are one column of the sheet — the caveat under it
+       on that same measure, and the reading beginning where the second door
+       does. Every line of the brief starts on a column the doors already
+       start on. */
     .opening-brief {
-      grid-column: 1 / span 2;
+      grid-column: 1 / -1;
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       column-gap: 2.5rem;
-      row-gap: 2.5rem;
-      /* Hung from the foot of each row rather than from its head: the reading
-         sits on the same line the claim ends on, and the caveat on the line
-         the way in ends on. The tall cell of each row sets the row's depth
-         either way, so only the shorter of the two actually moves. */
-      align-items: end;
+      align-items: start;
     }
 
     .opening-title {
-      grid-area: 1 / 1;
-    }
-
-    .opening-lead {
-      grid-area: 1 / 2;
-      margin-block-start: 0;
-    }
-
-    .opening-act {
-      grid-area: 2 / 1;
-      margin-block-start: 0;
+      grid-area: 1 / 1 / 2 / 2;
+      max-inline-size: none;
     }
 
     .opening-aside {
-      grid-area: 2 / 2;
-      margin-block-start: 0;
+      grid-area: 2 / 1 / 3 / 2;
+      margin-block-start: 1.5rem;
     }
 
-    /* The way in is the width of the claim above it. A pill sized to its own
-       words in a column this wide reads as a stray control; ruled to the
-       column, it reads as the foot of that column. */
-    .opening-search {
-      inline-size: 100%;
-      justify-content: center;
+    .opening-lead {
+      grid-area: 1 / 2 / 3 / 4;
+      margin-block-start: 0;
     }
 
     .opening-doors {
@@ -4031,6 +5033,93 @@
   .door:hover .door-count svg,
   .door:focus-visible .door-count svg {
     transform: translateX(3px);
+  }
+
+  /* Three narrow columns rather than three wide ones: the constraint, what it
+     buys and the count are the same four lines, set at the size the column can
+     carry them at. */
+  @media (width >= 40rem) and (width < 56rem) {
+    .opening-doors {
+      gap: 1.5rem 1rem;
+    }
+
+    .door {
+      gap: 0.375rem 0;
+    }
+
+    .door-rule {
+      margin-block-end: 0.5rem;
+    }
+
+    .door-limit {
+      font-size: clamp(1rem, 3.4vw, 1.75rem);
+      gap: 0.125rem 0.375rem;
+    }
+
+    .door-unit {
+      font-size: 0.625rem;
+    }
+
+    .door-note {
+      font-size: 0.75rem;
+      line-height: 1.4;
+      padding-block-end: 0.875rem;
+    }
+
+    .door-count {
+      padding: 0.4375rem 0.25rem;
+      font-size: 0.625rem;
+      gap: 0.25rem;
+    }
+
+    .door-count svg {
+      inline-size: 0.75rem;
+      block-size: 0.75rem;
+    }
+  }
+
+  /* Narrower than three columns a door is a row: the figure keeps its size on
+     the left, and what it buys and the way in stack against it on the right —
+     the two of them together as deep as the figure beside them, so the three
+     doors read as three lines of one schedule. */
+  @media (width < 40rem) {
+    .opening-doors {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 1.75rem;
+    }
+
+    .door {
+      grid-template-columns: minmax(0, 9rem) minmax(0, 1fr);
+      grid-template-rows: auto auto auto;
+      column-gap: 1.5rem;
+      gap: 0.375rem 1.5rem;
+    }
+
+    .door-rule {
+      grid-area: 1 / 1 / 2 / -1;
+      margin-block-end: 0.5rem;
+    }
+
+    .door-term {
+      grid-area: 2 / 1 / 3 / 2;
+      align-self: end;
+    }
+
+    .door-limit {
+      grid-area: 3 / 1 / 4 / 2;
+      align-self: start;
+    }
+
+    .door-note {
+      grid-area: 2 / 2 / 3 / 3;
+      max-inline-size: none;
+      padding-block-end: 0;
+    }
+
+    .door-count {
+      grid-area: 3 / 2 / 4 / 3;
+      align-self: start;
+    }
   }
 
   .door:hover .door-limit,
@@ -4510,18 +5599,26 @@
 
    Unlayered on purpose: the code carries a `text-muted` utility, and a utility
    beats any specificity in an earlier layer. */
-.product-card:hover .product-name,
-.product-card:focus-within .product-name,
-.product-card:hover .product-body,
-.product-card:focus-within .product-body,
-.product-card:hover .product-body .text-muted,
-.product-card:focus-within .product-body .text-muted {
+.product-card:has(:focus-visible) .product-name,
+.product-card:has(:focus-visible) .product-body,
+.product-card:has(:focus-visible) .product-body .text-muted {
   color: var(--color-signal-bright);
 }
 
-.product-card:hover .product-body .label,
-.product-card:focus-within .product-body .label {
+.product-card:has(:focus-visible) .product-body .label {
   color: color-mix(in srgb, var(--color-signal-bright) 72%, transparent);
+}
+
+@media (hover: hover) {
+  .product-card:hover .product-name,
+  .product-card:hover .product-body,
+  .product-card:hover .product-body .text-muted {
+    color: var(--color-signal-bright);
+  }
+
+  .product-card:hover .product-body .label {
+    color: color-mix(in srgb, var(--color-signal-bright) 72%, transparent);
+  }
 }
 
 /* While the search panel is open the bar belongs to it: same ground, no rule
@@ -4699,14 +5796,6 @@ html[data-search-open] .search-bar {
   font-variant-numeric: tabular-nums;
 }
 
-/* Below `lg` the mat is cropped to its middle and the label block would be off
-   the edge of it, so it is not printed at all. */
-@media (width < 64rem) {
-  .mat-note {
-    display: none;
-  }
-}
-
 /* The figure settles rather than snapping when the run to 100 finishes, so the
    completed state reads as an arrival. */
 .loader[data-phase="done"] .loader-figure {
@@ -4727,12 +5816,6 @@ html[data-search-open] .search-bar {
    it is set at the size of a decision: struck on the mat's own blue, so the
    ruling behind it does not run through the words, and outlined in white. */
 .loader-enter {
-  position: absolute;
-  inset-inline: 0;
-  inset-block-start: 71%;
-  z-index: 2;
-  justify-self: center;
-  inline-size: fit-content;
   display: inline-flex;
   align-items: center;
   border: 1.5px solid rgba(255, 255, 255, 0.82);
@@ -4790,16 +5873,14 @@ html[data-search-open] .search-bar {
   }
 }
 
-/* The corner the mat leaves clear, under the label block. */
+/* Ranged right on the block under the sheet, against the edge the mat's own
+   label block ends its lines at. */
 .loader-figure {
-  position: absolute;
-  inset-block-end: clamp(2rem, 6vw, 3.5rem);
-  inset-inline-end: clamp(1.5rem, 6vw, 3.5rem);
   display: flex;
   align-items: baseline;
   gap: 0.15em;
   font-family: var(--font-mono);
-  font-size: clamp(3rem, 11vw, 8rem);
+  font-size: clamp(2.5rem, 9vw, 5rem);
   line-height: 0.9;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
@@ -4810,14 +5891,28 @@ html[data-search-open] .search-bar {
   opacity: 0.7;
 }
 
-/* Below `lg` the label block is off the cropped mat, so the figure and the way
-   in are set as type on the blue instead of printed into the block. Above it,
-   the mat carries both and these are not rendered at all. */
-@media (width >= 64rem) {
-  .loader-figure,
-  .loader-enter {
-    display: none;
-  }
+/* The state of the printing, for the sheets with no room to print their own
+   label block. It is rendered only on those, so it needs no breakpoint of its
+   own: it rides the foot of the screen, on the mat rather than beside it, the
+   way the block it stands in for rides the foot of the sheet. */
+.loader-block {
+  position: absolute;
+  z-index: 2;
+  inset-inline: clamp(1.5rem, 7vw, 3rem);
+  inset-block-end: clamp(1.75rem, 7svh, 3.5rem);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  border-block-start: 1px solid rgba(255, 255, 255, 0.42);
+  padding-block-start: clamp(0.75rem, 2svh, 1.25rem);
+}
+
+.loader-enter {
+  position: static;
+  inline-size: auto;
+  justify-self: auto;
+  padding: 0.6875rem 1.125rem;
 }
 
 @keyframes mat-in {

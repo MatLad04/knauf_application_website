@@ -86,15 +86,59 @@ export function rawFromSearchParams(params: URLSearchParams): RawSearchParams {
 
 const SLUG = /^[a-z0-9][a-z0-9-]{0,48}$/;
 
-function readAll(params: RawSearchParams, key: string): string[] {
+function readAll(params: RawSearchParams, key: string, split = true): string[] {
   const raw = params[key];
   if (raw === undefined) return [];
   const values = Array.isArray(raw) ? raw : [raw];
   // Accept ?category=a&category=b and ?category=a,b alike.
-  return values
-    .flatMap((value) => value.split(","))
+  return (split ? values.flatMap((value) => value.split(",")) : values)
     .map((value) => value.trim())
     .filter((value) => value.length > 0);
+}
+
+/**
+ * The Euroclasses named in `fire`, which cannot be read like the other lists.
+ *
+ * A Euroclass carries a comma of its own — `B-s1,d0` is one class, not two —
+ * so splitting the parameter on commas tore every class but `A1`, `E` and `F`
+ * in half and then reported both halves as classes this catalogue does not
+ * have. Which is what the notice over the results was saying, correctly, about
+ * a filter the checkbox had just set.
+ *
+ * A value that names a class is taken whole. Only one that does not is split,
+ * and a fragment that names nothing is tried again joined to the fragment after
+ * it — so `?fire=A1,B-s1,d0` still reads as the two classes it means. No
+ * fragment of a Euroclass is itself a Euroclass, so there is nothing for the
+ * pairing to be wrong about.
+ */
+function readFireClasses(params: RawSearchParams): string[] {
+  const out: string[] = [];
+
+  for (const raw of readAll(params, "fire", false)) {
+    if (FIRE_VALUES.includes(raw)) {
+      out.push(raw);
+      continue;
+    }
+
+    const parts = raw
+      .split(",")
+      .map((part) => part.trim())
+      .filter((part) => part.length > 0);
+
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i] as string;
+      const next = parts[i + 1];
+      const paired = next === undefined ? null : `${part},${next}`;
+      if (paired && FIRE_VALUES.includes(paired)) {
+        out.push(paired);
+        i++;
+      } else {
+        out.push(part);
+      }
+    }
+  }
+
+  return out;
 }
 
 function readOne(params: RawSearchParams, key: string): string | undefined {
@@ -170,7 +214,7 @@ export function parseProductQuery(
   const applications = parseSlugList(params, "application", issues, allowed?.applications);
 
   const fireClasses: string[] = [];
-  for (const value of readAll(params, "fire")) {
+  for (const value of readFireClasses(params)) {
     if (!FIRE_VALUES.includes(value)) {
       issues.push({ param: "fire", value, reason: "not a Euroclass in this catalogue" });
       continue;

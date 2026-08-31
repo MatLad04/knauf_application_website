@@ -1,7 +1,8 @@
+import type React from "react";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { getProductsBySlugs, type Product } from "@/lib/catalogue";
+import { getAlternatives, getProductsBySlugs, type Product } from "@/lib/catalogue";
 import { parseProductQuery, type RawSearchParams } from "@/lib/params";
 import { texture, textureCrop } from "@/lib/media";
 import { lambda, rValue, thermalResistance } from "@/lib/format";
@@ -39,15 +40,53 @@ const ROWS: Row[] = [
   { label: "EPD available", value: (p) => (p.epdAvailable ? "Yes" : "No") },
 ];
 
+/**
+ * Two suggestions, from two different families where the catalogue has them.
+ *
+ * The alternatives come back closest-first, and the closest two are often the
+ * same slab at two thicknesses — which compares a product against itself. A
+ * family is taken once, and the list is only doubled back on if that leaves
+ * fewer than two columns to fill.
+ */
+function pickTwo(alternatives: Product[]): Product[] {
+  const families = new Set<string>();
+  const spread: Product[] = [];
+
+  for (const product of alternatives) {
+    if (families.has(product.family)) continue;
+    families.add(product.family);
+    spread.push(product);
+  }
+
+  return [...spread, ...alternatives.filter((p) => !spread.includes(p))].slice(0, 2);
+}
+
 export default async function ComparePage({
   searchParams,
 }: {
   searchParams: Promise<RawSearchParams>;
 }) {
   const { query, issues } = parseProductQuery(await searchParams);
-  const products = await getProductsBySlugs(query.compare);
+  const picked = await getProductsBySlugs(query.compare);
 
-  const missing = query.compare.length - products.length;
+  const missing = query.compare.length - picked.length;
+
+  /**
+   * A comparison of one is not a comparison.
+   *
+   * Someone who picked a single product has still asked a question — "is this
+   * the right one?" — and the answer is the products it would have been chosen
+   * against: a different family approved for the same application, ordered by
+   * how close its declared conductivity and thickness are to this one's. So
+   * the table fills its own remaining columns rather than sending them back to
+   * the catalogue to tick two more boxes.
+   *
+   * They are marked as suggestions in the head of each column, because a
+   * column nobody chose must never read as one they did.
+   */
+  const alone = picked.length === 1 ? picked[0] : undefined;
+  const suggested = alone ? pickTwo(await getAlternatives(alone)) : [];
+  const products = [...picked, ...suggested];
 
   if (products.length === 0) {
     return (
@@ -70,6 +109,19 @@ export default async function ComparePage({
         {products.length} {plural(products.length, "product")} side by side
       </h1>
 
+      {suggested.length > 0 && (
+        <p className="mt-5 max-w-[62ch] text-muted">
+          You picked one product, so{" "}
+          {suggested.length === 1 ? "the second column is" : "the other two columns are"} filled in:
+          the closest the catalogue has for the same application, nearest on declared conductivity
+          and thickness, each from a different family. Pick your own in the{" "}
+          <Link href="/products" className="link">
+            catalogue
+          </Link>{" "}
+          to replace {suggested.length === 1 ? "it" : "them"}.
+        </p>
+      )}
+
       {(missing > 0 || issues.length > 0) && (
         <p className="panel mt-6 p-4 text-sm text-muted">
           {missing > 0 && `${missing} of the requested products is no longer in the catalogue. `}
@@ -77,37 +129,47 @@ export default async function ComparePage({
         </p>
       )}
 
-      <div className="panel mt-10 overflow-x-auto">
-        <table className="w-full text-sm border-collapse min-w-[40rem]">
+      <div className="panel compare-plate mt-10">
+        <table
+          className="compare-table w-full border-collapse"
+          style={{ "--columns": products.length } as React.CSSProperties}
+        >
           <caption className="sr-only">Declared performance compared</caption>
           <thead>
             <tr>
-              <th scope="col" className="text-left p-3 align-bottom w-56">
-                <span className="label">Characteristic</span>
+              <th scope="col" className="compare-term compare-head text-left align-bottom">
+                <span className="label">Property</span>
               </th>
-              {products.map((product) => {
+              {products.map((product, i) => {
                 return (
-                  <th
-                    key={product.id}
-                    scope="col"
-                    className="text-left p-3 align-bottom border-l rule"
-                  >
-                    <span className="media block aspect-square w-full max-w-32">
-                      <Image
-                        src={texture(product.textureKey).src}
-                        alt=""
-                        fill
-                        sizes="8rem"
-                        className="texture object-cover"
-                        style={textureCrop(product.slug)}
-                      />
-                    </span>
-                    <Link
-                      href={`/products/${product.slug}`}
-                      className="link block mt-2 font-normal"
-                    >
-                      {product.name}
-                    </Link>
+                  <th key={product.id} scope="col" className="compare-cell text-left align-top">
+                    {/* The specimen, and under it the name of what it is —
+                        every column read the same way down, so the three names
+                        line up as one row.
+
+                        A column nobody chose says so on the photograph rather
+                        than in a line of its own, because a line only two of
+                        the three columns carry knocks their names out of step
+                        with the first. */}
+                    <div className="compare-ident">
+                      <span className="media compare-shot block aspect-square w-full">
+                        <Image
+                          src={texture(product.textureKey).src}
+                          alt=""
+                          fill
+                          sizes="12rem"
+                          className="texture object-cover"
+                          style={textureCrop(product.slug)}
+                        />
+                        {i >= picked.length && <span className="compare-flag">Suggested</span>}
+                      </span>
+                      <Link
+                        href={`/products/${product.slug}`}
+                        className="link compare-name font-normal"
+                      >
+                        {product.name}
+                      </Link>
+                    </div>
                   </th>
                 );
               })}
@@ -120,15 +182,15 @@ export default async function ComparePage({
               const differs = products.length > 1 && new Set(values.map(String)).size > 1;
 
               return (
-                <tr key={row.label} className="border-t rule">
-                  <th scope="row" className="font-sans font-normal text-left p-3 align-top">
+                <tr key={row.label} className="compare-row">
+                  <th scope="row" className="compare-term text-left align-top font-sans">
                     {row.label}
-                    {row.unit && <span className="block caption">{row.unit}</span>}
+                    {row.unit && <span className="caption compare-unit">{row.unit}</span>}
                   </th>
                   {values.map((value, i) => (
                     <td
                       key={i}
-                      className={`p-3 align-top border-l rule ${differs ? "text-ink" : "text-muted"}`}
+                      className={`compare-cell align-top ${differs ? "text-ink" : "text-muted"}`}
                     >
                       {value ?? <span className="font-sans">not declared</span>}
                     </td>

@@ -19,28 +19,30 @@ export default function Filters({
   facets,
   query,
   onApply,
+  total,
+  onDone,
 }: {
   facets: Facets;
   query: ProductQuery;
   /** Given the form's own state. Returning false lets the form submit. */
   onApply?: (form: HTMLFormElement) => void;
+  /** What the filters currently come to, for the button that closes the panel. */
+  total?: number;
+  /** Closes the panel. Below `lg` the panel is a sheet over the catalogue and
+   *  covers the control that opened it, so both buttons at the foot are ways
+   *  out — and which of the two was taken is the caller's business: one asks
+   *  for a set of products, the other asks for nothing in particular. */
+  onDone?: (reason: "shown" | "cleared") => void;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [lambdaMax, setLambdaMax] = useState(
     query.lambdaMax === null ? "" : String(query.lambdaMax),
   );
-  // Starts open so the panel is usable without JavaScript, where the toggle
-  // button does nothing. Once hydrated it collapses into a disclosure on small
-  // screens; from `lg` up it is always visible anyway.
-  const [open, setOpen] = useState(true);
-  // `scripted` also decides whether the Apply button is worth showing: the
-  // change handler above already applies a filter as it is chosen, so the
-  // button is only the route for a browser that is not running this.
+  // `scripted` decides whether the Apply button is worth showing: the change
+  // handler above already applies a filter as it is chosen, so the button is
+  // only the route for a browser that is not running this.
   const [scripted, setScripted] = useState(false);
-  useEffect(() => {
-    setOpen(false);
-    setScripted(true);
-  }, []);
+  useEffect(() => setScripted(true), []);
 
   const submit = (event: React.FormEvent<HTMLFormElement>) => {
     if (!onApply) return;
@@ -52,16 +54,6 @@ export default function Filters({
 
   return (
     <>
-      <button
-        type="button"
-        className="btn btn-quiet w-full lg:hidden"
-        aria-expanded={open}
-        aria-controls="filter-panel"
-        onClick={() => setOpen((value) => !value)}
-      >
-        {open ? "Hide filters" : "Show filters"}
-      </button>
-
       <form
         ref={formRef}
         action="/products"
@@ -69,7 +61,6 @@ export default function Filters({
         id="filter-panel"
         onChange={applyOnChange}
         onSubmit={submit}
-        className={`${open ? "block" : "hidden"} mt-4 lg:mt-0 lg:block`}
       >
         {/* Carried through so filtering does not reset the search, view or sort. */}
         {query.q && <input type="hidden" name="q" value={query.q} />}
@@ -196,7 +187,11 @@ export default function Filters({
           />
         </div>
 
-        <div className="mt-6 flex gap-2">
+        {/* The foot of the panel, and below `lg` the only way out of it: the
+            sheet covers the funnel that opened it, so both buttons here leave.
+            The list of filters is longer than the screen, so the foot rides the
+            bottom of it rather than waiting at the end of the scroll. */}
+        <div className="filter-foot mt-6 flex gap-2">
           {!scripted && (
             <button type="submit" className="btn btn-primary flex-1 py-2.5 text-sm">
               Apply
@@ -217,11 +212,27 @@ export default function Filters({
               for (const el of form.querySelectorAll<HTMLInputElement>("input[type=number]"))
                 el.value = "";
               onApply(form);
+              // The other way out. Taking every filter off is a decision about
+              // the catalogue as much as applying one is, and it is answered
+              // by the catalogue rather than by a sheet of empty boxes.
+              onDone?.("cleared");
             }}
             className="btn btn-quiet flex-1 py-2.5 text-sm"
           >
             Clear all
           </a>
+
+          {onDone && (
+            <button
+              type="button"
+              onClick={() => onDone("shown")}
+              className="btn btn-primary flex-1 py-2.5 text-sm lg:hidden"
+            >
+              {total === undefined
+                ? "Apply"
+                : `Show ${total} ${total === 1 ? "product" : "products"}`}
+            </button>
+          )}
         </div>
       </form>
     </>

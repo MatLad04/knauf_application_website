@@ -12,9 +12,9 @@ import { Container } from "./section";
  *
  * Under the rule is the sign-off, in two lines. The first states what the data
  * is declared against — a rail of references, because a reference is a token
- * you cite rather than a sentence you read — with the way back up at the far
- * end of it. The wordmark closes underneath, at the left edge every other line
- * in the footer starts at.
+ * you cite rather than a sentence you read — and the wordmark closes
+ * underneath, at the left edge every other line in the footer starts at. The
+ * way back up rides whichever of those two lines still has room for it.
  */
 const COLUMNS = [
   {
@@ -47,6 +47,23 @@ const COLUMNS = [
     ],
   },
 ];
+
+function BackToTop({ className }: { className: string }) {
+  return (
+    <a
+      href="#main"
+      className={`group shrink-0 items-center gap-2 text-sm hover:text-signal ${className}`}
+    >
+      <ArrowUp
+        size={16}
+        weight="bold"
+        aria-hidden="true"
+        className="transition-transform group-hover:-translate-y-0.5"
+      />
+      Back to top
+    </a>
+  );
+}
 
 export default function SiteFooter() {
   return (
@@ -88,10 +105,15 @@ export default function SiteFooter() {
         {/* The sign-off. The references and the way back up share a line —
             the last thing the data is answerable to at one end, the way out at
             the other — and the wordmark closes underneath them, starting at the
-            same left edge every other line in the footer starts at. */}
+            same left edge every other line in the footer starts at.
+
+            The way back up only rides the references line while that line has
+            room for it. Below that it drops to the wordmark line — centred on
+            it, and at its right end once the line is narrow enough that the
+            middle would sit on top of the wordmark. */}
         <div className="mt-12 border-t rule pt-8">
-          <div className="relative flex flex-wrap items-center justify-between gap-x-6 gap-y-4">
-            <div className="flex flex-wrap items-center gap-2">
+          <div className="sign-off-line relative flex flex-wrap items-center justify-between gap-x-6 gap-y-4">
+            <div className="standards-rail">
               <Link href="/standards" className="label mr-2 hover:text-signal">
                 Declared against
               </Link>
@@ -106,21 +128,13 @@ export default function SiteFooter() {
               ))}
             </div>
 
-            <a
-              href="#main"
-              className="group inline-flex shrink-0 items-center gap-2 text-sm hover:text-signal lg:absolute lg:top-1/2 lg:left-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2"
-            >
-              <ArrowUp
-                size={16}
-                weight="bold"
-                aria-hidden="true"
-                className="transition-transform group-hover:-translate-y-0.5"
-              />
-              Back to top
-            </a>
+            <BackToTop className="hidden min-[1510px]:absolute min-[1510px]:top-1/2 min-[1510px]:left-1/2 min-[1510px]:inline-flex min-[1510px]:-translate-x-1/2 min-[1510px]:-translate-y-1/2" />
           </div>
 
-          <p className="display t-section mt-9 tracking-tight">KERNBAU</p>
+          <div className="relative mt-9 flex items-center justify-between gap-6">
+            <p className="display t-section tracking-tight">KERNBAU</p>
+            <BackToTop className="inline-flex sm:absolute sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 min-[1510px]:hidden" />
+          </div>
         </div>
       </Container>
     </footer>
