@@ -6,9 +6,10 @@ import { ArrowRight, Basket } from "@phosphor-icons/react";
 import type { Product } from "@/lib/catalogue";
 import { lambda, plural } from "@/lib/format";
 import { supply } from "@/lib/schedule";
-import { cart, saved, useSaved } from "@/lib/store";
+import { cart, saved, useSaved, useStoreReady } from "@/lib/store";
 import { release } from "@/lib/release";
 import { LineDrop, LineIdent, LineShot } from "./schedule-row";
+import { LoadingRegion, ScheduleSkeleton } from "./skeletons";
 
 /**
  * The shortlist.
@@ -32,6 +33,10 @@ export default function FavouritesView({
   head: React.ReactNode;
 }) {
   const shortlist = useSaved();
+  // The shortlist lives in the browser, so on the server and on the first
+  // client pass there is no shortlist to have — which is not the same as an
+  // empty one. See `useStoreReady`.
+  const ready = useStoreReady();
 
   // How many were just put on the schedule, so the page can say so. Cleared on
   // a timer rather than left standing: it is a receipt, not a state.
@@ -48,6 +53,19 @@ export default function FavouritesView({
     const product = bySlug.get(slug);
     return product ? [product] : [];
   });
+
+  if (!ready) {
+    return (
+      <div className="schedule-grid" data-alone="true">
+        <div>
+          {head}
+          <LoadingRegion label="Loading your shortlist">
+            <ScheduleSkeleton rows={3} />
+          </LoadingRegion>
+        </div>
+      </div>
+    );
+  }
 
   if (products.length === 0) {
     return (

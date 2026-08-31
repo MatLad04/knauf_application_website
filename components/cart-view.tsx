@@ -5,10 +5,11 @@ import { ArrowRight, Heart } from "@phosphor-icons/react";
 import type { Product } from "@/lib/catalogue";
 import { plural, rValue } from "@/lib/format";
 import { m2, metres, schedule } from "@/lib/schedule";
-import { cart, saved, useCart, useSaved } from "@/lib/store";
+import { cart, saved, useCart, useSaved, useStoreReady } from "@/lib/store";
 import { release } from "@/lib/release";
 import InDev from "./in-dev";
 import { Covers, LineDrop, LineIdent, LineShot, Stepper } from "./schedule-row";
+import { LoadingRegion, ScheduleSkeleton } from "./skeletons";
 
 /**
  * The basket, drawn as what it is: a materials schedule.
@@ -34,6 +35,10 @@ export default function CartView({
 }) {
   const lines = useCart();
   const shortlist = useSaved();
+  // The basket lives in the browser, so on the server and on the first client
+  // pass there is no basket to have — which is not the same as an empty one.
+  // See `useStoreReady`.
+  const ready = useStoreReady();
 
   const bySlug = new Map(catalogue.map((product) => [product.slug, product]));
 
@@ -49,6 +54,19 @@ export default function CartView({
   // The panel is the second column of the same grid as the heading, not of the
   // list below it: started under the heading it began a third of the way down
   // the screen and ran its own foot off the bottom.
+  if (!ready) {
+    return (
+      <div className="schedule-grid" data-alone="true">
+        <div>
+          {head}
+          <LoadingRegion label="Loading your basket">
+            <ScheduleSkeleton rows={3} />
+          </LoadingRegion>
+        </div>
+      </div>
+    );
+  }
+
   if (entries.length === 0) {
     return (
       <div className="schedule-grid" data-alone="true">

@@ -144,6 +144,27 @@ export function useSaved(): readonly string[] {
   return useSyncExternalStore(subscribe, readSavedSnapshot, () => EMPTY_SAVED);
 }
 
+/**
+ * Whether these lists have actually been read, as opposed to not yet known.
+ *
+ * Both hooks above answer "empty" twice before they can answer truthfully: once
+ * on the server, which has no browser to ask, and once on the first client pass,
+ * which has to match the markup the server sent. A page that treats that as an
+ * empty list tells somebody with eight products in their basket that their
+ * basket is empty, and then contradicts itself a frame later.
+ *
+ * So the two states are separated. This is `false` for exactly as long as the
+ * lists are unknown and `true` from the commit after hydration onwards, which
+ * is the difference between an empty state and a loading one.
+ */
+export function useStoreReady(): boolean {
+  return useSyncExternalStore(
+    subscribe,
+    () => true,
+    () => false,
+  );
+}
+
 /** Total units, not lines: what the figure on the basket in the bar counts. */
 export function useCartCount(): number {
   return useCart().reduce((total, line) => total + line.qty, 0);

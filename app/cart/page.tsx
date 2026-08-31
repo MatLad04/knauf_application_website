@@ -14,8 +14,9 @@ export const metadata: Metadata = {
  * The basket lives in the browser, so this page cannot be told what is in it
  * before it renders. It hands the catalogue over whole — seventy-four products
  * is a smaller payload than the photographs on any other page — and the view
- * picks its lines out of it. No loading state, no fetch, and the rows are there
- * on the first paint after hydration.
+ * picks its lines out of it. No fetch: the rows are there on the first paint
+ * after hydration, and the only wait is hydration itself, which the view fills
+ * with the shape of a schedule rather than with a claim that there isn't one.
  *
  * The heading is passed down rather than set above, because it belongs to the
  * same column as the list: the totals take the other column from the top of the

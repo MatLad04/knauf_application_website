@@ -21,6 +21,7 @@ import { readCompare, writeCompare } from "./compare-button";
 import ProductCard from "./product-card";
 import SpecSchedule from "./spec-schedule";
 import { Container } from "./section";
+import { SkeletonCard } from "./skeletons";
 import { plural } from "@/lib/format";
 
 /**
@@ -51,6 +52,18 @@ export default function CatalogueBrowser({
   // grid it is about to rearrange, while appending the next page must leave the
   // products already on the screen exactly as they are.
   const [pending, setPending] = useState<"filter" | "append" | null>(null);
+  /**
+   * The last request that did not come back, kept so the interface can say so.
+   *
+   * `error.tsx` covers the server render; it cannot cover this. Once the page
+   * is mounted every filter, sort and page is a server action, and an action
+   * that rejects — the database gone, the network dropped, a deploy mid-flight
+   * — used to leave the grid dimmed at 62% opacity with nothing on its way and
+   * nothing said. The results already on the screen are still true, so they
+   * stay; what is added is the line saying the newer set never arrived, and the
+   * button that asks for it again.
+   */
+  const [failed, setFailed] = useState<null | { search: string; kind: "filter" | "append" }>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
   // Every request is numbered, so an answer that arrives after a newer one was
   // asked for is dropped rather than painted. Ticking three filters quickly
@@ -89,13 +102,32 @@ export default function CatalogueBrowser({
     setSearch(initialSearch);
     setResult(initial);
     setPending(null);
+    setFailed(null);
     setFormKey((n) => n + 1);
     // Anything still in flight was asked for by the address we have just left.
     request.current += 1;
   }
 
+  /**
+   * The address, read the same way the server reads it.
+   *
+   * Parsed here rather than taken from `result.query` because this has to be
+   * right the instant a box is ticked, a round trip before the answer to it
+   * arrives — that is what keeps the chips and the checkboxes in step with the
+   * pointer instead of a fifth of a second behind it.
+   *
+   * The allowed lists matter: without them this parse accepted anything
+   * slug-shaped, so `?category=nonsense` — which the server had rejected and
+   * run without — still came up as a chip on the rail claiming to be filtering
+   * 42 unfiltered results. The facets carry every category and application the
+   * catalogue has, at zero count where a filter excludes them, so they are
+   * exactly the list to check against and they are already here.
+   */
   const raw = rawFromSearchParams(new URLSearchParams(search));
-  const { query } = parseProductQuery(raw);
+  const { query } = parseProductQuery(raw, {
+    categories: result.facets.categories.map((facet) => facet.value),
+    applications: result.facets.applications.map((facet) => facet.value),
+  });
 
   /**
    * Back to the head of the list.
@@ -190,12 +222,24 @@ export default function CatalogueBrowser({
 
       const id = (request.current += 1);
       setPending(kind);
+      setFailed(null);
 
-      void browse(rawFromSearchParams(next)).then((data) => {
-        if (id !== request.current) return;
-        setPending(null);
-        swap(() => setResult(data), animate);
-      });
+      void browse(rawFromSearchParams(next)).then(
+        (data) => {
+          if (id !== request.current) return;
+          setPending(null);
+          swap(() => setResult(data), animate);
+        },
+        (error: unknown) => {
+          if (id !== request.current) return;
+          console.error("[kernbau] the catalogue could not be reached", error);
+          setPending(null);
+          // The address was pushed before the request went out, so it is the
+          // address of a set nobody has. Retrying reads it back off this rather
+          // than off the URL, which the reader may have changed again since.
+          setFailed({ search: qs, kind });
+        },
+      );
     },
     [],
   );
@@ -247,11 +291,19 @@ export default function CatalogueBrowser({
     setFormKey((n) => n + 1);
     const id = (request.current += 1);
     setPending("filter");
-    void browse(rawFromSearchParams(new URLSearchParams(qs))).then((data) => {
-      if (id !== request.current) return;
-      setPending(null);
-      setResult(data);
-    });
+    void browse(rawFromSearchParams(new URLSearchParams(qs))).then(
+      (data) => {
+        if (id !== request.current) return;
+        setPending(null);
+        setResult(data);
+      },
+      (error: unknown) => {
+        if (id !== request.current) return;
+        console.error("[kernbau] the catalogue could not be reached", error);
+        setPending(null);
+        setFailed({ search: qs, kind: "filter" });
+      },
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -381,11 +433,20 @@ export default function CatalogueBrowser({
       setFormKey((n) => n + 1);
       const id = (request.current += 1);
       setPending("filter");
-      void browse(rawFromSearchParams(new URLSearchParams(qs))).then((data) => {
-        if (id !== request.current) return;
-        setPending(null);
-        swap(() => setResult(data), true);
-      });
+      setFailed(null);
+      void browse(rawFromSearchParams(new URLSearchParams(qs))).then(
+        (data) => {
+          if (id !== request.current) return;
+          setPending(null);
+          swap(() => setResult(data), true);
+        },
+        (error: unknown) => {
+          if (id !== request.current) return;
+          console.error("[kernbau] the catalogue could not be reached", error);
+          setPending(null);
+          setFailed({ search: qs, kind: "filter" });
+        },
+      );
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
@@ -450,7 +511,17 @@ export default function CatalogueBrowser({
     run(next, true, { animate: !sheeted() });
   };
 
-  const { products, total, facets, relaxations } = result;
+  const { products, total, facets, relaxations, issues } = result;
+
+  /** Ask again for the set that did not arrive. */
+  const retry = () => {
+    if (!failed) return;
+    run(new URLSearchParams(failed.search), false, {
+      animate: false,
+      resync: false,
+      kind: failed.kind,
+    });
+  };
   const chips = activeFilters(query, facets);
   const shown = products.length;
   const fade = useRailFade(rail, chips.length);
@@ -699,10 +770,66 @@ export default function CatalogueBrowser({
             </div>
           )}
 
+          {/* What the address asked for that the catalogue could not use.
+              Every one of these was already corrected — clamped, swapped or
+              dropped — before the query ran, so the results underneath are
+              real results; this only says why they are not quite the results
+              the link asked for. Silently ignoring it is how a shared link
+              gives two people two different catalogues. */}
+          {issues.length > 0 && (
+            <div role="status" className="panel mb-8 p-4 text-sm">
+              <p className="font-medium">
+                {issues.length === 1
+                  ? "One value in this address could not be used as written."
+                  : `${issues.length} values in this address could not be used as written.`}
+              </p>
+              <ul className="mt-2 grid gap-1 text-muted">
+                {issues.map((issue, i) => (
+                  <li key={`${issue.param}-${issue.value}-${i}`}>
+                    <span className="mono">{issue.param}</span>
+                    <span aria-hidden="true"> · </span>
+                    <span className="mono">“{issue.value}”</span> — {issue.reason}.
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* The interactive path's error state. The products below are the
+              last set that did arrive, so they are left standing and labelled
+              rather than cleared: a catalogue that empties itself because the
+              network blinked is worse than one that is honestly out of date. */}
+          {failed && (
+            <div role="alert" className="panel mb-8 flex flex-wrap items-center gap-4 p-4 text-sm">
+              <p className="min-w-0 flex-1">
+                <span className="font-medium">
+                  {failed.kind === "append"
+                    ? "The next page could not be loaded."
+                    : "These filters could not be applied."}
+                </span>{" "}
+                <span className="text-muted">
+                  The catalogue did not answer. What is shown below is the last set that did.
+                </span>
+              </p>
+              <button
+                type="button"
+                onClick={retry}
+                disabled={pending !== null}
+                className="btn btn-primary shrink-0 disabled:opacity-60"
+              >
+                {pending !== null ? "Trying…" : "Try again"}
+              </button>
+            </div>
+          )}
+
           {/* The grid is never emptied while the next set is on its way: the
               cards keep their keys, so what is already on the screen stays on
               the screen and only what changed is patched. */}
-          <div data-pending={pending === "filter" ? "true" : undefined} className="results">
+          <div
+            data-pending={pending === "filter" ? "true" : undefined}
+            aria-busy={pending !== null}
+            className="results"
+          >
             {total === 0 ? (
               <EmptyState query={query} relaxations={relaxations} onRelax={set} />
             ) : query.view === "table" ? (
@@ -727,6 +854,16 @@ export default function CatalogueBrowser({
                     />
                   </div>
                 ))}
+
+                {/* Appending is the one wait where a skeleton is the right
+                    answer. A filter change rearranges cards that are already
+                    on the screen — it dims them and swaps them, and putting
+                    grey boxes over a set someone is reading would be a step
+                    backwards. "Load more" adds to the end of that set, so the
+                    wait happens in empty space below it, and filling that space
+                    with the shape of the next row is what stops the button
+                    jumping down the page as the row lands under it. */}
+                {pending === "append" && <AppendSkeleton />}
               </div>
             )}
           </div>
@@ -917,6 +1054,40 @@ function activeFilters(query: ProductQuery, facets: Facets): Chip[] {
   if (query.epdOnly) chips.push({ key: "epd", label: "With an EPD", remove: { epd: null } });
   if (query.q) chips.push({ key: "q", label: `“${query.q}”`, remove: { q: null } });
   return chips;
+}
+
+/**
+ * One row of card-shaped holes on the end of the grid, drawn as direct children
+ * of it so they take their columns from the grid they are in rather than
+ * starting a second grid underneath.
+ *
+ * One *row*, which is a different number at every breakpoint: the grid runs
+ * 1 / 2 / 3 / 4 / 5 columns up from a phone, and five placeholders on a
+ * three-column screen is a full row plus two, which reads as a set of results
+ * rather than as the shape of one. So each is revealed at the width its own
+ * column appears, and the tail is never ragged by more than the last row of
+ * real cards already was.
+ *
+ * `aria-hidden`, because the count above the button already says how many
+ * products are on their way and the button itself already says "Loading" — a
+ * screen reader does not need five empty articles read to it as well.
+ */
+const SKELETON_ROW = [
+  "",
+  "hidden sm:block",
+  "hidden lg:block",
+  "hidden xl:block",
+  "hidden 2xl:block",
+];
+
+function AppendSkeleton() {
+  return (
+    <>
+      {SKELETON_ROW.map((className, i) => (
+        <SkeletonCard key={`skeleton-${i}`} className={className} />
+      ))}
+    </>
+  );
 }
 
 function EmptyState({

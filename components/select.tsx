@@ -159,6 +159,12 @@ export default function Select({
         aria-expanded={open}
         aria-haspopup="listbox"
         aria-label={label}
+        // Focus never leaves this button — the list is navigated with the
+        // arrows while the button keeps it — so this is the element that has
+        // to carry the pointer to the active option. On the list itself, which
+        // is where it was, it named a node inside an element nobody was focused
+        // on, and a screen reader announced none of the movement.
+        aria-activedescendant={open ? `${id}-${cursor}` : undefined}
         data-open={open ? "true" : undefined}
         onClick={() => setOpen((was) => !was)}
         onKeyDown={onKeyDown}
@@ -174,7 +180,7 @@ export default function Select({
           id={`${id}-list`}
           role="listbox"
           tabIndex={-1}
-          aria-activedescendant={`${id}-${cursor}`}
+          aria-label={label}
           data-align={align}
           className="dropdown-list"
           onKeyDown={onKeyDown}
@@ -186,6 +192,10 @@ export default function Select({
                 key={option.value}
                 id={`${id}-${i}`}
                 type="button"
+                // Not a tab stop: the keyboard works this list through the
+                // combobox with the arrows, so eight options must not be eight
+                // presses of Tab between this control and the next one.
+                tabIndex={-1}
                 role="option"
                 aria-selected={isSelected}
                 data-cursor={i === cursor ? "true" : undefined}

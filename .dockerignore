@@ -7,3 +7,7 @@ inspo
 plan.md
 *.md
 !README.md
+
+# Never bake a developer's local database URL into the image.
+.env
+.env.local

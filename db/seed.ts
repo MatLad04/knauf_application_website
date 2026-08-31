@@ -81,6 +81,26 @@ const catalogue = JSON.parse(
 
 const schema = readFileSync(join(here, "schema.sql"), "utf8");
 
+/**
+ * `.env`, which Next loads for the app and nothing loads for a plain script.
+ *
+ * This is run two ways: inside the container, where compose sets `DATABASE_URL`
+ * in the environment, and on a developer's machine by `npm run db:setup`, where
+ * it is in `.env` because that is where `.env.example` says to put it. Without
+ * this the second case silently fell through to the default below — port 5432,
+ * which on a machine that already runs Postgres is somebody else's database.
+ *
+ * An explicit `DATABASE_URL` still wins: `loadEnvFile` does not overwrite a
+ * variable that is already set, which is what makes the container case safe.
+ */
+for (const file of [".env.local", ".env"]) {
+  try {
+    process.loadEnvFile(join(here, "..", file));
+  } catch {
+    // No such file, which is the normal case in the container.
+  }
+}
+
 const connectionString =
   process.env.DATABASE_URL ?? "postgres://kernbau:kernbau@localhost:5432/kernbau";
 
