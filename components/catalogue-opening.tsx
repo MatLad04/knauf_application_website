@@ -104,11 +104,6 @@ export default async function CatalogueOpening() {
                 building height demands, a depth the reveal will take. A figure is a constraint, not
                 a product. Each of these is one, already applied.
               </p>
-
-              <p className="caption opening-aside">
-                Or combine them: the catalogue filters on conductivity, fire class, depth, density
-                and application at once, and compares any three side by side.
-              </p>
             </div>
 
             {/* Three constraints, three doors. The rule over each one is the

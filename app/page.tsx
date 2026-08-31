@@ -205,9 +205,11 @@ function Hero({ stats }: { stats: Stats }) {
             <Enter delay={0.06}>
               {/* Broken by hand rather than by width: the name takes the first
                   line and what it makes takes the second, so the break is the
-                  same on every screen the two lines fit on. */}
+                  same on every screen the two lines fit on. And the name is the
+                  half that is lit — what it makes is held back off it, which is
+                  the emphasis the sign-in sheet uses on its own two lines. */}
               <h1 className="display hero-title mt-4">
-                <span className="block">Kernbau</span>
+                <span className="hero-title-lit block">Kernbau</span>
                 <span className="block">building materials</span>
               </h1>
             </Enter>
